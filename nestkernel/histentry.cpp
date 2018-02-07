@@ -42,3 +42,14 @@ nest::histentry::histentry( double t,
   , access_counter_( access_counter )
 {
 }
+
+// member functions of histentry_cl
+
+nest::histentry_cl::histentry_cl( double t,
+  double dw,
+  size_t access_counter )
+  : t_( t )
+  , dw_( dw )
+  , access_counter_( access_counter )
+{
+}

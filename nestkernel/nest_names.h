@@ -42,6 +42,8 @@ extern const Name a; //!< Specific to Brette & Gerstner 2005 (aeif_cond-*)
 extern const Name a_acausal; //!< Used by stdp_connection_facetshw_hom
 extern const Name a_causal;  //!< Used by stdp_connection_facetshw_hom
 extern const Name A_lower;
+extern const Name A_LTD;
+extern const Name A_LTP;
 extern const Name A_mean;
 extern const Name A_minus; //!< Used by stdp_dopa_connection
 extern const Name A_plus;  //!< Used by stdp_dopa_connection
@@ -255,6 +257,7 @@ extern const Name I_in;     //!< Inhibitory synaptic input current
 extern const Name I_KNa;    //!< specific to Hill & Tononi 2005
 extern const Name I_L;      //!< Leak current
 extern const Name I_NaP;    //!< specific to Hill & Tononi 2005
+extern const Name I_sp;     //!< specific to Clopath et al. 2010
 extern const Name I_stc;    //!< relevant for gif models
 extern const Name I_std;    //!< Standard deviation of current distribution
                             //!< (current homeostasis)
@@ -525,9 +528,14 @@ extern const Name tau_syn_ex;      //!< Excitatory synaptic time constant
 extern const Name tau_syn_in;      //!< Inhibitory synaptic time constant
 extern const Name tau_theta;       //!< Specific to Hill-Tononi (2005)
 extern const Name tau_v;           //!< Specific to amat2_*
+extern const Name tau_V_T;         //!< Specific to Clopath et al. 2010
 extern const Name tau_vacant;      //!< Parameter for MSP dynamics
 extern const Name tau_w; //!< Specific to Brette & Gerstner 2005 (aeif_cond-*)
+extern const Name tau_x; //!< Specific to Clopath et al. 2010
+extern const Name tau_z; //!< Specific to Clopath et al. 2010
 extern const Name theta; //!< Did not compile without (theta neuron problem)
+extern const Name theta_plus;
+extern const Name theta_minus;
 extern const Name theta_eq;                //!< specific to Hill & Tononi 2005
 extern const Name thread;                  //!< Node parameter
 extern const Name thread_local_id;         //!< Thead-local ID of node,
@@ -552,6 +560,8 @@ extern const Name type_id; //!< model paramater
 
 extern const Name u; //!< probability of release [0...1] (Tsodyks2_connection)
 extern const Name U; //!< Used by stdp_connection_facetshw_hom
+extern const Name u_bar_plus; //!< Specific to Clopath et al. 2010
+extern const Name u_bar_minus; //!< Specific to Clopath et al. 2010
 extern const Name U_lower;
 extern const Name U_m; //!< Specific to Izhikevich 2003
 extern const Name U_mean;
@@ -571,6 +581,8 @@ extern const Name
   V_peak; //!< Spike detection threshold (Brette & Gerstner 2005)
 extern const Name V_reset;  //!< Reset potential
 extern const Name V_T;      //!< Voltage offset
+extern const Name V_T_max; //!< Specific to Clopath et al. 2010
+extern const Name V_T_rest; //!< Specific to Clopath et al. 2010
 extern const Name V_T_star; //!< Specific to gif models
 extern const Name V_th;     //!< Threshold
 extern const Name
@@ -612,6 +624,8 @@ extern const Name Wmin;          //!< Used by stdp_dopa_connection
 
 extern const Name x; //!< current scaling factor of the synaptic weight [0...1]
                      //!< (Tsodyks2_connection)
+
+extern const Name x_bar; //!< Specific to Clopath et al. 2010
 
 extern const Name y;   //!< Used by stdp_connection_facetshw_hom
 extern const Name y_0; //!< Used by ac_generator

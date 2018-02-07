@@ -43,6 +43,8 @@
 #include "config.h"
 
 // Neuron models
+#include "aeif_cbvg_2010.h"
+#include "aeif_cbvg1_2010.h"
 #include "aeif_cond_alpha.h"
 #include "aeif_cond_alpha_multisynapse.h"
 #include "aeif_cond_beta_multisynapse.h"
@@ -111,6 +113,8 @@
 
 // Prototypes for synapses
 #include "bernoulli_connection.h"
+#include "clopath_stdp_connection.h"
+#include "clopath1_stdp_connection.h"
 #include "common_synapse_properties.h"
 #include "cont_delay_connection.h"
 #include "cont_delay_connection_impl.h"
@@ -360,6 +364,8 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< gif_cond_exp_multisynapse >(
     "gif_cond_exp_multisynapse" );
 
+  kernel().model_manager.register_node_model< aeif_cbvg_2010 >( "aeif_cbvg_2010" );
+  kernel().model_manager.register_node_model< aeif_cbvg1_2010 >( "aeif_cbvg1_2010" );
   kernel().model_manager.register_node_model< aeif_cond_alpha >(
     "aeif_cond_alpha" );
   kernel().model_manager.register_node_model< aeif_cond_exp >(
@@ -459,6 +465,14 @@ ModelsModule::init( SLIInterpreter* )
      consumption.
      SeeAlso: synapsedict, stdp_synapse, static_synapse_hpc
   */
+  kernel()
+    .model_manager
+    .register_connection_model< Clopath1_STDPConnection< TargetIdentifierPtrRport > >(
+      "clopath1_stdp_synapse" );
+  kernel()
+    .model_manager
+    .register_connection_model< Clopath_STDPConnection< TargetIdentifierPtrRport > >(
+      "clopath_stdp_synapse" );
   kernel()
     .model_manager
     .register_connection_model< STDPConnection< TargetIdentifierPtrRport > >(

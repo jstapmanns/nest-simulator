@@ -129,6 +129,7 @@ nest::aeif_psc_alpha_dynamics( double,
   // Adaptation current w.
   f[ S::W ] = ( node.P_.a * ( V - node.P_.E_L ) - w ) / node.P_.tau_w;
 
+  std::cout << "hello" << std::endl;
   return GSL_SUCCESS;
 }
 

@@ -19,6 +19,8 @@
 
 set( models_sources
     ac_generator.h ac_generator.cpp
+    aeif_cbvg_2010.h aeif_cbvg_2010.cpp
+    aeif_cbvg1_2010.h aeif_cbvg1_2010.cpp
     aeif_cond_alpha.h aeif_cond_alpha.cpp
     aeif_cond_alpha_RK5.h aeif_cond_alpha_RK5.cpp
     aeif_cond_alpha_multisynapse.h aeif_cond_alpha_multisynapse.cpp
@@ -29,6 +31,8 @@ set( models_sources
     amat2_psc_exp.h amat2_psc_exp.cpp
     bernoulli_connection.h
     binary_neuron.h
+    clopath_stdp_connection.h
+    clopath1_stdp_connection.h
     cont_delay_connection.h cont_delay_connection_impl.h
     correlation_detector.h correlation_detector.cpp
     correlomatrix_detector.h correlomatrix_detector.cpp
