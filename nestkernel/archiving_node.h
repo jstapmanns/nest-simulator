@@ -194,11 +194,12 @@ public:
    * constant of the intracellular calcium concentration
    */
   double get_tau_Ca() const;
+  
+  double get_theta_plus() const;
+  
+  double get_theta_minus() const;
 
 protected:
-  double theta_plus_; // TO DO: Does it make sense to put it here?
-
-  double theta_minus_;
 
   /**
    * \fn void set_spiketime(Time const & t_sp, double offset)
@@ -290,6 +291,10 @@ private:
   double A_LTD_;
 
   double A_LTP_;
+  
+  double theta_plus_;
+
+  double theta_minus_;
 
   // Map of the synaptic elements
   std::map< Name, SynapticElement > synaptic_elements_map_;
@@ -311,6 +316,18 @@ inline double
 Archiving_Node::get_Ca_minus() const
 {
   return Ca_minus_;
+}
+
+inline double
+Archiving_Node::get_theta_plus() const
+{
+  return theta_plus_;
+}
+
+inline double
+Archiving_Node::get_theta_minus() const
+{
+  return theta_minus_;
 }
 
 } // of namespace

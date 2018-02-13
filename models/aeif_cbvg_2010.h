@@ -231,13 +231,13 @@ public:
     enum StateVecElems
     {
       V_M = 0,
-      I_EXC, // 1
-      I_INH, // 2
-      W,     // 3
-	  Z,	 // 4
-	  V_T,	 // 5
-	  U_BAR_PLUS,	// 6
-	  U_BAR_MINUS,	// 7
+      I_EXC,       // 1
+      I_INH,       // 2
+      W,           // 3
+      Z,           // 4
+      V_T,         // 5
+      U_BAR_PLUS,  // 6
+      U_BAR_MINUS, // 7
       STATE_VEC_SIZE
     };
 

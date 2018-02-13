@@ -1,5 +1,5 @@
 /*
- *  aeif_cbvg_2010.cpp
+ *  aeif_cbvg1_2010.cpp
  *
  *  This file is part of NEST.
  *
@@ -576,15 +576,15 @@ nest::aeif_cbvg1_2010::update( const Time& origin, const long from, const long t
     }
 
     // save data for Clopath STDP
-    if ( (S_.y_[ State_::V_M] > theta_plus_ ) && 
-        ( S_.y_[ State_::U_BAR_PLUS ] > theta_minus_  ) )
+    if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
+        ( S_.y_[ State_::U_BAR_PLUS ] > get_theta_minus()  ) )
     {
       write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
           S_.y_[ State_::V_M ],
           S_.y_[ State_::U_BAR_PLUS ] );
     }
 
-    if ( S_.y_[ State_::U_BAR_MINUS ] > theta_minus_ )
+    if ( S_.y_[ State_::U_BAR_MINUS ] > get_theta_minus() )
     {
       write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
           S_.y_[ State_::U_BAR_MINUS ] );
