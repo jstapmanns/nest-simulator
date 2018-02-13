@@ -1,5 +1,5 @@
 /*
- *  stdp_connection.h
+ *  clopath_stdp_connection.h
  *
  *  This file is part of NEST.
  *
@@ -24,8 +24,7 @@
 #define CLOPATH_STDP_CONNECTION_H
 
 /* BeginDocumentation
-  Name: stdp_synapse - Synapse type for spike-timing dependent
-   plasticity.
+  Name: clopath_stdp_connection - TODO
 
   Description:
    stdp_synapse is a connector to create synapses with spike time

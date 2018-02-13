@@ -114,7 +114,7 @@ nest::aeif_psc_exp_dynamics( double, const double y[], double f[], void* pnode )
   f[ S::V_M ] = is_refractory
     ? 0.
     : ( -node.P_.g_L * ( V - node.P_.E_L ) + I_spike + I_syn_ex - I_syn_in - w
-        + 0.0*node.P_.I_e + node.B_.I_stim_ ) / node.P_.C_m;
+        + node.P_.I_e + node.B_.I_stim_ ) / node.P_.C_m;
 
   f[ S::I_EXC ] = -I_syn_ex / node.P_.tau_syn_ex; // Exc. synaptic current (pA)
 
@@ -122,12 +122,6 @@ nest::aeif_psc_exp_dynamics( double, const double y[], double f[], void* pnode )
 
   // Adaptation current w.
   f[ S::W ] = ( node.P_.a * ( V - node.P_.E_L ) - w ) / node.P_.tau_w;
-  ///if (V < -70.0){
-  //std::cout << f[S::W] << ", " << node.P_.a << ", " << V -  node.P_.E_L 
-	//  << ", " << w << ", " << node.P_.tau_w << std::endl;
-	///std::cout << I_spike << ", " << std::exp( ( V - node.P_.V_th ) / node.P_.Delta_T )  << ", " << I_syn_ex << std::endl;
-	
-  //}
 
   return GSL_SUCCESS;
 }
@@ -461,8 +455,6 @@ nest::aeif_psc_exp::update( const Time& origin, const long from, const long to )
   assert( from < to );
   assert( State_::V_M == 0 );
 
-  //std::cout << from << ", " << to << std::endl;
-  //std::cout << origin.get_steps() << std::endl;
   for ( long lag = from; lag < to; ++lag )
   {
     double t = 0.0;
@@ -489,7 +481,6 @@ nest::aeif_psc_exp::update( const Time& origin, const long from, const long to )
         S_.y_ );              // neuronal state
       if ( status != GSL_SUCCESS )
       {
-		std::cout << "GSLSolverFailure" << std::endl;
         throw GSLSolverFailure( get_name(), status );
       }
 
@@ -497,26 +488,19 @@ nest::aeif_psc_exp::update( const Time& origin, const long from, const long to )
       if ( S_.y_[ State_::V_M ] < -1e3 || S_.y_[ State_::W ] < -1e6
         || S_.y_[ State_::W ] > 1e6 )
       {
-		std::cout << "NumericalInstability" << std::endl;
         throw NumericalInstability( get_name() );
       }
 
       // spikes are handled inside the while-loop
       // due to spike-driven adaptation
-      /*if (S_.y_[State_::V_M] >= -42.0)
-	  {
-		  std::cout << "V_m = " << S_.y_[State_::V_M] << ", w_ad = " << S_.y_[State_::W] << ", " << Time::step( origin.get_steps() + lag )<< ", " << t << ", " << B_.step_ << ", " << B_.IntegrationStep_ << std::endl;
-	  }*/
-	  if ( S_.r_ > 0 )
+      if ( S_.r_ > 0 )
       {
         S_.y_[ State_::V_M ] = P_.V_reset_;
       }
       else if ( S_.y_[ State_::V_M ] >= V_.V_peak )
       {
-		std::cout << "spike! " << S_.y_[State_::V_M] << ", " << S_.y_[State_::W] << ", ";
         S_.y_[ State_::V_M ] = P_.V_reset_;
         S_.y_[ State_::W ] += P_.b; // spike-driven adaptation
-		std::cout << P_.b << ", " << S_.y_[State_::W] << ", " << Time::step( origin.get_steps() + lag ) << B_.IntegrationStep_ << std::endl;
 
         /* Initialize refractory step counter.
          * - We need to add 1 to compensate for count-down immediately after
@@ -530,7 +514,6 @@ nest::aeif_psc_exp::update( const Time& origin, const long from, const long to )
         SpikeEvent se;
         kernel().event_delivery_manager.send( *this, se, lag );
       }
-	  
     }
 
     // decrement refractory count

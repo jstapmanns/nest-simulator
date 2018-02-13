@@ -543,13 +543,13 @@ extern const Name tau_w; //!< Specific to Brette & Gerstner 2005 (aeif_cond-*)
 extern const Name tau_x; //!< Specific to Clopath et al. 2010
 extern const Name tau_z; //!< Specific to Clopath et al. 2010
 extern const Name theta; //!< Did not compile without (theta neuron problem)
-extern const Name theta_plus;
-extern const Name theta_minus;
-extern const Name theta_eq;                //!< specific to Hill & Tononi 2005
+extern const Name theta_eq; //!< specific to Hill & Tononi 2005
 extern const Name theta_ex; //!< specific to rate neurons (offset excitatory
 // multiplicative coupling)
 extern const Name theta_in; //!< specific to rate neurons (offset inhibitory
 // multiplicative coupling)
+extern const Name theta_plus;  //!< Specific to Clopath et al. 2010
+extern const Name theta_minus; //!< Specific to Clopath et al. 2010
 extern const Name thread;                  //!< Node parameter
 extern const Name thread_local_id;         //!< Thead-local ID of node,
                                            //!< see Kunkel et al 2014, Sec 3.3.2

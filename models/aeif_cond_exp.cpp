@@ -139,7 +139,7 @@ nest::aeif_cond_exp_dynamics( double,
  * ---------------------------------------------------------------- */
 
 nest::aeif_cond_exp::Parameters_::Parameters_()
- : V_peak_( 0.0 )    // mV
+  : V_peak_( 0.0 )    // mV
   , V_reset_( -60.0 ) // mV
   , t_ref_( 0.0 )     // ms
   , g_L( 30.0 )       // nS

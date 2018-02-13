@@ -1,5 +1,5 @@
 /*
- *  aeif_cbvg_2010.h
+ *  aeif_cbvg1_2010.h
  *
  *  This file is part of NEST.
  *
@@ -43,8 +43,7 @@
 #include "universal_data_logger.h"
 
 /* BeginDocumentation
-Name: aeif_cbvg_2010 - Current-based exponential integrate-and-fire neuron
-                      model according to Brette and Gerstner (2005).
+Name: aeif_cbvg_2010 - TODO
 
 Description:
 
