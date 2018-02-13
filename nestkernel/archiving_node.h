@@ -283,6 +283,10 @@ private:
   // Increase in calcium concentration [Ca2+] for each spike of the neuron
   double beta_Ca_;
 
+  /*
+   * Clopath rule
+   */
+
   double A_LTD_;
 
   double A_LTP_;
