@@ -53,7 +53,6 @@ EventDeliveryManager::send< SpikeEvent >( Node& source,
 {
   e.set_stamp(
     kernel().simulation_manager.get_slice_origin() + Time::step( lag + 1 ) );
-  //std::cout << "spkike stamp: " << e.get_stamp() << std::endl;
   e.set_sender( source );
   thread t = source.get_thread();
 

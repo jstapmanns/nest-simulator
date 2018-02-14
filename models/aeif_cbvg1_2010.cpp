@@ -1,5 +1,5 @@
 /*
- *  aeif_cbvg_2010.cpp
+ *  aeif_cbvg1_2010.cpp
  *
  *  This file is part of NEST.
  *
@@ -164,14 +164,14 @@ nest::aeif_cbvg1_2010::Parameters_::Parameters_()
   , Delta_T( 2.0 )    // mV
   , tau_w( 144.0 )    // ms
   , tau_z( 40.0 )     // ms
-  , I_sp( 400.0 )     // pA
-  , tau_V_T( 50.0 )	  // ms
+  , tau_V_T( 50.0 )   // ms
   , V_T_max( 30.4 )   // mV
   , V_T_rest( -50.4 ) // mV
   , tau_plus( 7.0 )   // ms
   , tau_minus( 10.0)  // ms
   , a( 4.0 )          // nS
   , b( 80.5 )         // pA
+  , I_sp( 400.0 )     // pA
   , tau_syn_ex( 0.2 ) // ms
   , tau_syn_in( 2.0 ) // ms
   , I_e( 0.0 )        // pA
@@ -576,15 +576,15 @@ nest::aeif_cbvg1_2010::update( const Time& origin, const long from, const long t
     }
 
     // save data for Clopath STDP
-    if ( (S_.y_[ State_::V_M] > theta_plus_ ) && 
-        ( S_.y_[ State_::U_BAR_PLUS ] > theta_minus_  ) )
+    if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
+        ( S_.y_[ State_::U_BAR_PLUS ] > get_theta_minus()  ) )
     {
       write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
           S_.y_[ State_::V_M ],
           S_.y_[ State_::U_BAR_PLUS ] );
     }
 
-    if ( S_.y_[ State_::U_BAR_MINUS ] > theta_minus_ )
+    if ( S_.y_[ State_::U_BAR_MINUS ] > get_theta_minus() )
     {
       write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
           S_.y_[ State_::U_BAR_MINUS ] );
