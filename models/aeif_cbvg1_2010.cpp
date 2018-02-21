@@ -78,12 +78,13 @@ RecordablesMap< aeif_cbvg1_2010 >::create()
   insert_( names::V_T, &aeif_cbvg1_2010::get_y_elem_< aeif_cbvg1_2010::State_::V_T > );
   insert_( names::u_bar_plus, &aeif_cbvg1_2010::get_y_elem_< aeif_cbvg1_2010::State_::U_BAR_PLUS > );
   insert_( names::u_bar_minus, &aeif_cbvg1_2010::get_y_elem_< aeif_cbvg1_2010::State_::U_BAR_MINUS > );
+  insert_( names::ltp_factor, &aeif_cbvg1_2010::get_y_elem_< aeif_cbvg1_2010::State_::LTP_FACTOR > );
 }
 }
 
 
 extern "C" int
-nest::aeif_cbvg1_2010_dynamics( double, const double y[], double f[], void* pnode )
+nest::aeif_cbvg1_2010_dynamics( double t, const double y[], double f[], void* pnode )
 {
   // a shorthand
   typedef nest::aeif_cbvg1_2010::State_ S;
@@ -140,6 +141,16 @@ nest::aeif_cbvg1_2010_dynamics( double, const double y[], double f[], void* pnod
   f[ S::U_BAR_PLUS ] = ( -u_bar_plus + V ) / node.P_.tau_plus;
 
   f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V) / node.P_.tau_minus;
+
+  if ((V > node.get_theta_plus()) && (u_bar_plus > node.get_theta_minus()))
+  {
+    const double omega = (V - node.get_theta_plus()) * (u_bar_plus - node.get_theta_minus());
+    f[ S::LTP_FACTOR ] = exp(-t / node.P_.tau_x)*omega;
+  }
+  else
+  {
+    f[ S::LTP_FACTOR ] = 0.0;
+  }
   ///if (V < -70.0){
   //std::cout << f[S::W] << ", " << node.P_.a << ", " << V -  node.P_.E_L 
 	//  << ", " << w << ", " << node.P_.tau_w << std::endl;
@@ -169,6 +180,7 @@ nest::aeif_cbvg1_2010::Parameters_::Parameters_()
   , V_T_rest( -50.4 ) // mV
   , tau_plus( 7.0 )   // ms
   , tau_minus( 10.0)  // ms
+  , tau_x( 15.0)  // ms
   , a( 4.0 )          // nS
   , b( 80.5 )         // pA
   , I_sp( 400.0 )     // pA
@@ -235,6 +247,7 @@ nest::aeif_cbvg1_2010::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::tau_z, tau_z );
   def< double >( d, names::tau_plus, tau_plus );
   def< double >( d, names::tau_minus, tau_minus );
+  def< double >( d, names::tau_x, tau_x );
   def< double >( d, names::I_e, I_e );
   def< double >( d, names::V_peak, V_peak_ );
   def< double >( d, names::gsl_error_tol, gsl_error_tol );
@@ -265,6 +278,7 @@ nest::aeif_cbvg1_2010::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::tau_z, tau_z );
   updateValue< double >( d, names::tau_plus, tau_plus );
   updateValue< double >( d, names::tau_minus, tau_minus );
+  updateValue< double >( d, names::tau_x, tau_x );
 
   updateValue< double >( d, names::I_e, I_e );
 
@@ -506,6 +520,7 @@ nest::aeif_cbvg1_2010::update( const Time& origin, const long from, const long t
   for ( long lag = from; lag < to; ++lag )
   {
     double t = 0.0;
+    S_.y_[ State_::LTP_FACTOR ] = 0.0;
 
     // numerical integration with adaptive step size control:
     // ------------------------------------------------------
@@ -579,9 +594,8 @@ nest::aeif_cbvg1_2010::update( const Time& origin, const long from, const long t
     if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
         ( S_.y_[ State_::U_BAR_PLUS ] > get_theta_minus()  ) )
     {
-      write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
-          S_.y_[ State_::V_M ],
-          S_.y_[ State_::U_BAR_PLUS ] );
+      write_LTP_history_exp_int( Time::step( origin.get_steps() + lag + 1 ),
+          S_.y_[ State_::LTP_FACTOR ] );
     }
 
     if ( S_.y_[ State_::U_BAR_MINUS ] > get_theta_minus() )

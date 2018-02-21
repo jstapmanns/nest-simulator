@@ -335,6 +335,38 @@ nest::Archiving_Node::write_LTP_history( Time const& t_ltp,
 }
 
 void
+nest::Archiving_Node::write_LTP_history_exp_int( Time const& t_ltp, 
+    double ltp_factor, 
+    double offset )
+{
+  const double t_ltp_ms = t_ltp.get_ms() - offset;
+  update_synaptic_elements( t_ltp_ms );  // TO DO: do we need this?
+
+  if ( n_incoming_ )
+  {
+    // prune all spikes from history which are no longer needed
+    // except the penultimate one. we might still need it.
+    while ( ltp_history_.size() > 1 )
+    {
+      if ( ltp_history_.front().access_counter_ >= n_incoming_ )
+      {
+        ltp_history_.pop_front();
+      }
+      else
+      {
+        break;
+      }
+    }
+    // TO DO: appropriate implementation of histentry
+    // dw is not the change of the synaptic weight since the factors 
+    // x_bar and dt are not includet (but later in the synapse)
+    // TO DO: get dt.
+    const double dw = A_LTP_ * ltp_factor;
+    ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
+  }
+}
+
+void
 nest::Archiving_Node::get_status( DictionaryDatum& d ) const
 {
   DictionaryDatum synaptic_elements_d;

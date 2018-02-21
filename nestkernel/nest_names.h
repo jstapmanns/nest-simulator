@@ -306,6 +306,7 @@ extern const Name local_spike_counter; //!< Used by event_delivery_manager
 extern const Name lookuptable_0;       //!< Used in stdp_connection_facetshw_hom
 extern const Name lookuptable_1;       //!< Used in stdp_connection_facetshw_hom
 extern const Name lookuptable_2;       //!< Used in stdp_connection_facetshw_hom
+extern const Name ltp_factor;       //!< Used aeif_cbvg_2010
 
 extern const Name make_symmetric; //!< Connectivity-related
 extern const Name max_delay;      //!< In ConnBuilder

@@ -226,6 +226,10 @@ protected:
       double u_bar_plus, 
       double offset = 0.0 );
 
+  void write_LTP_history_exp_int( Time const& t_sp, 
+      double ltp_factor, 
+      double offset = 0.0 );
+
   /**
    * \fn double get_spiketime()
    * return most recent spike time in ms

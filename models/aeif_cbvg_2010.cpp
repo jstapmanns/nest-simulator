@@ -581,7 +581,7 @@ nest::aeif_cbvg_2010::update( const Time& origin, const long from, const long to
     {
       write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
           S_.y_[ State_::V_M ],
-          S_.y_[ State_::U_BAR_PLUS ] );
+          S_.y_[ State_::U_BAR_PLUS ]);
     }
 
     if ( S_.y_[ State_::U_BAR_MINUS ] > get_theta_minus() )
