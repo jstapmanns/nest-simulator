@@ -133,12 +133,6 @@ public:
   double get_K_value( double t );
 
   /**
-   * \fn double get_LTD_value(long t)
-   * return the Kminus value at t (in ms).
-   */
-  double get_LTD_value( double t );
-
-  /**
    * write the Kminus and triplet_Kminus values at t (in ms) to
    * the provided locations.
    * @throws UnexpectedEvent
@@ -166,19 +160,6 @@ public:
     std::deque< histentry >::iterator* finish );
 
   /**
-   * \fn void get_LTP_history(long t1, long t2,
-   * std::deque<Archiver::histentry>::iterator* start,
-   * std::deque<Archiver::histentry>::iterator* finish)
-   * return the spike times (in steps) of spikes which occurred in the range
-   * (t1,t2].
-   * TO DO: modify text, see virtual void in Node
-   */
-  void get_LTP_history( double t1,
-    double t2,
-    std::deque< histentry_cl >::iterator* start,
-    std::deque< histentry_cl >::iterator* finish );
-
-  /**
    * Register a new incoming STDP connection.
    *
    * t_first_read: The newly registered synapse will read the history entries
@@ -194,41 +175,13 @@ public:
    * constant of the intracellular calcium concentration
    */
   double get_tau_Ca() const;
-  
-  double get_theta_plus() const;
-  
-  double get_theta_minus() const;
 
 protected:
-
   /**
    * \fn void set_spiketime(Time const & t_sp, double offset)
    * record spike history
    */
   void set_spiketime( Time const& t_sp, double offset = 0.0 );
-
-  /**
-   * \fn void set_spiketime(Time const & t_sp, double offset)
-   * record spike history
-   * TO DO: modify text
-   */
-  void write_LTD_history( Time const& t_sp, 
-      double u_bar_minus, 
-      double offset = 0.0 );
-
-  /**
-   * \fn void set_spiketime(Time const & t_sp, double offset)
-   * record spike history
-   * TO DO: modify text
-   */
-  void write_LTP_history( Time const& t_sp, 
-      double u, 
-      double u_bar_plus, 
-      double offset = 0.0 );
-
-  void write_LTP_history_exp_int( Time const& t_sp, 
-      double ltp_factor, 
-      double offset = 0.0 );
 
   /**
    * \fn double get_spiketime()
@@ -241,12 +194,13 @@ protected:
    * clear spike history
    */
   void clear_history();
-
-private:
+  
   // number of incoming connections from stdp connectors.
   // needed to determine, if every incoming connection has
   // read the spikehistory for a given point in time
   size_t n_incoming_;
+
+private:
 
   // sum exp(-(t-ti)/tau_minus)
   double Kminus_;
@@ -265,8 +219,6 @@ private:
 
   // spiking history needed by stdp synapses
   std::deque< histentry > history_;
-  std::deque< histentry_cl > ltd_history_;
-  std::deque< histentry_cl > ltp_history_;
 
   /*
    * Structural plasticity
@@ -288,20 +240,95 @@ private:
   // Increase in calcium concentration [Ca2+] for each spike of the neuron
   double beta_Ca_;
 
+  // Map of the synaptic elements
+  std::map< Name, SynapticElement > synaptic_elements_map_;
+};
+
+/**
+ * \class Extended_Archiving_Node
+ * a archiving node which additionally archives the history of third factors
+ * for the purposes of third-factor plasticity
+ */
+class Extended_Archiving_Node : public Archiving_Node
+{
+
+public:
+  /**
+   * \fn Extended_Archiving_Node()
+   * Constructor.
+   */
+  Extended_Archiving_Node();
+
+  /**
+   * \fn Extended_Archiving_Node()
+   * Copy Constructor.
+   */
+  Extended_Archiving_Node( const Extended_Archiving_Node& );
+
+  /**
+   * \fn double get_LTD_value(long t)
+   * return the Kminus value at t (in ms).
+   */
+  double get_LTD_value( double t );
+
+  /**
+   * \fn void get_LTP_history(long t1, long t2,
+   * std::deque<Archiver::histentry>::iterator* start,
+   * std::deque<Archiver::histentry>::iterator* finish)
+   * return the spike times (in steps) of spikes which occurred in the range
+   * (t1,t2].
+   * TO DO: modify text, see virtual void in Node
+   */
+  void get_LTP_history( double t1,
+    double t2,
+    std::deque< histentry_cl >::iterator* start,
+    std::deque< histentry_cl >::iterator* finish );
+
+  double get_theta_plus() const;
+
+  double get_theta_minus() const;
+
+protected:
+  /**
+   * \fn void set_spiketime(Time const & t_sp, double offset)
+   * record spike history
+   * TO DO: modify text
+   */
+  void write_LTD_history( Time const& t_sp,
+    double u_bar_minus,
+    double offset = 0.0 );
+
+  /**
+   * \fn void set_spiketime(Time const & t_sp, double offset)
+   * record spike history
+   * TO DO: modify text
+   */
+  void write_LTP_history( Time const& t_sp,
+    double u,
+    double u_bar_plus,
+    double offset = 0.0 );
+
+  void write_LTP_history_exp_int( Time const& t_sp,
+    double ltp_factor,
+    double offset = 0.0 );
+
+  void get_status( DictionaryDatum& d ) const;
+  void set_status( const DictionaryDatum& d );
+
+private:
+  std::deque< histentry_cl > ltd_history_;
+  std::deque< histentry_cl > ltp_history_;
+
   /*
    * Clopath rule
    */
-
   double A_LTD_;
 
   double A_LTP_;
-  
+
   double theta_plus_;
 
   double theta_minus_;
-
-  // Map of the synaptic elements
-  std::map< Name, SynapticElement > synaptic_elements_map_;
 };
 
 inline double
@@ -323,13 +350,13 @@ Archiving_Node::get_Ca_minus() const
 }
 
 inline double
-Archiving_Node::get_theta_plus() const
+Extended_Archiving_Node::get_theta_plus() const
 {
   return theta_plus_;
 }
 
 inline double
-Archiving_Node::get_theta_minus() const
+Extended_Archiving_Node::get_theta_minus() const
 {
   return theta_minus_;
 }

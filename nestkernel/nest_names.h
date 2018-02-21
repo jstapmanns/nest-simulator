@@ -306,7 +306,7 @@ extern const Name local_spike_counter; //!< Used by event_delivery_manager
 extern const Name lookuptable_0;       //!< Used in stdp_connection_facetshw_hom
 extern const Name lookuptable_1;       //!< Used in stdp_connection_facetshw_hom
 extern const Name lookuptable_2;       //!< Used in stdp_connection_facetshw_hom
-extern const Name ltp_factor;       //!< Used aeif_cbvg_2010
+extern const Name ltp_factor;          //!< Used aeif_cbvg_2010
 
 extern const Name make_symmetric; //!< Connectivity-related
 extern const Name max_delay;      //!< In ConnBuilder
@@ -549,8 +549,8 @@ extern const Name theta_ex; //!< specific to rate neurons (offset excitatory
 // multiplicative coupling)
 extern const Name theta_in; //!< specific to rate neurons (offset inhibitory
 // multiplicative coupling)
-extern const Name theta_plus;  //!< Specific to Clopath et al. 2010
-extern const Name theta_minus; //!< Specific to Clopath et al. 2010
+extern const Name theta_minus;             //!< Specific to Clopath et al. 2010
+extern const Name theta_plus;              //!< Specific to Clopath et al. 2010
 extern const Name thread;                  //!< Node parameter
 extern const Name thread_local_id;         //!< Thead-local ID of node,
                                            //!< see Kunkel et al 2014, Sec 3.3.2
@@ -574,7 +574,7 @@ extern const Name type_id; //!< model paramater
 
 extern const Name u; //!< probability of release [0...1] (Tsodyks2_connection)
 extern const Name U; //!< Used by stdp_connection_facetshw_hom
-extern const Name u_bar_plus; //!< Specific to Clopath et al. 2010
+extern const Name u_bar_plus;  //!< Specific to Clopath et al. 2010
 extern const Name u_bar_minus; //!< Specific to Clopath et al. 2010
 extern const Name U_lower;
 extern const Name U_m; //!< Specific to Izhikevich 2003
@@ -595,7 +595,7 @@ extern const Name
   V_peak; //!< Spike detection threshold (Brette & Gerstner 2005)
 extern const Name V_reset;  //!< Reset potential
 extern const Name V_T;      //!< Voltage offset
-extern const Name V_T_max; //!< Specific to Clopath et al. 2010
+extern const Name V_T_max;  //!< Specific to Clopath et al. 2010
 extern const Name V_T_rest; //!< Specific to Clopath et al. 2010
 extern const Name V_T_star; //!< Specific to gif models
 extern const Name V_th;     //!< Threshold

@@ -50,10 +50,6 @@ nest::Archiving_Node::Archiving_Node()
   , Ca_minus_( 0.0 )
   , tau_Ca_( 10000.0 )
   , beta_Ca_( 0.001 )
-  , A_LTD_( 14.0e-5 )
-  , A_LTP_( 8.0e-5 )
-  , theta_plus_( -45.3 )
-  , theta_minus_( -70.6 )
   , synaptic_elements_map_()
 {
 }
@@ -72,10 +68,6 @@ nest::Archiving_Node::Archiving_Node( const Archiving_Node& n )
   , Ca_minus_( n.Ca_minus_ )
   , tau_Ca_( n.tau_Ca_ )
   , beta_Ca_( n.beta_Ca_ )
-  , A_LTD_( n.A_LTD_ )
-  , A_LTP_( n.A_LTP_ )
-  , theta_plus_( n.theta_plus_ )
-  , theta_minus_( n.theta_minus_ )
   , synaptic_elements_map_( n.synaptic_elements_map_ )
 {
 }
@@ -116,28 +108,6 @@ nest::Archiving_Node::get_K_value( double t )
     i--;
   }
   return 0;
-}
-
-double
-nest::Archiving_Node::get_LTD_value( double t)
-{
-  std::deque< histentry_cl >::iterator runner;
-  if ( ltd_history_.empty() || t < 0.0)
-  {
-    return 0.0;   
-    // TO DO: find meaningful return value and condition whether
-    // history exists
-  }
-  else
-  {
-    runner = ltd_history_.begin();
-    while ( ( runner != ltd_history_.end() ) && ( ( t - runner->t_ ) > 1e-8 ) )
-    {
-      ++runner;
-    }
-  }
-  std::cout << "time LTD: " << runner->t_ << ", w LTD: " << runner->dw_ << std::endl;
-  return runner->dw_;
 }
 
 void
@@ -204,38 +174,8 @@ nest::Archiving_Node::get_history( double t1,
 }
 
 void
-nest::Archiving_Node::get_LTP_history( double t1,
-  double t2,
-  std::deque< histentry_cl >::iterator* start,
-  std::deque< histentry_cl >::iterator* finish )
-{
-  *finish = ltp_history_.end();
-  if ( ltp_history_.empty() )
-  {
-    *start = *finish;
-    return;
-  }
-  else
-  {
-    std::deque< histentry_cl >::iterator runner = ltp_history_.begin();
-    while ( ( runner != ltp_history_.end() ) && ( runner->t_ <= t1 ) )
-    {
-      ++runner;
-    }
-    *start = runner;
-    while ( ( runner != ltp_history_.end() ) && ( runner->t_ <= t2 ) )
-    {
-      ( runner->access_counter_ )++;
-      ++runner;
-    }
-    *finish = runner;
-  }
-}
-
-void
 nest::Archiving_Node::set_spiketime( Time const& t_sp, double offset )
 {
-  //std::cout << "t_lastspike in arch node before: " << last_spike_ << std::endl;
   const double t_sp_ms = t_sp.get_ms() - offset;
   update_synaptic_elements( t_sp_ms );
   Ca_minus_ += beta_Ca_;
@@ -268,102 +208,6 @@ nest::Archiving_Node::set_spiketime( Time const& t_sp, double offset )
   {
     last_spike_ = t_sp_ms;
   }
-  //std::cout << "t_lastspike in arch node after: " << last_spike_ << std::endl;
-}
-
-void
-nest::Archiving_Node::write_LTD_history( Time const& t_ltd, 
-    double u_bar_minus, 
-    double offset )
-{
-  const double t_ltd_ms = t_ltd.get_ms() - offset;
-  update_synaptic_elements( t_ltd_ms );  // TO DO: do we need this?
-
-  if ( n_incoming_ )
-  {
-    // prune all spikes from history which are no longer needed
-    // except the penultimate one. we might still need it.
-    while ( ltd_history_.size() > 1 )
-    {
-      if ( ltd_history_.front().access_counter_ >= n_incoming_ )
-      {
-        ltd_history_.pop_front();
-      }
-      else
-      {
-        break;
-      }
-    }
-    // TO DO: appropriate implementation of histentry (Done)
-    const double dw = A_LTD_ * (u_bar_minus - theta_minus_);
-    ltd_history_.push_back( histentry_cl( t_ltd_ms, dw, 0 ) );
-  }
-}
-
-void
-nest::Archiving_Node::write_LTP_history( Time const& t_ltp, 
-    double u,
-    double u_bar_plus, 
-    double offset )
-{
-  const double t_ltp_ms = t_ltp.get_ms() - offset;
-  update_synaptic_elements( t_ltp_ms );  // TO DO: do we need this?
-
-  if ( n_incoming_ )
-  {
-    // prune all spikes from history which are no longer needed
-    // except the penultimate one. we might still need it.
-    while ( ltp_history_.size() > 1 )
-    {
-      if ( ltp_history_.front().access_counter_ >= n_incoming_ )
-      {
-        ltp_history_.pop_front();
-      }
-      else
-      {
-        break;
-      }
-    }
-    // TO DO: appropriate implementation of histentry
-    // dw is not the change of the synaptic weight since the factors 
-    // x_bar and dt are not includet (but later in the synapse)
-    // TO DO: get dt.
-    const double dw = A_LTP_ * (u - theta_plus_) * (u_bar_plus - theta_minus_) * 
-      t_ltp.get_resolution().get_ms();
-    ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
-  }
-}
-
-void
-nest::Archiving_Node::write_LTP_history_exp_int( Time const& t_ltp, 
-    double ltp_factor, 
-    double offset )
-{
-  const double t_ltp_ms = t_ltp.get_ms() - offset;
-  update_synaptic_elements( t_ltp_ms );  // TO DO: do we need this?
-
-  if ( n_incoming_ )
-  {
-    // prune all spikes from history which are no longer needed
-    // except the penultimate one. we might still need it.
-    while ( ltp_history_.size() > 1 )
-    {
-      if ( ltp_history_.front().access_counter_ >= n_incoming_ )
-      {
-        ltp_history_.pop_front();
-      }
-      else
-      {
-        break;
-      }
-    }
-    // TO DO: appropriate implementation of histentry
-    // dw is not the change of the synaptic weight since the factors 
-    // x_bar and dt are not includet (but later in the synapse)
-    // TO DO: get dt.
-    const double dw = A_LTP_ * ltp_factor;
-    ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
-  }
 }
 
 void
@@ -377,10 +221,6 @@ nest::Archiving_Node::get_status( DictionaryDatum& d ) const
   def< double >( d, names::Ca, Ca_minus_ );
   def< double >( d, names::tau_Ca, tau_Ca_ );
   def< double >( d, names::beta_Ca, beta_Ca_ );
-  def< double >( d, names::A_LTD, A_LTD_ );
-  def< double >( d, names::A_LTP, A_LTP_ );
-  def< double >( d, names::theta_plus, theta_plus_ );
-  def< double >( d, names::theta_minus, theta_minus_ );
   def< double >( d, names::tau_minus_triplet, tau_minus_triplet_ );
 #ifdef DEBUG_ARCHIVER
   def< int >( d, names::archiver_length, history_.size() );
@@ -408,18 +248,10 @@ nest::Archiving_Node::set_status( const DictionaryDatum& d )
   double new_tau_minus_triplet = tau_minus_triplet_;
   double new_tau_Ca = tau_Ca_;
   double new_beta_Ca = beta_Ca_;
-  double new_A_LTD = A_LTD_;
-  double new_A_LTP = A_LTP_;
-  double new_theta_plus = theta_plus_;
-  double new_theta_minus = theta_minus_;
   updateValue< double >( d, names::tau_minus, new_tau_minus );
   updateValue< double >( d, names::tau_minus_triplet, new_tau_minus_triplet );
   updateValue< double >( d, names::tau_Ca, new_tau_Ca );
   updateValue< double >( d, names::beta_Ca, new_beta_Ca );
-  updateValue< double >( d, names::A_LTD, new_A_LTD );
-  updateValue< double >( d, names::A_LTP, new_A_LTP );
-  updateValue< double >( d, names::theta_plus, new_theta_plus );
-  updateValue< double >( d, names::theta_minus, new_theta_minus );
 
   if ( new_tau_minus <= 0.0 || new_tau_minus_triplet <= 0.0 )
   {
@@ -620,6 +452,201 @@ nest::Archiving_Node::connect_synaptic_element( Name name, int n )
   if ( se_it != synaptic_elements_map_.end() )
   {
     se_it->second.connect( n );
+  }
+}
+
+// member functions for Extended_Archiving_Node
+
+nest::Extended_Archiving_Node::Extended_Archiving_Node()
+  : Archiving_Node()
+  , A_LTD_( 14.0e-5 )
+  , A_LTP_( 8.0e-5 )
+  , theta_plus_( -45.3 )
+  , theta_minus_( -70.6 )
+{
+}
+
+nest::Extended_Archiving_Node::Extended_Archiving_Node(
+  const Extended_Archiving_Node& n )
+  : Archiving_Node( n )
+  , A_LTD_( n.A_LTD_ )
+  , A_LTP_( n.A_LTP_ )
+  , theta_plus_( n.theta_plus_ )
+  , theta_minus_( n.theta_minus_ )
+{
+}
+
+void
+nest::Extended_Archiving_Node::get_status( DictionaryDatum& d ) const
+{
+  Archiving_Node::get_status( d );
+
+  def< double >( d, names::A_LTD, A_LTD_ );
+  def< double >( d, names::A_LTP, A_LTP_ );
+  def< double >( d, names::theta_plus, theta_plus_ );
+  def< double >( d, names::theta_minus, theta_minus_ );
+}
+
+void
+nest::Extended_Archiving_Node::set_status( const DictionaryDatum& d )
+{
+  Archiving_Node::set_status( d );
+
+  // We need to preserve values in case invalid values are set
+  double new_A_LTD = A_LTD_;
+  double new_A_LTP = A_LTP_;
+  double new_theta_plus = theta_plus_;
+  double new_theta_minus = theta_minus_;
+  updateValue< double >( d, names::A_LTD, new_A_LTD );
+  updateValue< double >( d, names::A_LTP, new_A_LTP );
+  updateValue< double >( d, names::theta_plus, new_theta_plus );
+  updateValue< double >( d, names::theta_minus, new_theta_minus );
+}
+
+double
+nest::Extended_Archiving_Node::get_LTD_value( double t )
+{
+  std::deque< histentry_cl >::iterator runner;
+  if ( ltd_history_.empty() || t < 0.0 )
+  {
+    return 0.0;
+    // TO DO: find meaningful return value and condition whether
+    // history exists
+  }
+  else
+  {
+    runner = ltd_history_.begin();
+    while ( ( runner != ltd_history_.end() ) && ( ( t - runner->t_ ) > 1e-8 ) )
+    {
+      ++runner;
+    }
+  }
+  std::cout << "time LTD: " << runner->t_ << ", w LTD: " << runner->dw_
+            << std::endl;
+  return runner->dw_;
+}
+
+void
+nest::Extended_Archiving_Node::get_LTP_history( double t1,
+  double t2,
+  std::deque< histentry_cl >::iterator* start,
+  std::deque< histentry_cl >::iterator* finish )
+{
+  *finish = ltp_history_.end();
+  if ( ltp_history_.empty() )
+  {
+    *start = *finish;
+    return;
+  }
+  else
+  {
+    std::deque< histentry_cl >::iterator runner = ltp_history_.begin();
+    while ( ( runner != ltp_history_.end() ) && ( runner->t_ <= t1 ) )
+    {
+      ++runner;
+    }
+    *start = runner;
+    while ( ( runner != ltp_history_.end() ) && ( runner->t_ <= t2 ) )
+    {
+      ( runner->access_counter_ )++;
+      ++runner;
+    }
+    *finish = runner;
+  }
+}
+
+void
+nest::Extended_Archiving_Node::write_LTD_history( Time const& t_ltd,
+  double u_bar_minus,
+  double offset )
+{
+  const double t_ltd_ms = t_ltd.get_ms() - offset;
+  update_synaptic_elements( t_ltd_ms ); // TO DO: do we need this?
+
+  if ( n_incoming_ )
+  {
+    // prune all spikes from history which are no longer needed
+    // except the penultimate one. we might still need it.
+    while ( ltd_history_.size() > 1 )
+    {
+      if ( ltd_history_.front().access_counter_ >= n_incoming_ )
+      {
+        ltd_history_.pop_front();
+      }
+      else
+      {
+        break;
+      }
+    }
+    // TO DO: appropriate implementation of histentry (Done)
+    const double dw = A_LTD_ * ( u_bar_minus - theta_minus_ );
+    ltd_history_.push_back( histentry_cl( t_ltd_ms, dw, 0 ) );
+  }
+}
+
+void
+nest::Extended_Archiving_Node::write_LTP_history( Time const& t_ltp,
+  double u,
+  double u_bar_plus,
+  double offset )
+{
+  const double t_ltp_ms = t_ltp.get_ms() - offset;
+  update_synaptic_elements( t_ltp_ms ); // TO DO: do we need this?
+
+  if ( n_incoming_ )
+  {
+    // prune all spikes from history which are no longer needed
+    // except the penultimate one. we might still need it.
+    while ( ltp_history_.size() > 1 )
+    {
+      if ( ltp_history_.front().access_counter_ >= n_incoming_ )
+      {
+        ltp_history_.pop_front();
+      }
+      else
+      {
+        break;
+      }
+    }
+    // TO DO: appropriate implementation of histentry
+    // dw is not the change of the synaptic weight since the factors
+    // x_bar and dt are not includet (but later in the synapse)
+    // TO DO: get dt.
+    const double dw = A_LTP_ * ( u - theta_plus_ )
+      * ( u_bar_plus - theta_minus_ ) * t_ltp.get_resolution().get_ms();
+    ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
+  }
+}
+
+void
+nest::Extended_Archiving_Node::write_LTP_history_exp_int( Time const& t_ltp,
+  double ltp_factor,
+  double offset )
+{
+  const double t_ltp_ms = t_ltp.get_ms() - offset;
+  update_synaptic_elements( t_ltp_ms ); // TO DO: do we need this?
+
+  if ( n_incoming_ )
+  {
+    // prune all spikes from history which are no longer needed
+    // except the penultimate one. we might still need it.
+    while ( ltp_history_.size() > 1 )
+    {
+      if ( ltp_history_.front().access_counter_ >= n_incoming_ )
+      {
+        ltp_history_.pop_front();
+      }
+      else
+      {
+        break;
+      }
+    }
+    // TO DO: appropriate implementation of histentry
+    // dw is not the change of the synaptic weight since the factors
+    // x_bar and dt are not includet (but later in the synapse)
+    // TO DO: get dt.
+    const double dw = A_LTP_ * ltp_factor;
+    ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
   }
 }
 
