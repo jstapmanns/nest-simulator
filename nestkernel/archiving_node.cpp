@@ -131,13 +131,20 @@ nest::Archiving_Node::get_LTD_value( double t)
   else
   {
     runner = ltd_history_.begin();
-    while ( ( runner != ltd_history_.end() ) && ( ( t - runner->t_ ) > 1e-8 ) )
+    while ( runner != ltd_history_.end() )
     {
+      if ( abs( t - runner->t_ ) < 1e-4 )
+      {
+        return runner->dw_;
+      }
+      //std::cout << "t = " << runner->t_ << " counter = " << runner->access_counter_ << std::endl;
+      ( runner->access_counter_ )++;
       ++runner;
     }
   }
-  std::cout << "time LTD: " << runner->t_ << ", w LTD: " << runner->dw_ << std::endl;
-  return runner->dw_;
+  std::cout << "time LTD: " << runner->t_ << ", w LTD: " << runner->dw_ 
+    << " searched for time: " << t << std::endl;
+  return 0.0;
 }
 
 void
@@ -268,6 +275,9 @@ nest::Archiving_Node::set_spiketime( Time const& t_sp, double offset )
   {
     last_spike_ = t_sp_ms;
   }
+  std::cout << "A_LTP = " << A_LTP_ << "  A_LTD = " << A_LTD_ 
+    << "  theta_plus = " << theta_plus_ 
+    << "  theta_minus = " << theta_minus_ << std::endl;
   //std::cout << "t_lastspike in arch node after: " << last_spike_ << std::endl;
 }
 
@@ -420,6 +430,12 @@ nest::Archiving_Node::set_status( const DictionaryDatum& d )
   updateValue< double >( d, names::A_LTP, new_A_LTP );
   updateValue< double >( d, names::theta_plus, new_theta_plus );
   updateValue< double >( d, names::theta_minus, new_theta_minus );
+
+  // TO DO: Check whether new values are allowed values
+  A_LTP_ = new_A_LTP;
+  A_LTD_ = new_A_LTD;
+  theta_plus_ = new_theta_plus;
+  theta_minus_ = new_theta_minus;
 
   if ( new_tau_minus <= 0.0 || new_tau_minus_triplet <= 0.0 )
   {
