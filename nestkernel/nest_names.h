@@ -555,6 +555,8 @@ extern const Name y_1;
 extern const Name z;
 extern const Name z_connected;
 
+} // namespace names
+
 } // namespace nest
 
 #endif /* #ifndef NEST_NAMES_H */

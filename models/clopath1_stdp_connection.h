@@ -133,12 +133,10 @@ public:
   /**
    * Send an event to the receiver of this connection.
    * \param e The event to send
-   * \param t_lastspike Point in time of last spike sent.
    * \param cp common properties of all synapses (empty).
    */
   void send( Event& e,
     thread t,
-    double t_lastspike,
     const CommonSynapseProperties& cp );
 
 
@@ -159,14 +157,13 @@ public:
   check_connection( Node& s,
     Node& t,
     rport receptor_type,
-    double t_lastspike,
     const CommonPropertiesType& )
   {
     ConnTestDummyNode dummy_target;
 
     ConnectionBase::check_connection_( dummy_target, s, t, receptor_type );
 
-    t.register_stdp_connection( t_lastspike - get_delay() );
+    t.register_stdp_connection( t_lastspike_ - get_delay() );
   }
 
   void
@@ -196,6 +193,8 @@ private:
   double x_bar_;
   double tau_x_;  // TO DO: save tau_x in synapse?
   double Wmax_;
+  
+  double t_lastspike_;
 };
 
 
@@ -203,22 +202,16 @@ private:
  * Send an event to the receiver of this connection.
  * \param e The event to send
  * \param t The thread on which this connection is stored.
- * \param t_lastspike Time point of last spike emitted
  * \param cp Common properties object, containing the stdp parameters.
  */
 template < typename targetidentifierT >
 inline void
 Clopath1_STDPConnection< targetidentifierT >::send( Event& e,
   thread t,
-  double t_lastspike,
   const CommonSynapseProperties& )
 {
   const double old_w = weight_;
-  // synapse STDP depressing/facilitation dynamics
-  //   if(t_lastspike >0) {std::cout << "last spike " << t_lastspike <<
-  //   std::endl ;}
   double t_spike = e.get_stamp().get_ms();
-  // t_lastspike_ = 0 initially
 
   // use accessor functions (inherited from Connection< >) to obtain delay and
   // target
@@ -229,7 +222,7 @@ Clopath1_STDPConnection< targetidentifierT >::send( Event& e,
   std::deque< histentry_cl >::iterator start;
   std::deque< histentry_cl >::iterator finish;
 
-  // For a new synapse, t_lastspike contains the point in time of the last
+  // For a new synapse, t_lastspike_ contains the point in time of the last
   // spike. So we initially read the
   // history(t_last_spike - dendritic_delay, ..., T_spike-dendritic_delay]
   // which increases the access counter for these entries.
@@ -237,14 +230,13 @@ Clopath1_STDPConnection< targetidentifierT >::send( Event& e,
   // history[0, ..., t_last_spike - dendritic_delay] have been
   // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
   // details.
-  //std::cout << "t_lastspike = " << t_lastspike << "  t_spike = " << t_spike << std::endl;
   target->get_LTP_history(
-    t_lastspike - dendritic_delay, t_spike - dendritic_delay, &start, &finish );
+    t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish );
   // facilitation due to post-synaptic spikes since last pre-synaptic spike
   double minus_dt;
   while ( start != finish )
   {
-    minus_dt = t_lastspike - ( start->t_ + dendritic_delay );
+    minus_dt = t_lastspike_ - ( start->t_ + dendritic_delay );
     if ( minus_dt == 0 )
     {
       continue;
@@ -269,7 +261,9 @@ Clopath1_STDPConnection< targetidentifierT >::send( Event& e,
   e.set_rport( get_rport() );
   e();
 
-  x_bar_ = x_bar_ * std::exp( ( t_lastspike - t_spike ) / tau_x_ ) + 1.0;
+  x_bar_ = x_bar_ * std::exp( ( t_lastspike_ - t_spike ) / tau_x_ ) + 1.0;
+  
+  t_lastspike_ = t_spike;
 }
 
 
@@ -280,6 +274,7 @@ Clopath1_STDPConnection< targetidentifierT >::Clopath1_STDPConnection()
   , x_bar_( 0.0 )
   , tau_x_( 15.0 )
   , Wmax_( 100.0 )
+  , t_lastspike_( 0.0 )
 {
 }
 
@@ -291,6 +286,7 @@ Clopath1_STDPConnection< targetidentifierT >::Clopath1_STDPConnection(
   , x_bar_( rhs.x_bar_ )
   , tau_x_( rhs.tau_x_ )
   , Wmax_( rhs.Wmax_ )
+  , t_lastspike_( rhs.t_lastspike_ )
 {
 }
 
