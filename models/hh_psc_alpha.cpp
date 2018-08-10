@@ -70,6 +70,8 @@ RecordablesMap< hh_psc_alpha >::create()
     names::Act_h, &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::HH_H > );
   insert_(
     names::Inact_n, &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::HH_N > );
+  insert_( names::u_bar_plus, &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::U_BAR_PLUS > );
+  insert_( names::u_bar_minus, &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::U_BAR_MINUS > );
 }
 
 extern "C" int
@@ -98,6 +100,8 @@ hh_psc_alpha_dynamics( double, const double y[], double f[], void* pnode )
   const double& I_ex = y[ S::I_EXC ];
   const double& dI_in = y[ S::DI_INH ];
   const double& I_in = y[ S::I_INH ];
+  const double& u_bar_plus = y[ S::U_BAR_PLUS ];
+  const double& u_bar_minus = y[ S::U_BAR_MINUS];
 
   const double alpha_n =
     ( 0.01 * ( V + 55. ) ) / ( 1. - std::exp( -( V + 55. ) / 10. ) );
@@ -123,6 +127,11 @@ hh_psc_alpha_dynamics( double, const double y[], double f[], void* pnode )
     alpha_h * ( 1 - y[ S::HH_H ] ) - beta_h * y[ S::HH_H ]; // h-variable
   f[ S::HH_N ] =
     alpha_n * ( 1 - y[ S::HH_N ] ) - beta_n * y[ S::HH_N ]; // n-variable
+
+  // convolved membrane potentials
+  f[ S::U_BAR_PLUS ] = ( -u_bar_plus + V ) / node.P_.tau_plus;
+
+  f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V) / node.P_.tau_minus;
 
   // synapses: alpha functions
   f[ S::DI_EXC ] = -dI_ex / node.P_.tau_synE;
@@ -150,6 +159,8 @@ nest::hh_psc_alpha::Parameters_::Parameters_()
   , tau_synE( 0.2 ) // ms
   , tau_synI( 2.0 ) // ms
   , I_e( 0.0 )      // pA
+  , tau_plus( 114.0 )   // ms
+  , tau_minus( 10.0)  // ms
 {
 }
 
@@ -216,6 +227,8 @@ nest::hh_psc_alpha::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::tau_syn_ex, tau_synE );
   def< double >( d, names::tau_syn_in, tau_synI );
   def< double >( d, names::I_e, I_e );
+  def< double >( d, names::tau_plus, tau_plus );
+  def< double >( d, names::tau_minus, tau_minus );
 }
 
 void
@@ -234,6 +247,8 @@ nest::hh_psc_alpha::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::tau_syn_in, tau_synI );
 
   updateValue< double >( d, names::I_e, I_e );
+  updateValue< double >( d, names::tau_plus, tau_plus );
+  updateValue< double >( d, names::tau_minus, tau_minus );
   if ( C_m <= 0 )
   {
     throw BadProperty( "Capacitance must be strictly positive." );
@@ -268,6 +283,8 @@ nest::hh_psc_alpha::State_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::Act_m, y_[ HH_M ] );
   updateValue< double >( d, names::Act_h, y_[ HH_H ] );
   updateValue< double >( d, names::Inact_n, y_[ HH_N ] );
+  updateValue< double >( d, names::V_m, y_[ U_BAR_PLUS ] );
+  updateValue< double >( d, names::V_m, y_[ U_BAR_MINUS ] );
   if ( y_[ HH_M ] < 0 || y_[ HH_H ] < 0 || y_[ HH_N ] < 0 )
   {
     throw BadProperty( "All (in)activation variables must be non-negative." );
@@ -299,7 +316,7 @@ nest::hh_psc_alpha::Buffers_::Buffers_( const Buffers_&, hh_psc_alpha& n )
  * ---------------------------------------------------------------- */
 
 nest::hh_psc_alpha::hh_psc_alpha()
-  : Archiving_Node()
+  : Extended_Archiving_Node()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -308,7 +325,7 @@ nest::hh_psc_alpha::hh_psc_alpha()
 }
 
 nest::hh_psc_alpha::hh_psc_alpha( const hh_psc_alpha& n )
-  : Archiving_Node( n )
+  : Extended_Archiving_Node( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -349,7 +366,7 @@ nest::hh_psc_alpha::init_buffers_()
   B_.spike_exc_.clear(); // includes resize
   B_.spike_inh_.clear(); // includes resize
   B_.currents_.clear();  // includes resize
-  Archiving_Node::clear_history();
+  Extended_Archiving_Node::clear_history();
 
   B_.logger_.reset();
 
@@ -390,6 +407,11 @@ nest::hh_psc_alpha::init_buffers_()
   B_.sys_.params = reinterpret_cast< void* >( this );
 
   B_.I_stim_ = 0.0;
+  B_.read_idx_ = 0;
+  B_.delay_length_ = Time::delay_ms_to_steps( 5.0 );
+  std::cout << B_.read_idx_ << "  " << B_.delay_length_ << std::endl;
+  B_.delayed_u_bar_plus_.resize( B_.delay_length_ );
+  B_.delayed_u_bar_minus_.resize( B_.delay_length_ );
 }
 
 void
@@ -456,6 +478,45 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
     S_.y_[ State_::DI_INH ] +=
       B_.spike_inh_.get_value( lag ) * V_.PSCurrInit_I_;
 
+    B_.delayed_u_bar_plus_[ B_.read_idx_ ] = S_.y_[ State_::U_BAR_PLUS ];
+
+    B_.delayed_u_bar_minus_[ B_.read_idx_ ] = S_.y_[ State_::U_BAR_MINUS ];
+
+    B_.read_idx_ = (B_.read_idx_ + 1)%B_.delay_length_;
+
+    if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
+        ( B_.delayed_u_bar_plus_[ B_.read_idx_ ] > get_theta_minus()  ) )
+    {
+      write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
+          S_.y_[ State_::V_M ],
+          B_.delayed_u_bar_plus_[ B_.read_idx_ ] );
+      std::cout << "V_m = " << S_.y_[ State_::V_M ] << "  u_bar_plus = " 
+        << B_.delayed_u_bar_plus_[ B_.read_idx_ ] << "  idx = " << B_.read_idx_ 
+        << "  theta_plus = " << get_theta_plus() << "  theta_minus = " << get_theta_minus() << std::endl;
+    }
+
+    if ( B_.delayed_u_bar_minus_[ B_.read_idx_ ] > get_theta_minus() )
+    {
+      write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
+          B_.delayed_u_bar_minus_[ B_.read_idx_ ] );
+      //std::cout << "u_bar_minus = " << B_.delayed_u_bar_minus_[ B_.read_idx_ ] << "  idx = " << B_.read_idx_ << std::endl;
+    }
+    
+    // save data for Clopath STDP
+    /*if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
+        ( S_.y_[ State_::U_BAR_PLUS ] > get_theta_minus()  ) )
+    {
+      write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
+          S_.y_[ State_::V_M ],
+          S_.y_[ State_::U_BAR_PLUS ]);
+    }
+
+    if ( S_.y_[ State_::U_BAR_MINUS ] > get_theta_minus() )
+    {
+      write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
+          S_.y_[ State_::U_BAR_MINUS ] );
+    }*/
+
     // sending spikes: crossing 0 mV, pseudo-refractoriness and local maximum...
     // refractory?
     if ( S_.r_ > 0 )
@@ -466,6 +527,7 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
       // (    threshold    &&     maximum       )
       if ( S_.y_[ State_::V_M ] >= 0 && U_old > S_.y_[ State_::V_M ] )
     {
+      std::cout << "spike!" << std::endl;
       S_.r_ = V_.RefractoryCounts_;
 
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );

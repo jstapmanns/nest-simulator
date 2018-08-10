@@ -140,12 +140,6 @@ nest::aeif_cbvg_2010_dynamics( double, const double y[], double f[], void* pnode
   f[ S::U_BAR_PLUS ] = ( -u_bar_plus + V ) / node.P_.tau_plus;
 
   f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V) / node.P_.tau_minus;
-  ///if (V < -70.0){
-  //std::cout << f[S::W] << ", " << node.P_.a << ", " << V -  node.P_.E_L 
-	//  << ", " << w << ", " << node.P_.tau_w << std::endl;
-	///std::cout << I_spike << ", " << std::exp( ( V - node.P_.V_th ) / node.P_.Delta_T )  << ", " << I_syn_ex << std::endl;
-	
-  //}
 
   return GSL_SUCCESS;
 }
@@ -182,11 +176,13 @@ nest::aeif_cbvg_2010::Parameters_::Parameters_()
 nest::aeif_cbvg_2010::State_::State_( const Parameters_& p )
   : r_( 0 )
 {
-  y_[ 0 ] = p.E_L;
-  for ( size_t i = 1; i < STATE_VEC_SIZE; ++i )
+  for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
     y_[ i ] = 0;
   }
+  y_[ 5 ] = p.V_T_rest;
+  y_[ 6 ] = p.E_L;
+  y_[ 7 ] = p.E_L;
 }
 
 nest::aeif_cbvg_2010::State_::State_( const State_& s )
@@ -501,8 +497,6 @@ nest::aeif_cbvg_2010::update( const Time& origin, const long from, const long to
   assert( from < to );
   assert( State_::V_M == 0 );
 
-  //std::cout << from << ", " << to << std::endl;
-  //std::cout << origin.get_steps() << std::endl;
   for ( long lag = from; lag < to; ++lag )
   {
     double t = 0.0;
@@ -543,10 +537,6 @@ nest::aeif_cbvg_2010::update( const Time& origin, const long from, const long to
 
       // spikes are handled inside the while-loop
       // due to spike-driven adaptation
-      /*if (S_.y_[State_::V_M] >= -42.0)
-	  {
-		  std::cout << "V_m = " << S_.y_[State_::V_M] << ", w_ad = " << S_.y_[State_::W] << ", " << Time::step( origin.get_steps() + lag )<< ", " << t << ", " << B_.step_ << ", " << B_.IntegrationStep_ << std::endl;
-	  }*/
 	  if ( S_.r_ > 0 )
       {
         S_.y_[ State_::V_M ] = P_.V_reset_;

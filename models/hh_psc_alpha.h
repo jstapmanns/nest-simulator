@@ -123,7 +123,7 @@ Authors: Schrader
 SeeAlso: hh_cond_exp_traub
 */
 
-class hh_psc_alpha : public Archiving_Node
+class hh_psc_alpha : public Extended_Archiving_Node
 {
 
 public:
@@ -206,6 +206,8 @@ private:
     double tau_synE; //!< Synaptic Time Constant Excitatory Synapse in ms
     double tau_synI; //!< Synaptic Time Constant for Inhibitory Synapse in ms
     double I_e;      //!< Constant Current in pA
+    double tau_plus;
+    double tau_minus;
 
     Parameters_(); //!< Sets default parameter values
 
@@ -240,6 +242,8 @@ public:
       I_EXC,  // 5
       DI_INH, // 6
       I_INH,  // 7
+      U_BAR_PLUS,  // 8
+      U_BAR_MINUS, // 9
       STATE_VEC_SIZE
     };
 
@@ -296,6 +300,10 @@ private:
      * the first simulation, but not modified before later Simulate calls.
      */
     double I_stim_;
+    std::vector< double > delayed_u_bar_plus_;
+    std::vector< double > delayed_u_bar_minus_;
+    size_t read_idx_;
+    size_t delay_length_;
   };
 
   // ----------------------------------------------------------------
@@ -384,7 +392,7 @@ hh_psc_alpha::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Archiving_Node::get_status( d );
+  Extended_Archiving_Node::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
@@ -401,7 +409,7 @@ hh_psc_alpha::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  Extended_Archiving_Node::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

@@ -79,6 +79,7 @@
 #include "connection.h"
 #include "connector_model.h"
 #include "event.h"
+#include "ring_buffer.h"
 
 // Includes from sli:
 #include "dictdatum.h"
@@ -196,6 +197,10 @@ private:
   double x_bar_;
   double tau_x_;  // TO DO: save tau_x in synapse?
   double Wmax_;
+  std::vector< double > delayed_u_bar_plus_;
+  std::vector< double > delayed_u_bar_minus_;
+  size_t read_idx_;
+  size_t delay_length_;
 };
 
 
@@ -269,7 +274,7 @@ Clopath_STDPConnection< targetidentifierT >::send( Event& e,
   e.set_rport( get_rport() );
   e();
 
-  x_bar_ = x_bar_ * std::exp( ( t_lastspike - t_spike ) / tau_x_ ) + 1.0;
+  x_bar_ = x_bar_ * std::exp( ( t_lastspike - t_spike ) / tau_x_ ) + 1.0 / tau_x_;
 }
 
 
@@ -280,7 +285,11 @@ Clopath_STDPConnection< targetidentifierT >::Clopath_STDPConnection()
   , x_bar_( 0.0 )
   , tau_x_( 15.0 )
   , Wmax_( 100.0 )
+  , read_idx_( 0 )
+  , delay_length_( 100 )
 {
+  delayed_u_bar_plus_.resize( delay_length_ );
+  delayed_u_bar_minus_.resize( delay_length_ );
 }
 
 template < typename targetidentifierT >
