@@ -121,6 +121,7 @@ extern const Name dead_time;
 extern const Name dead_time_random;
 extern const Name dead_time_shape;
 extern const Name delay;
+extern const Name delay_u_bars;
 extern const Name delays;
 extern const Name deliver_interval;
 extern const Name delta_P;

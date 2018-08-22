@@ -100,6 +100,7 @@ const Name dead_time( "dead_time" );
 const Name dead_time_random( "dead_time_random" );
 const Name dead_time_shape( "dead_time_shape" );
 const Name delay( "delay" );
+const Name delay_u_bars( "delay_u_bars" );
 const Name delays( "delays" );
 const Name deliver_interval( "deliver_interval" );
 const Name delta_P( "delta_P" );

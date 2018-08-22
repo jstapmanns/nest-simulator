@@ -161,6 +161,8 @@ nest::hh_psc_alpha::Parameters_::Parameters_()
   , I_e( 0.0 )      // pA
   , tau_plus( 114.0 )   // ms
   , tau_minus( 10.0)  // ms
+  // implementation of the delay of the convolved membrane potentials
+  , delay_u_bars( 5.0 ) // ms
 {
 }
 
@@ -229,6 +231,8 @@ nest::hh_psc_alpha::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::I_e, I_e );
   def< double >( d, names::tau_plus, tau_plus );
   def< double >( d, names::tau_minus, tau_minus );
+  // implementation of the delay of the convolved membrane potentials
+  def< double >( d, names::delay_u_bars, delay_u_bars );
 }
 
 void
@@ -249,6 +253,8 @@ nest::hh_psc_alpha::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::I_e, I_e );
   updateValue< double >( d, names::tau_plus, tau_plus );
   updateValue< double >( d, names::tau_minus, tau_minus );
+  // implementation of the delay of the convolved membrane potentials
+  updateValue< double >( d, names::delay_u_bars, delay_u_bars );
   if ( C_m <= 0 )
   {
     throw BadProperty( "Capacitance must be strictly positive." );
@@ -407,8 +413,11 @@ nest::hh_psc_alpha::init_buffers_()
   B_.sys_.params = reinterpret_cast< void* >( this );
 
   B_.I_stim_ = 0.0;
+
+  // implementation of the delay of the convolved membrane potentials. This delay is not described
+  // in the paper but is present in the code which was presumably used to create the figures in the paper.
   B_.read_idx_ = 0;
-  B_.delay_length_ = Time::delay_ms_to_steps( 5.0 );
+  B_.delay_length_ = Time::delay_ms_to_steps( P_.delay_u_bars ) + 1;
   std::cout << B_.read_idx_ << "  " << B_.delay_length_ << std::endl;
   B_.delayed_u_bar_plus_.resize( B_.delay_length_ );
   B_.delayed_u_bar_minus_.resize( B_.delay_length_ );
@@ -490,9 +499,9 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
       write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
           S_.y_[ State_::V_M ],
           B_.delayed_u_bar_plus_[ B_.read_idx_ ] );
-      std::cout << "V_m = " << S_.y_[ State_::V_M ] << "  u_bar_plus = " 
-        << B_.delayed_u_bar_plus_[ B_.read_idx_ ] << "  idx = " << B_.read_idx_ 
-        << "  theta_plus = " << get_theta_plus() << "  theta_minus = " << get_theta_minus() << std::endl;
+      //std::cout << "V_m = " << S_.y_[ State_::V_M ] << "  u_bar_plus = " 
+      //  << B_.delayed_u_bar_plus_[ B_.read_idx_ ] << "  idx = " << B_.read_idx_ 
+      //  << "  theta_plus = " << get_theta_plus() << "  theta_minus = " << get_theta_minus() << std::endl;
     }
 
     if ( B_.delayed_u_bar_minus_[ B_.read_idx_ ] > get_theta_minus() )
@@ -527,7 +536,7 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
       // (    threshold    &&     maximum       )
       if ( S_.y_[ State_::V_M ] >= 0 && U_old > S_.y_[ State_::V_M ] )
     {
-      std::cout << "spike!" << std::endl;
+      //std::cout << "spike!" << std::endl;
       S_.r_ = V_.RefractoryCounts_;
 
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );

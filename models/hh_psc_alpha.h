@@ -208,6 +208,7 @@ private:
     double I_e;      //!< Constant Current in pA
     double tau_plus;
     double tau_minus;
+    double delay_u_bars;
 
     Parameters_(); //!< Sets default parameter values
 
