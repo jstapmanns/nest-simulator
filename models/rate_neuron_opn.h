@@ -55,8 +55,8 @@ namespace nest
  *  - mult_coupling_in (factor of multiplicative coupling for inhibitory input)
  *
  * The boolean parameter linear_summation determines whether the input function
- * is applied to the summed up incoming connections (= True, default value) or
- * to each input individually (= False). In case of multiplicative coupling the
+ * is applied to the summed up incoming connections (True, default value) or
+ * to each input individually (False). In case of multiplicative coupling the
  * nonlinearity is applied separately to the summed excitatory and inhibitory
  * inputs if linear_summation=True.
  *
@@ -296,7 +296,9 @@ rate_neuron_opn< TNonlinearities >::handles_test_event(
   rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return 0;
 }
 
@@ -307,7 +309,9 @@ rate_neuron_opn< TNonlinearities >::handles_test_event(
   rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return 0;
 }
 
@@ -317,7 +321,9 @@ rate_neuron_opn< TNonlinearities >::handles_test_event( DataLoggingRequest& dlr,
   rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return B_.logger_.connect_logging_device( dlr, recordablesMap_ );
 }
 

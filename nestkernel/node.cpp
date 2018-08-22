@@ -127,6 +127,19 @@ Node::get_status_dict_()
   return DictionaryDatum( new Dictionary );
 }
 
+void
+Node::set_local_device_id( const index lsdid )
+{
+  assert(
+    false && "set_local_device_id() called on a non-device node of type" );
+}
+
+index
+Node::get_local_device_id() const
+{
+  assert( false && "set_local_device_id() called on a non-device node." );
+}
+
 DictionaryDatum
 Node::get_status_base()
 {
@@ -445,18 +458,6 @@ nest::Node::get_LTP_history( double,
   double,
   std::deque< histentry_cl >::iterator*,
   std::deque< histentry_cl >::iterator* )
-{
-  throw UnexpectedEvent();
-}
-
-void
-Node::set_has_proxies( const bool )
-{
-  throw UnexpectedEvent();
-}
-
-void
-Node::set_local_receiver( const bool )
 {
   throw UnexpectedEvent();
 }
