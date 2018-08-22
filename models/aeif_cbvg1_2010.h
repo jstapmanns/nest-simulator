@@ -129,7 +129,7 @@ namespace nest
  */
 extern "C" int aeif_cbvg1_2010_dynamics( double, const double*, double*, void* );
 
-class aeif_cbvg1_2010 : public Archiving_Node
+class aeif_cbvg1_2010 : public Extended_Archiving_Node
 {
 
 public:
@@ -380,7 +380,7 @@ aeif_cbvg1_2010::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Archiving_Node::get_status( d );
+  Extended_Archiving_Node::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
@@ -397,7 +397,7 @@ aeif_cbvg1_2010::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  Extended_Archiving_Node::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
