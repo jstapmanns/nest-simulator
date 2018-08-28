@@ -43,6 +43,8 @@
 #include "config.h"
 
 // Neuron models
+#include "aeif_cbvg_2010.h"
+#include "aeif_cbvg1_2010.h"
 #include "aeif_cond_alpha.h"
 #include "aeif_cond_alpha_multisynapse.h"
 #include "aeif_cond_beta_multisynapse.h"
@@ -395,8 +397,8 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< gif_pop_psc_exp >(
     "gif_pop_psc_exp" );
 
-  //kernel().model_manager.register_node_model< aeif_cbvg_2010 >( "aeif_cbvg_2010" );
-  //kernel().model_manager.register_node_model< aeif_cbvg1_2010 >( "aeif_cbvg1_2010" );
+  kernel().model_manager.register_node_model< aeif_cbvg_2010 >( "aeif_cbvg_2010" );
+  kernel().model_manager.register_node_model< aeif_cbvg1_2010 >( "aeif_cbvg1_2010" );
   kernel().model_manager.register_node_model< aeif_cond_alpha >(
     "aeif_cond_alpha" );
   kernel().model_manager.register_node_model< aeif_cond_exp >(

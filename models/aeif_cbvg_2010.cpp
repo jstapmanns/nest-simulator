@@ -170,6 +170,8 @@ nest::aeif_cbvg_2010::Parameters_::Parameters_()
   , tau_syn_in( 2.0 ) // ms
   , I_e( 0.0 )        // pA
   , gsl_error_tol( 1e-6 )
+  // implementation of the delay of the convolved membrane potentials
+  , delay_u_bars( 5.0 ) // ms
 {
 }
 
@@ -234,6 +236,8 @@ nest::aeif_cbvg_2010::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::I_e, I_e );
   def< double >( d, names::V_peak, V_peak_ );
   def< double >( d, names::gsl_error_tol, gsl_error_tol );
+  // implementation of the delay of the convolved membrane potentials
+  def< double >( d, names::delay_u_bars, delay_u_bars );
 }
 
 void
@@ -265,6 +269,9 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::I_e, I_e );
 
   updateValue< double >( d, names::gsl_error_tol, gsl_error_tol );
+
+  // implementation of the delay of the convolved membrane potentials
+  updateValue< double >( d, names::delay_u_bars, delay_u_bars );
 
   if ( V_reset_ >= V_peak_ )
   {
@@ -461,6 +468,12 @@ nest::aeif_cbvg_2010::init_buffers_()
   B_.sys_.function = aeif_cbvg_2010_dynamics;
 
   B_.I_stim_ = 0.0;
+  // implementation of the delay of the convolved membrane potentials. This delay is not described
+  // in the paper but is present in the code which was presumably used to create the figures in the paper.
+  B_.read_idx_ = 0;
+  B_.delay_length_ = Time::delay_ms_to_steps( P_.delay_u_bars ) + 1;
+  B_.delayed_u_bar_plus_.resize( B_.delay_length_ );
+  B_.delayed_u_bar_minus_.resize( B_.delay_length_ );
 }
 
 void
@@ -566,6 +579,27 @@ nest::aeif_cbvg_2010::update( const Time& origin, const long from, const long to
     }
 
     // save data for Clopath STDP
+    B_.delayed_u_bar_plus_[ B_.read_idx_ ] = S_.y_[ State_::U_BAR_PLUS ];
+
+    B_.delayed_u_bar_minus_[ B_.read_idx_ ] = S_.y_[ State_::U_BAR_MINUS ];
+
+    B_.read_idx_ = (B_.read_idx_ + 1)%B_.delay_length_;
+
+    if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
+        ( B_.delayed_u_bar_plus_[ B_.read_idx_ ] > get_theta_minus()  ) )
+    {
+      write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
+          S_.y_[ State_::V_M ],
+          B_.delayed_u_bar_plus_[ B_.read_idx_ ] );
+    }
+
+    if ( B_.delayed_u_bar_minus_[ B_.read_idx_ ] > get_theta_minus() )
+    {
+      write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
+          B_.delayed_u_bar_minus_[ B_.read_idx_ ] );
+    }
+    // old version without the delay of the convolved membrane potentials
+    /*
     if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
         ( S_.y_[ State_::U_BAR_PLUS ] > get_theta_minus()  ) )
     {
@@ -579,7 +613,7 @@ nest::aeif_cbvg_2010::update( const Time& origin, const long from, const long to
       write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
           S_.y_[ State_::U_BAR_MINUS ] );
     }
-
+    */
     // decrement refractory count
     if ( S_.r_ > 0 )
     {

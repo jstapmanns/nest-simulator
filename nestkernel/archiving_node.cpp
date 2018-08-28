@@ -531,9 +531,10 @@ nest::Extended_Archiving_Node::get_LTD_value( double t )
     {
       if ( abs( t - runner->t_ ) < 1e-4 )
       {
+        std::cout << "t = " << runner->t_ << " counter = " << runner->access_counter_ 
+         << " dw = " << runner->dw_ << std::endl;
         return runner->dw_;
       }
-      //std::cout << "t = " << runner->t_ << " counter = " << runner->access_counter_ << std::endl;
       ( runner->access_counter_ )++;
       ++runner;
     }

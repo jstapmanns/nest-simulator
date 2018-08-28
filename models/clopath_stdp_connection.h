@@ -235,7 +235,7 @@ Clopath_STDPConnection< targetidentifierT >::send( Event& e,
   // history[0, ..., t_last_spike - dendritic_delay] have been
   // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
   // details.
-  //std::cout << "t_lastspike_ = " << t_lastspike_ << "  t_spike = " << t_spike << std::endl;
+  std::cout << "t_lastspike_ = " << t_lastspike_ << "  t_spike = " << t_spike << std::endl;
   target->get_LTP_history(
     t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish );
   // facilitation due to post-synaptic spikes since last pre-synaptic spike

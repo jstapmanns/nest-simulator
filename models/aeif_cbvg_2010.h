@@ -206,6 +206,8 @@ private:
 
     double gsl_error_tol; //!< error bound for GSL integrator
 
+    double delay_u_bars;
+
     Parameters_(); //!< Sets default parameter values
 
     void get( DictionaryDatum& ) const; //!< Store current values in dictionary
@@ -292,6 +294,10 @@ public:
      * the first simulation, but not modified before later Simulate calls.
      */
     double I_stim_;
+    std::vector< double > delayed_u_bar_plus_;
+    std::vector< double > delayed_u_bar_minus_;
+    size_t read_idx_;
+    size_t delay_length_;
   };
 
   // ----------------------------------------------------------------
