@@ -418,7 +418,7 @@ nest::hh_psc_alpha::init_buffers_()
   // in the paper but is present in the code which was presumably used to create the figures in the paper.
   B_.read_idx_ = 0;
   B_.delay_length_ = Time::delay_ms_to_steps( P_.delay_u_bars ) + 1;
-  std::cout << B_.read_idx_ << "  " << B_.delay_length_ << std::endl;
+  //std::cout << B_.read_idx_ << "  " << B_.delay_length_ << std::endl;
   B_.delayed_u_bar_plus_.resize( B_.delay_length_ );
   B_.delayed_u_bar_minus_.resize( B_.delay_length_ );
 }
@@ -499,6 +499,9 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
       write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
           S_.y_[ State_::V_M ],
           B_.delayed_u_bar_plus_[ B_.read_idx_ ] );
+      //std::cout << "wrote in neuron: V_M = " << S_.y_[ State_::V_M]  - get_theta_plus()<< "  del_u_bar_plus = " <<
+      //  B_.delayed_u_bar_plus_[ B_.read_idx_ ]  - get_theta_minus() <<
+      //    "  theta_plus = " << get_theta_plus() << "  theta_minus = " << get_theta_minus() << std::endl;
       //std::cout << "V_m = " << S_.y_[ State_::V_M ] << "  u_bar_plus = " 
       //  << B_.delayed_u_bar_plus_[ B_.read_idx_ ] << "  idx = " << B_.read_idx_ 
       //  << "  theta_plus = " << get_theta_plus() << "  theta_minus = " << get_theta_minus() << std::endl;
