@@ -408,6 +408,7 @@ extern const Name synapses_per_driver;
 extern const Name synaptic_elements;
 extern const Name synaptic_elements_param;
 
+extern const Name t_clamp;
 extern const Name t_lag;
 extern const Name T_max;
 extern const Name T_min;
@@ -504,6 +505,7 @@ extern const Name use_gid_in_filename;
 extern const Name use_wfr;
 
 extern const Name V_act_NMDA;
+extern const Name V_clamp;
 extern const Name V_epsp;
 extern const Name V_m;
 extern const Name V_min;

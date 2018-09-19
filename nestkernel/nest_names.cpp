@@ -389,6 +389,7 @@ const Name synapses_per_driver( "synapses_per_driver" );
 const Name synaptic_elements( "synaptic_elements" );
 const Name synaptic_elements_param( "synaptic_elements_param" );
 
+const Name t_clamp( "t_clamp" );
 const Name t_lag( "t_lag" );
 const Name T_max( "T_max" );
 const Name T_min( "T_min" );
@@ -485,6 +486,7 @@ const Name use_gid_in_filename( "use_gid_in_filename" );
 const Name use_wfr( "use_wfr" );
 
 const Name V_act_NMDA( "V_act_NMDA" );
+const Name V_clamp( "V_clamp" );
 const Name V_epsp( "V_epsp" );
 const Name V_m( "V_m" );
 const Name V_min( "V_min" );

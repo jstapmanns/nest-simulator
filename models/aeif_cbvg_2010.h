@@ -206,7 +206,10 @@ private:
 
     double gsl_error_tol; //!< error bound for GSL integrator
 
-    double delay_u_bars;
+    double delay_u_bars; //!< Delay of the convolved membrane potentials in ms
+
+    double t_clamp_; //!< The membrane potential is clamped to V_clamp (in mV)
+    double V_clamp_; //!< for the duration of t_clamp (in ms) after each spike.
 
     Parameters_(); //!< Sets default parameter values
 
@@ -246,6 +249,7 @@ public:
     //! neuron state, must be C-array for GSL solver
     double y_[ STATE_VEC_SIZE ];
     unsigned int r_; //!< number of refractory steps remaining
+    unsigned int clamp_r_; //!< number of clamp steps remaining
 
     State_( const Parameters_& ); //!< Default initialization
     State_( const State_& );
@@ -296,8 +300,7 @@ public:
     double I_stim_;
     std::vector< double > delayed_u_bar_plus_;
     std::vector< double > delayed_u_bar_minus_;
-    size_t read_idx_;
-    size_t delay_length_;
+    size_t delayed_u_bars_idx_;
   };
 
   // ----------------------------------------------------------------
@@ -314,6 +317,9 @@ public:
     double V_peak;
 
     unsigned int refractory_counts_;
+    unsigned int clamp_counts_;
+
+    size_t delay_u_bars_steps_;
   };
 
   // Access functions for UniversalDataLogger -------------------------------
