@@ -114,8 +114,8 @@ nest::aeif_cbvg_2010_dynamics( double, const double y[], double f[], void* pnode
     ? ( is_clamped ? node.P_.V_clamp_ : node.P_.V_reset_)
     : std::min( y[ S::V_M ], node.P_.V_peak_ );
   // shorthand for the other state variables
-  const double& I_syn_ex = y[ S::I_EXC ];
-  const double& I_syn_in = y[ S::I_INH ];
+  const double& I_syn_ex = node.P_.C_m*y[ S::I_EXC ]; // A bit unclear in the paper
+  const double& I_syn_in = node.P_.C_m*y[ S::I_INH ];
   const double& w = y[ S::W ];
   const double& z = y[ S::Z ];
   const double& V_T = y[ S::V_T ];
