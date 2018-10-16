@@ -70,8 +70,10 @@ RecordablesMap< hh_psc_alpha >::create()
     names::Act_h, &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::HH_H > );
   insert_(
     names::Inact_n, &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::HH_N > );
-  insert_( names::u_bar_plus, &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::U_BAR_PLUS > );
-  insert_( names::u_bar_minus, &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::U_BAR_MINUS > );
+  insert_( names::u_bar_plus,
+    &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::U_BAR_PLUS > );
+  insert_( names::u_bar_minus,
+    &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::U_BAR_MINUS > );
 }
 
 extern "C" int
@@ -101,7 +103,7 @@ hh_psc_alpha_dynamics( double, const double y[], double f[], void* pnode )
   const double& dI_in = y[ S::DI_INH ];
   const double& I_in = y[ S::I_INH ];
   const double& u_bar_plus = y[ S::U_BAR_PLUS ];
-  const double& u_bar_minus = y[ S::U_BAR_MINUS];
+  const double& u_bar_minus = y[ S::U_BAR_MINUS ];
 
   const double alpha_n =
     ( 0.01 * ( V + 55. ) ) / ( 1. - std::exp( -( V + 55. ) / 10. ) );
@@ -131,7 +133,7 @@ hh_psc_alpha_dynamics( double, const double y[], double f[], void* pnode )
   // convolved membrane potentials
   f[ S::U_BAR_PLUS ] = ( -u_bar_plus + V ) / node.P_.tau_plus;
 
-  f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V) / node.P_.tau_minus;
+  f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V ) / node.P_.tau_minus;
 
   // synapses: alpha functions
   f[ S::DI_EXC ] = -dI_ex / node.P_.tau_synE;
@@ -148,19 +150,19 @@ hh_psc_alpha_dynamics( double, const double y[], double f[], void* pnode )
  * ---------------------------------------------------------------- */
 
 nest::hh_psc_alpha::Parameters_::Parameters_()
-  : t_ref_( 2.0 )   // ms
-  , g_Na( 12000.0 ) // nS
-  , g_K( 3600.0 )   // nS
-  , g_L( 30.0 )     // nS
-  , C_m( 100.0 )    // pF
-  , E_Na( 50.0 )    // mV
-  , E_K( -77.0 )    // mV
-  , E_L( -54.402 )  // mV
-  , tau_synE( 0.2 ) // ms
-  , tau_synI( 2.0 ) // ms
-  , I_e( 0.0 )      // pA
-  , tau_plus( 114.0 )   // ms
-  , tau_minus( 10.0)  // ms
+  : t_ref_( 2.0 )     // ms
+  , g_Na( 12000.0 )   // nS
+  , g_K( 3600.0 )     // nS
+  , g_L( 30.0 )       // nS
+  , C_m( 100.0 )      // pF
+  , E_Na( 50.0 )      // mV
+  , E_K( -77.0 )      // mV
+  , E_L( -54.402 )    // mV
+  , tau_synE( 0.2 )   // ms
+  , tau_synI( 2.0 )   // ms
+  , I_e( 0.0 )        // pA
+  , tau_plus( 114.0 ) // ms
+  , tau_minus( 10.0 ) // ms
   // implementation of the delay of the convolved membrane potentials
   , delay_u_bars( 5.0 ) // ms
 {
@@ -414,11 +416,13 @@ nest::hh_psc_alpha::init_buffers_()
 
   B_.I_stim_ = 0.0;
 
-  // implementation of the delay of the convolved membrane potentials. This delay is not described
-  // in the paper but is present in the code which was presumably used to create the figures in the paper.
+  // implementation of the delay of the convolved membrane potentials. This
+  // delay is not described
+  // in the paper but is present in the code which was presumably used to create
+  // the figures in the paper.
   B_.read_idx_ = 0;
   B_.delay_length_ = Time::delay_ms_to_steps( P_.delay_u_bars ) + 1;
-  //std::cout << B_.read_idx_ << "  " << B_.delay_length_ << std::endl;
+  // std::cout << B_.read_idx_ << "  " << B_.delay_length_ << std::endl;
   B_.delayed_u_bar_plus_.resize( B_.delay_length_ );
   B_.delayed_u_bar_minus_.resize( B_.delay_length_ );
 }
@@ -491,31 +495,36 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
 
     B_.delayed_u_bar_minus_[ B_.read_idx_ ] = S_.y_[ State_::U_BAR_MINUS ];
 
-    B_.read_idx_ = (B_.read_idx_ + 1)%B_.delay_length_;
+    B_.read_idx_ = ( B_.read_idx_ + 1 ) % B_.delay_length_;
 
-    if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
-        ( B_.delayed_u_bar_plus_[ B_.read_idx_ ] > get_theta_minus()  ) )
+    if ( ( S_.y_[ State_::V_M ] > get_theta_plus() )
+      && ( B_.delayed_u_bar_plus_[ B_.read_idx_ ] > get_theta_minus() ) )
     {
       write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
-          S_.y_[ State_::V_M ],
-          B_.delayed_u_bar_plus_[ B_.read_idx_ ] );
-      //std::cout << "wrote in neuron: V_M = " << S_.y_[ State_::V_M]  - get_theta_plus()<< "  del_u_bar_plus = " <<
+        S_.y_[ State_::V_M ],
+        B_.delayed_u_bar_plus_[ B_.read_idx_ ] );
+      // std::cout << "wrote in neuron: V_M = " << S_.y_[ State_::V_M]  -
+      // get_theta_plus()<< "  del_u_bar_plus = " <<
       //  B_.delayed_u_bar_plus_[ B_.read_idx_ ]  - get_theta_minus() <<
-      //    "  theta_plus = " << get_theta_plus() << "  theta_minus = " << get_theta_minus() << std::endl;
-      //std::cout << "V_m = " << S_.y_[ State_::V_M ] << "  u_bar_plus = " 
-      //  << B_.delayed_u_bar_plus_[ B_.read_idx_ ] << "  idx = " << B_.read_idx_ 
-      //  << "  theta_plus = " << get_theta_plus() << "  theta_minus = " << get_theta_minus() << std::endl;
+      //    "  theta_plus = " << get_theta_plus() << "  theta_minus = " <<
+      //    get_theta_minus() << std::endl;
+      // std::cout << "V_m = " << S_.y_[ State_::V_M ] << "  u_bar_plus = "
+      //  << B_.delayed_u_bar_plus_[ B_.read_idx_ ] << "  idx = " <<
+      //  B_.read_idx_
+      //  << "  theta_plus = " << get_theta_plus() << "  theta_minus = " <<
+      //  get_theta_minus() << std::endl;
     }
 
     if ( B_.delayed_u_bar_minus_[ B_.read_idx_ ] > get_theta_minus() )
     {
       write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
-          B_.delayed_u_bar_minus_[ B_.read_idx_ ] );
-      //std::cout << "u_bar_minus = " << B_.delayed_u_bar_minus_[ B_.read_idx_ ] << "  idx = " << B_.read_idx_ << std::endl;
+        B_.delayed_u_bar_minus_[ B_.read_idx_ ] );
+      // std::cout << "u_bar_minus = " << B_.delayed_u_bar_minus_[ B_.read_idx_
+      // ] << "  idx = " << B_.read_idx_ << std::endl;
     }
-    
+
     // save data for Clopath STDP
-    /*if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
+    /*if ( (S_.y_[ State_::V_M] > get_theta_plus() ) &&
         ( S_.y_[ State_::U_BAR_PLUS ] > get_theta_minus()  ) )
     {
       write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),

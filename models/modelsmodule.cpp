@@ -396,7 +396,8 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< gif_pop_psc_exp >(
     "gif_pop_psc_exp" );
 
-  kernel().model_manager.register_node_model< aeif_cbvg_2010 >( "aeif_cbvg_2010" );
+  kernel().model_manager.register_node_model< aeif_cbvg_2010 >(
+    "aeif_cbvg_2010" );
   kernel().model_manager.register_node_model< aeif_cond_alpha >(
     "aeif_cond_alpha" );
   kernel().model_manager.register_node_model< aeif_cond_exp >(
@@ -520,7 +521,7 @@ ModelsModule::init( SLIInterpreter* )
     .model_manager
     .register_connection_model< STDPConnection< TargetIdentifierIndex > >(
       "stdp_synapse_hpc" );
-    
+
   kernel()
     .model_manager
     .register_connection_model< Clopath_STDPConnection< TargetIdentifierPtrRport > >(

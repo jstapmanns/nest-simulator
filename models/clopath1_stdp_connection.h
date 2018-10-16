@@ -135,9 +135,7 @@ public:
    * \param e The event to send
    * \param cp common properties of all synapses (empty).
    */
-  void send( Event& e,
-    thread t,
-    const CommonSynapseProperties& cp );
+  void send( Event& e, thread t, const CommonSynapseProperties& cp );
 
 
   class ConnTestDummyNode : public ConnTestDummyNodeBase
@@ -176,7 +174,7 @@ private:
   double
   facilitate_( double w, double dw, double x_bar )
   {
-	//std::cout << "facilitate!" << std::endl;
+    // std::cout << "facilitate!" << std::endl;
     w += dw * x_bar;
     return w < Wmax_ ? w : Wmax_;
   }
@@ -191,9 +189,9 @@ private:
   // data members of each connection
   double weight_;
   double x_bar_;
-  double tau_x_;  // TO DO: save tau_x in synapse?
+  double tau_x_; // TO DO: save tau_x in synapse?
   double Wmax_;
-  
+
   double t_lastspike_;
 };
 
@@ -230,8 +228,10 @@ Clopath1_STDPConnection< targetidentifierT >::send( Event& e,
   // history[0, ..., t_last_spike - dendritic_delay] have been
   // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
   // details.
-  target->get_LTP_history(
-    t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish );
+  target->get_LTP_history( t_lastspike_ - dendritic_delay,
+    t_spike - dendritic_delay,
+    &start,
+    &finish );
   // facilitation due to post-synaptic spikes since last pre-synaptic spike
   double minus_dt;
   while ( start != finish )
@@ -241,19 +241,21 @@ Clopath1_STDPConnection< targetidentifierT >::send( Event& e,
     {
       continue;
     }
-    weight_ = facilitate_( weight_, start->dw_,  
-       x_bar_ * exp( minus_dt / tau_x_ ) );
+    weight_ =
+      facilitate_( weight_, start->dw_, x_bar_ * exp( minus_dt / tau_x_ ) );
     ++start;
   }
 
   const double fa_weight = weight_;
   // depression due to new pre-synaptic spike
   weight_ =
-    depress_( weight_, target->get_LTD_value( t_spike - dendritic_delay) );
+    depress_( weight_, target->get_LTD_value( t_spike - dendritic_delay ) );
 
   e.set_receiver( *target );
-  std::cout << "facilitation:  " << fa_weight - old_w << "   depression:  " << weight_ - fa_weight 
-    << "   delta:  " << weight_ - old_w << "   synapse weight:  " << weight_ << std::endl;
+  std::cout << "facilitation:  " << fa_weight - old_w
+            << "   depression:  " << weight_ - fa_weight
+            << "   delta:  " << weight_ - old_w
+            << "   synapse weight:  " << weight_ << std::endl;
   e.set_weight( weight_ );
   // use accessor functions (inherited from Connection< >) to obtain delay in
   // steps and rport
@@ -261,8 +263,9 @@ Clopath1_STDPConnection< targetidentifierT >::send( Event& e,
   e.set_rport( get_rport() );
   e();
 
-  x_bar_ = x_bar_ * std::exp( ( t_lastspike_ - t_spike ) / tau_x_ ) + 1.0 / tau_x_;
-  
+  x_bar_ =
+    x_bar_ * std::exp( ( t_lastspike_ - t_spike ) / tau_x_ ) + 1.0 / tau_x_;
+
   t_lastspike_ = t_spike;
 }
 
@@ -292,7 +295,8 @@ Clopath1_STDPConnection< targetidentifierT >::Clopath1_STDPConnection(
 
 template < typename targetidentifierT >
 void
-Clopath1_STDPConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
+Clopath1_STDPConnection< targetidentifierT >::get_status(
+  DictionaryDatum& d ) const
 {
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
@@ -304,7 +308,8 @@ Clopath1_STDPConnection< targetidentifierT >::get_status( DictionaryDatum& d ) c
 
 template < typename targetidentifierT >
 void
-Clopath1_STDPConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
+Clopath1_STDPConnection< targetidentifierT >::set_status(
+  const DictionaryDatum& d,
   ConnectorModel& cm )
 {
   ConnectionBase::set_status( d, cm );

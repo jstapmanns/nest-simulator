@@ -191,15 +191,15 @@ private:
     double Delta_T; //!< Slope faktor in ms.
     double tau_w;   //!< adaptation time-constant in ms.
     double tau_z;
-    double tau_V_T;    
+    double tau_V_T;
     double V_T_max;
     double V_T_rest;
     double tau_plus;
     double tau_minus;
-    double a;       //!< Subthreshold adaptation in nS.
-    double b;       //!< Spike-triggered adaptation in pA
+    double a; //!< Subthreshold adaptation in nS.
+    double b; //!< Spike-triggered adaptation in pA
     double I_sp;
-    double t_ref;   //!< Refractory period in ms.
+    double t_ref;      //!< Refractory period in ms.
     double tau_syn_ex; //!< Excitatory synaptic rise time.
     double tau_syn_in; //!< Excitatory synaptic rise time.
     double I_e;        //!< Intrinsic current in pA.
@@ -248,7 +248,7 @@ public:
 
     //! neuron state, must be C-array for GSL solver
     double y_[ STATE_VEC_SIZE ];
-    unsigned int r_; //!< number of refractory steps remaining
+    unsigned int r_;       //!< number of refractory steps remaining
     unsigned int clamp_r_; //!< number of clamp steps remaining
 
     State_( const Parameters_& ); //!< Default initialization
@@ -270,7 +270,7 @@ public:
     Buffers_( const Buffers_&, aeif_cbvg_2010& ); //!<Sets buffer pointers to 0
 
     //! Logger for all analog data
-	UniversalDataLogger< aeif_cbvg_2010 > logger_;
+    UniversalDataLogger< aeif_cbvg_2010 > logger_;
 
     /** buffers and sums up incoming spikes/currents */
     RingBuffer spike_exc_;
@@ -376,7 +376,8 @@ aeif_cbvg_2010::handles_test_event( CurrentEvent&, rport receptor_type )
 }
 
 inline port
-aeif_cbvg_2010::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
+aeif_cbvg_2010::handles_test_event( DataLoggingRequest& dlr,
+  rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
