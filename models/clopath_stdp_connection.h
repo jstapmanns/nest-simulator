@@ -213,7 +213,7 @@ Clopath_STDPConnection< targetidentifierT >::send( Event& e,
   thread t,
   const CommonSynapseProperties& )
 {
-  const double old_w = weight_;
+  // const double old_w = weight_;
   double t_spike = e.get_stamp().get_ms();
 
   // use accessor functions (inherited from Connection< >) to obtain delay and
@@ -253,7 +253,7 @@ Clopath_STDPConnection< targetidentifierT >::send( Event& e,
     ++start;
   }
 
-  const double fa_weight = weight_;
+  // const double fa_weight = weight_;
   // depression due to new pre-synaptic spike
   weight_ =
     depress_( weight_, target->get_LTD_value( t_spike - dendritic_delay ) );

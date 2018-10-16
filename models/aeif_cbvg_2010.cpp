@@ -190,8 +190,8 @@ nest::aeif_cbvg_2010::Parameters_::Parameters_()
   // implementation of the delay of the convolved membrane potentials
   , delay_u_bars( 5.0 ) // ms
   // implementation of the clamping after each spike
-  , V_clamp_( 33.0 ) // mV
   , t_clamp_( 2.0 )  // ms
+  , V_clamp_( 33.0 ) // mV
 {
 }
 
