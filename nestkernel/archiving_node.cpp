@@ -212,8 +212,6 @@ nest::Archiving_Node::set_spiketime( Time const& t_sp, double offset )
   {
     last_spike_ = t_sp_ms;
   }
-
-  //std::cout << "t_lastspike in arch node after: " << last_spike_ << std::endl;
 }
 
 void

@@ -512,16 +512,6 @@ ModelsModule::init( SLIInterpreter* )
      consumption.
      SeeAlso: synapsedict, stdp_synapse, static_synapse_hpc
   */
-  /*
-  kernel()
-    .model_manager
-    .register_connection_model< Clopath1_STDPConnection< TargetIdentifierPtrRport > >(
-      "clopath1_stdp_synapse" );
-  */
-  kernel()
-    .model_manager
-    .register_connection_model< Clopath_STDPConnection< TargetIdentifierPtrRport > >(
-      "clopath_stdp_synapse" );
   kernel()
     .model_manager
     .register_connection_model< STDPConnection< TargetIdentifierPtrRport > >(
@@ -530,7 +520,11 @@ ModelsModule::init( SLIInterpreter* )
     .model_manager
     .register_connection_model< STDPConnection< TargetIdentifierIndex > >(
       "stdp_synapse_hpc" );
-
+    
+  kernel()
+    .model_manager
+    .register_connection_model< Clopath_STDPConnection< TargetIdentifierPtrRport > >(
+      "clopath_stdp_synapse" );
 
   /* BeginDocumentation
      Name: stdp_pl_synapse_hom_hpc - Variant of stdp_pl_synapse_hom with low

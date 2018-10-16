@@ -249,7 +249,6 @@ const Name local_spike_counter( "local_spike_counter" );
 const Name lookuptable_0( "lookuptable_0" );
 const Name lookuptable_1( "lookuptable_1" );
 const Name lookuptable_2( "lookuptable_2" );
-const Name ltp_factor( "ltp_factor" );
 
 const Name make_symmetric( "make_symmetric" );
 const Name max_buffer_size_spike_data( "max_buffer_size_spike_data" );
