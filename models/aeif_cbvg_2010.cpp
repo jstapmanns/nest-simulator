@@ -344,7 +344,11 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
     throw BadProperty( "Ensure that t_clamp >= 0" );
   }
 
-  if ( tau_syn_ex <= 0 || tau_syn_in <= 0 || tau_w <= 0 )
+  if ( tau_syn_ex <= 0 or tau_syn_in <= 0 or tau_w <= 0 or tau_V_T <= 0
+    or tau_w <= 0
+    or tau_z <= 0
+    or tau_plus <= 0
+    or tau_minus <= 0 )
   {
     throw BadProperty( "All time constants must be strictly positive." );
   }

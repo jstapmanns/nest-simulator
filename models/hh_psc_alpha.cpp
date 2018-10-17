@@ -265,11 +265,11 @@ nest::hh_psc_alpha::Parameters_::set( const DictionaryDatum& d )
   {
     throw BadProperty( "Refractory time cannot be negative." );
   }
-  if ( tau_synE <= 0 || tau_synI <= 0 )
+  if ( tau_synE <= 0 or tau_synI <= 0 or tau_plus <= 0 or tau_minus <= 0 )
   {
     throw BadProperty( "All time constants must be strictly positive." );
   }
-  if ( g_K < 0 || g_Na < 0 || g_L < 0 )
+  if ( g_K < 0 or g_Na < 0 or g_L < 0 )
   {
     throw BadProperty( "All conductances must be non-negative." );
   }
