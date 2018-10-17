@@ -269,7 +269,6 @@ extern const Name local_spike_counter;
 extern const Name lookuptable_0;
 extern const Name lookuptable_1;
 extern const Name lookuptable_2;
-extern const Name ltp_factor;
 
 extern const Name make_symmetric;
 extern const Name max_buffer_size_spike_data;

@@ -52,7 +52,8 @@ using namespace nest;
  * Recordables map
  * ---------------------------------------------------------------- */
 
-nest::RecordablesMap< nest::aeif_cbvg_2010 > nest::aeif_cbvg_2010::recordablesMap_;
+nest::RecordablesMap< nest::aeif_cbvg_2010 >
+  nest::aeif_cbvg_2010::recordablesMap_;
 
 namespace nest
 {
@@ -73,17 +74,25 @@ RecordablesMap< aeif_cbvg_2010 >::create()
     &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::I_EXC > );
   insert_( names::I_syn_in,
     &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::I_INH > );
-  insert_( names::w, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::W > );
-  insert_( names::z, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::Z > );
-  insert_( names::V_T, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::V_T > );
-  insert_( names::u_bar_plus, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::U_BAR_PLUS > );
-  insert_( names::u_bar_minus, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::U_BAR_MINUS > );
+  insert_(
+    names::w, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::W > );
+  insert_(
+    names::z, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::Z > );
+  insert_(
+    names::V_T, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::V_T > );
+  insert_( names::u_bar_plus,
+    &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::U_BAR_PLUS > );
+  insert_( names::u_bar_minus,
+    &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::U_BAR_MINUS > );
 }
 }
 
 
 extern "C" int
-nest::aeif_cbvg_2010_dynamics( double, const double y[], double f[], void* pnode )
+nest::aeif_cbvg_2010_dynamics( double,
+  const double y[],
+  double f[],
+  void* pnode )
 {
   // a shorthand
   typedef nest::aeif_cbvg_2010::State_ S;
@@ -109,18 +118,18 @@ nest::aeif_cbvg_2010_dynamics( double, const double y[], double f[], void* pnode
   const double& V =
     is_refractory ? node.P_.V_reset_ : std::min( y[ S::V_M ], node.P_.V_peak_ );
   */
-  const double& V =
-    ( is_refractory || is_clamped )
-    ? ( is_clamped ? node.P_.V_clamp_ : node.P_.V_reset_)
+  const double& V = ( is_refractory || is_clamped )
+    ? ( is_clamped ? node.P_.V_clamp_ : node.P_.V_reset_ )
     : std::min( y[ S::V_M ], node.P_.V_peak_ );
   // shorthand for the other state variables
-  const double& I_syn_ex = node.P_.C_m*y[ S::I_EXC ]; // A bit unclear in the paper
-  const double& I_syn_in = node.P_.C_m*y[ S::I_INH ];
+  const double& I_syn_ex =
+    node.P_.C_m * y[ S::I_EXC ]; // A bit unclear in the paper
+  const double& I_syn_in = node.P_.C_m * y[ S::I_INH ];
   const double& w = y[ S::W ];
   const double& z = y[ S::Z ];
   const double& V_T = y[ S::V_T ];
   const double& u_bar_plus = y[ S::U_BAR_PLUS ];
-  const double& u_bar_minus = y[ S::U_BAR_MINUS];
+  const double& u_bar_minus = y[ S::U_BAR_MINUS ];
 
   const double I_spike = node.P_.Delta_T == 0.
     ? 0.
@@ -138,17 +147,16 @@ nest::aeif_cbvg_2010_dynamics( double, const double y[], double f[], void* pnode
   f[ S::I_INH ] = -I_syn_in / node.P_.tau_syn_in; // Inh. synaptic current (pA)
 
   // Adaptation current w.
-  f[ S::W ] = is_clamped
-    ? 0.0
-    : ( node.P_.a * ( V - node.P_.E_L ) - w ) / node.P_.tau_w;
-  
+  f[ S::W ] =
+    is_clamped ? 0.0 : ( node.P_.a * ( V - node.P_.E_L ) - w ) / node.P_.tau_w;
+
   f[ S::Z ] = -z / node.P_.tau_z;
 
-  f[ S::V_T ] = -( V_T - node.P_.V_T_rest) / node.P_.tau_V_T;
+  f[ S::V_T ] = -( V_T - node.P_.V_T_rest ) / node.P_.tau_V_T;
 
   f[ S::U_BAR_PLUS ] = ( -u_bar_plus + V ) / node.P_.tau_plus;
 
-  f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V) / node.P_.tau_minus;
+  f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V ) / node.P_.tau_minus;
 
   return GSL_SUCCESS;
 }
@@ -171,7 +179,7 @@ nest::aeif_cbvg_2010::Parameters_::Parameters_()
   , V_T_max( 30.4 )   // mV
   , V_T_rest( -50.4 ) // mV
   , tau_plus( 7.0 )   // ms
-  , tau_minus( 10.0)  // ms
+  , tau_minus( 10.0 ) // ms
   , a( 4.0 )          // nS
   , b( 80.5 )         // pA
   , I_sp( 400.0 )     // pA
@@ -182,8 +190,8 @@ nest::aeif_cbvg_2010::Parameters_::Parameters_()
   // implementation of the delay of the convolved membrane potentials
   , delay_u_bars( 5.0 ) // ms
   // implementation of the clamping after each spike
-  , V_clamp_( 33.0 )  // mV
-  , t_clamp_( 2.0 )   // ms
+  , t_clamp_( 2.0 )  // ms
+  , V_clamp_( 33.0 ) // mV
 {
 }
 
@@ -239,7 +247,7 @@ nest::aeif_cbvg_2010::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::tau_syn_in, tau_syn_in );
   def< double >( d, names::a, a );
   def< double >( d, names::b, b );
-  def< double >( d, names::I_sp, I_sp);
+  def< double >( d, names::I_sp, I_sp );
   def< double >( d, names::Delta_T, Delta_T );
   def< double >( d, names::tau_w, tau_w );
   def< double >( d, names::tau_z, tau_z );
@@ -274,7 +282,7 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
 
   updateValue< double >( d, names::a, a );
   updateValue< double >( d, names::b, b );
-  updateValue< double >( d, names::I_sp, I_sp);
+  updateValue< double >( d, names::I_sp, I_sp );
   updateValue< double >( d, names::Delta_T, Delta_T );
   updateValue< double >( d, names::tau_w, tau_w );
   updateValue< double >( d, names::tau_z, tau_z );
@@ -336,7 +344,11 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
     throw BadProperty( "Ensure that t_clamp >= 0" );
   }
 
-  if ( tau_syn_ex <= 0 || tau_syn_in <= 0 || tau_w <= 0 )
+  if ( tau_syn_ex <= 0 or tau_syn_in <= 0 or tau_w <= 0 or tau_V_T <= 0
+    or tau_w <= 0
+    or tau_z <= 0
+    or tau_plus <= 0
+    or tau_minus <= 0 )
   {
     throw BadProperty( "All time constants must be strictly positive." );
   }
@@ -357,7 +369,8 @@ nest::aeif_cbvg_2010::State_::get( DictionaryDatum& d ) const
 }
 
 void
-nest::aeif_cbvg_2010::State_::set( const DictionaryDatum& d, const Parameters_& )
+nest::aeif_cbvg_2010::State_::set( const DictionaryDatum& d,
+  const Parameters_& )
 {
   updateValue< double >( d, names::V_m, y_[ V_M ] );
   updateValue< double >( d, names::V_m, y_[ U_BAR_PLUS ] );
@@ -491,8 +504,10 @@ nest::aeif_cbvg_2010::init_buffers_()
   B_.sys_.function = aeif_cbvg_2010_dynamics;
 
   B_.I_stim_ = 0.0;
-  // implementation of the delay of the convolved membrane potentials. This delay is not described
-  // in the paper but is present in the code which was presumably used to create the figures in the paper.
+  // implementation of the delay of the convolved membrane potentials. This
+  // delay is not described
+  // in the paper but is present in the code which was presumably used to create
+  // the figures in the paper.
   B_.delayed_u_bars_idx_ = 0;
   V_.delay_u_bars_steps_ = Time::delay_ms_to_steps( P_.delay_u_bars ) + 1;
   B_.delayed_u_bar_plus_.resize( V_.delay_u_bars_steps_ );
@@ -513,7 +528,7 @@ nest::aeif_cbvg_2010::calibrate()
   else
   {
     std::cout << "Delta_T has to be greater than zero otherwise consider"
-     << " to use Nest's aeif_psc_exp." << std::endl;
+              << " to use Nest's aeif_psc_exp." << std::endl;
   }
 
   V_.refractory_counts_ = Time( Time::ms( P_.t_ref_ ) ).get_steps();
@@ -531,7 +546,9 @@ nest::aeif_cbvg_2010::calibrate()
  * ---------------------------------------------------------------- */
 
 void
-nest::aeif_cbvg_2010::update( const Time& origin, const long from, const long to )
+nest::aeif_cbvg_2010::update( const Time& origin,
+  const long from,
+  const long to )
 {
   assert(
     to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
@@ -564,7 +581,7 @@ nest::aeif_cbvg_2010::update( const Time& origin, const long from, const long to
         S_.y_ );              // neuronal state
       if ( status != GSL_SUCCESS )
       {
-		std::cout << "GSLSolverFailure" << std::endl;
+        std::cout << "GSLSolverFailure" << std::endl;
         throw GSLSolverFailure( get_name(), status );
       }
 
@@ -572,53 +589,55 @@ nest::aeif_cbvg_2010::update( const Time& origin, const long from, const long to
       if ( S_.y_[ State_::V_M ] < -1e3 || S_.y_[ State_::W ] < -1e6
         || S_.y_[ State_::W ] > 1e6 )
       {
-		std::cout << "NumericalInstability" << std::endl;
+        std::cout << "NumericalInstability" << std::endl;
         throw NumericalInstability( get_name() );
       }
 
       // spikes are handled inside the while-loop
       // due to spike-driven adaptation
-    if ( S_.y_[ State_::V_M ] >= V_.V_peak && S_.clamp_r_ == 0 )
-    {
-      S_.y_[ State_::V_M ] = P_.V_clamp_;
-      S_.y_[ State_::W ] += P_.b; // spike-driven adaptation
-      S_.y_[ State_::Z ] = P_.I_sp;
-      S_.y_[ State_::V_T] = P_.V_T_max;
+      if ( S_.y_[ State_::V_M ] >= V_.V_peak && S_.clamp_r_ == 0 )
+      {
+        S_.y_[ State_::V_M ] = P_.V_clamp_;
+        S_.y_[ State_::W ] += P_.b; // spike-driven adaptation
+        S_.y_[ State_::Z ] = P_.I_sp;
+        S_.y_[ State_::V_T ] = P_.V_T_max;
 
-      S_.clamp_r_ = V_.clamp_counts_ > 0 ? V_.clamp_counts_ + 2 : 0;
+        S_.clamp_r_ = V_.clamp_counts_ > 0 ? V_.clamp_counts_ + 2 : 0;
 
-      set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
-      SpikeEvent se;
-      kernel().event_delivery_manager.send( *this, se, lag );
-    }
-    else if ( S_.clamp_r_ == 1 ) 
-    {
-      S_.y_[ State_::V_M ] = P_.V_reset_;
-      S_.clamp_r_ = 0;
+        set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
+        SpikeEvent se;
+        kernel().event_delivery_manager.send( *this, se, lag );
+      }
+      else if ( S_.clamp_r_ == 1 )
+      {
+        S_.y_[ State_::V_M ] = P_.V_reset_;
+        S_.clamp_r_ = 0;
 
-      /* Initialize refractory step counter.
-      * - We need to add 1 to compensate for count-down immediately after
-      *   while loop.
-      * - If neuron has no refractory time, set to 0 to avoid refractory
-      *   artifact inside while loop.
-      */
-      S_.r_ = V_.refractory_counts_ > 0 ? V_.refractory_counts_ + 1 : 0;
-    }
+        /* Initialize refractory step counter.
+        * - We need to add 1 to compensate for count-down immediately after
+        *   while loop.
+        * - If neuron has no refractory time, set to 0 to avoid refractory
+        *   artifact inside while loop.
+        */
+        S_.r_ = V_.refractory_counts_ > 0 ? V_.refractory_counts_ + 1 : 0;
+      }
 
-	  if ( S_.r_ > 0 )
-    {
-      S_.y_[ State_::V_M ] = P_.V_reset_;
-    }
-    /*
-    else if ( S_.y_[ State_::V_M ] >= V_.V_peak )
-    {
-      //std::cout << "spike! " << S_.y_[State_::V_M] << ", " << S_.y_[State_::W] << ", ";
-      S_.y_[ State_::V_M ] = P_.V_reset_;
-      S_.y_[ State_::W ] += P_.b; // spike-driven adaptation
-      S_.y_[ State_::Z ] = P_.I_sp;
-      S_.y_[ State_::V_T] = P_.V_T_max;
-      //std::cout << P_.b << ", " << S_.y_[State_::W] << ", " << Time::step( origin.get_steps() + lag ) << B_.IntegrationStep_ << std::endl;
-      */
+      if ( S_.r_ > 0 )
+      {
+        S_.y_[ State_::V_M ] = P_.V_reset_;
+      }
+      /*
+      else if ( S_.y_[ State_::V_M ] >= V_.V_peak )
+      {
+        //std::cout << "spike! " << S_.y_[State_::V_M] << ", " <<
+      S_.y_[State_::W] << ", ";
+        S_.y_[ State_::V_M ] = P_.V_reset_;
+        S_.y_[ State_::W ] += P_.b; // spike-driven adaptation
+        S_.y_[ State_::Z ] = P_.I_sp;
+        S_.y_[ State_::V_T] = P_.V_T_max;
+        //std::cout << P_.b << ", " << S_.y_[State_::W] << ", " << Time::step(
+      origin.get_steps() + lag ) << B_.IntegrationStep_ << std::endl;
+        */
 
       /* Initialize refractory step counter.
        * - We need to add 1 to compensate for count-down immediately after
@@ -634,32 +653,35 @@ nest::aeif_cbvg_2010::update( const Time& origin, const long from, const long to
       kernel().event_delivery_manager.send( *this, se, lag );
     }
     */
-	  
     }
 
     // save data for Clopath STDP
-    B_.delayed_u_bar_plus_[ B_.delayed_u_bars_idx_ ] = S_.y_[ State_::U_BAR_PLUS ];
+    B_.delayed_u_bar_plus_[ B_.delayed_u_bars_idx_ ] =
+      S_.y_[ State_::U_BAR_PLUS ];
 
-    B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ] = S_.y_[ State_::U_BAR_MINUS ];
+    B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ] =
+      S_.y_[ State_::U_BAR_MINUS ];
 
-    B_.delayed_u_bars_idx_ = (B_.delayed_u_bars_idx_ + 1)%V_.delay_u_bars_steps_;
+    B_.delayed_u_bars_idx_ =
+      ( B_.delayed_u_bars_idx_ + 1 ) % V_.delay_u_bars_steps_;
 
-    if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
-        ( B_.delayed_u_bar_plus_[ B_.delayed_u_bars_idx_ ] > get_theta_minus()  ) )
+    if ( ( S_.y_[ State_::V_M ] > get_theta_plus() )
+      && ( B_.delayed_u_bar_plus_[ B_.delayed_u_bars_idx_ ]
+           > get_theta_minus() ) )
     {
       write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
-          S_.y_[ State_::V_M ],
-          B_.delayed_u_bar_plus_[ B_.delayed_u_bars_idx_ ] );
+        S_.y_[ State_::V_M ],
+        B_.delayed_u_bar_plus_[ B_.delayed_u_bars_idx_ ] );
     }
 
     if ( B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ] > get_theta_minus() )
     {
       write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
-          B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ] );
+        B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ] );
     }
     // old version without the delay of the convolved membrane potentials
     /*
-    if ( (S_.y_[ State_::V_M] > get_theta_plus() ) && 
+    if ( (S_.y_[ State_::V_M] > get_theta_plus() ) &&
         ( S_.y_[ State_::U_BAR_PLUS ] > get_theta_minus()  ) )
     {
       write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),

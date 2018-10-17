@@ -194,14 +194,13 @@ protected:
    * clear spike history
    */
   void clear_history();
-  
+
   // number of incoming connections from stdp connectors.
   // needed to determine, if every incoming connection has
   // read the spikehistory for a given point in time
   size_t n_incoming_;
 
 private:
-
   // sum exp(-(t-ti)/tau_minus)
   double Kminus_;
 

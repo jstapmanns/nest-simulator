@@ -396,7 +396,8 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< gif_pop_psc_exp >(
     "gif_pop_psc_exp" );
 
-  kernel().model_manager.register_node_model< aeif_cbvg_2010 >( "aeif_cbvg_2010" );
+  kernel().model_manager.register_node_model< aeif_cbvg_2010 >(
+    "aeif_cbvg_2010" );
   kernel().model_manager.register_node_model< aeif_cond_alpha >(
     "aeif_cond_alpha" );
   kernel().model_manager.register_node_model< aeif_cond_exp >(
@@ -512,16 +513,6 @@ ModelsModule::init( SLIInterpreter* )
      consumption.
      SeeAlso: synapsedict, stdp_synapse, static_synapse_hpc
   */
-  /*
-  kernel()
-    .model_manager
-    .register_connection_model< Clopath1_STDPConnection< TargetIdentifierPtrRport > >(
-      "clopath1_stdp_synapse" );
-  */
-  kernel()
-    .model_manager
-    .register_connection_model< Clopath_STDPConnection< TargetIdentifierPtrRport > >(
-      "clopath_stdp_synapse" );
   kernel()
     .model_manager
     .register_connection_model< STDPConnection< TargetIdentifierPtrRport > >(
@@ -531,6 +522,10 @@ ModelsModule::init( SLIInterpreter* )
     .register_connection_model< STDPConnection< TargetIdentifierIndex > >(
       "stdp_synapse_hpc" );
 
+  kernel()
+    .model_manager
+    .register_connection_model< Clopath_STDPConnection< TargetIdentifierPtrRport > >(
+      "clopath_stdp_synapse" );
 
   /* BeginDocumentation
      Name: stdp_pl_synapse_hom_hpc - Variant of stdp_pl_synapse_hom with low
