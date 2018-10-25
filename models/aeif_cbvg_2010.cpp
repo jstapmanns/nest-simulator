@@ -70,10 +70,10 @@ RecordablesMap< aeif_cbvg_2010 >::create()
   // use standard names whereever you can for consistency!
   insert_(
     names::V_m, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::V_M > );
-  insert_( names::I_syn_ex,
-    &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::I_EXC > );
-  insert_( names::I_syn_in,
-    &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::I_INH > );
+  //insert_( names::I_syn_ex,
+    //&aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::I_EXC > );
+  //insert_( names::I_syn_in,
+    //&aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::I_INH > );
   insert_(
     names::w, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::W > );
   insert_(
@@ -122,9 +122,9 @@ nest::aeif_cbvg_2010_dynamics( double,
     ? ( is_clamped ? node.P_.V_clamp_ : node.P_.V_reset_ )
     : std::min( y[ S::V_M ], node.P_.V_peak_ );
   // shorthand for the other state variables
-  const double& I_syn_ex =
-    node.P_.C_m * y[ S::I_EXC ]; // A bit unclear in the paper
-  const double& I_syn_in = node.P_.C_m * y[ S::I_INH ];
+  //const double& I_syn_ex =
+    //node.P_.C_m * y[ S::I_EXC ]; // A bit unclear in the paper
+  //const double& I_syn_in = node.P_.C_m * y[ S::I_INH ];
   const double& w = y[ S::W ];
   const double& z = y[ S::Z ];
   const double& V_T = y[ S::V_T ];
@@ -139,12 +139,12 @@ nest::aeif_cbvg_2010_dynamics( double,
   // dv/dt
   f[ S::V_M ] = ( is_refractory || is_clamped )
     ? 0.0
-    : ( -node.P_.g_L * ( V - node.P_.E_L ) + I_spike + I_syn_ex - I_syn_in - w
+    : ( -node.P_.g_L * ( V - node.P_.E_L ) + I_spike - w
         + z + node.P_.I_e + node.B_.I_stim_ ) / node.P_.C_m;
 
-  f[ S::I_EXC ] = -I_syn_ex / node.P_.tau_syn_ex; // Exc. synaptic current (pA)
+  //f[ S::I_EXC ] = -I_syn_ex / node.P_.tau_syn_ex; // Exc. synaptic current (pA)
 
-  f[ S::I_INH ] = -I_syn_in / node.P_.tau_syn_in; // Inh. synaptic current (pA)
+  //f[ S::I_INH ] = -I_syn_in / node.P_.tau_syn_in; // Inh. synaptic current (pA)
 
   // Adaptation current w.
   f[ S::W ] =
@@ -202,9 +202,14 @@ nest::aeif_cbvg_2010::State_::State_( const Parameters_& p )
   {
     y_[ i ] = 0;
   }
+  y_[ V_T ] = p.V_T_rest;
+  y_[ U_BAR_PLUS ] = p.E_L;
+  y_[ U_BAR_MINUS ] = p.E_L;
+  /*
   y_[ 5 ] = p.V_T_rest;
   y_[ 6 ] = p.E_L;
   y_[ 7 ] = p.E_L;
+  */
 }
 
 nest::aeif_cbvg_2010::State_::State_( const State_& s )
@@ -363,8 +368,8 @@ void
 nest::aeif_cbvg_2010::State_::get( DictionaryDatum& d ) const
 {
   def< double >( d, names::V_m, y_[ V_M ] );
-  def< double >( d, names::I_syn_ex, y_[ I_EXC ] );
-  def< double >( d, names::I_syn_in, y_[ I_INH ] );
+  //def< double >( d, names::I_syn_ex, y_[ I_EXC ] );
+  //def< double >( d, names::I_syn_in, y_[ I_INH ] );
   def< double >( d, names::w, y_[ W ] );
 }
 
@@ -376,13 +381,15 @@ nest::aeif_cbvg_2010::State_::set( const DictionaryDatum& d,
   updateValue< double >( d, names::V_m, y_[ U_BAR_PLUS ] );
   updateValue< double >( d, names::V_m, y_[ U_BAR_MINUS ] );
   // TO DO: initialization of u_bar_plus and u_bar_minus
-  updateValue< double >( d, names::I_syn_ex, y_[ I_EXC ] );
-  updateValue< double >( d, names::I_syn_in, y_[ I_INH ] );
+  //updateValue< double >( d, names::I_syn_ex, y_[ I_EXC ] );
+  //updateValue< double >( d, names::I_syn_in, y_[ I_INH ] );
   updateValue< double >( d, names::w, y_[ W ] );
+  /*
   if ( y_[ I_EXC ] < 0 || y_[ I_INH ] < 0 )
   {
     throw BadProperty( "Conductances must not be negative." );
   }
+  */
 }
 
 nest::aeif_cbvg_2010::Buffers_::Buffers_( aeif_cbvg_2010& n )
@@ -457,8 +464,8 @@ nest::aeif_cbvg_2010::init_state_( const Node& proto )
 void
 nest::aeif_cbvg_2010::init_buffers_()
 {
-  B_.spike_exc_.clear(); // includes resize
-  B_.spike_inh_.clear(); // includes resize
+  B_.spikes_.clear(); // includes resize
+  //B_.spike_inh_.clear(); // includes resize
   B_.currents_.clear();  // includes resize
   Extended_Archiving_Node::clear_history();
 
@@ -593,6 +600,17 @@ nest::aeif_cbvg_2010::update( const Time& origin,
         throw NumericalInstability( get_name() );
       }
 
+      if ( S_.r_ == 0 && S_.clamp_r_ == 0)
+      {
+        // neuron not refractory
+        S_.y_[ State_::V_M ] =
+          S_.y_[ State_::V_M ] + B_.spikes_.get_value( lag );
+      }
+      else // neuron is absolute refractory
+      {
+        //S_.y_[ State_::V_M ] = P_.V_reset_; // clamp it to V_reset
+        B_.spikes_.get_value( lag ); // clear buffer entry, ignore spike
+      }
       // spikes are handled inside the while-loop
       // due to spike-driven adaptation
       if ( S_.y_[ State_::V_M ] >= V_.V_peak && S_.clamp_r_ == 0 )
@@ -706,8 +724,8 @@ nest::aeif_cbvg_2010::update( const Time& origin,
       --S_.r_;
     }
 
-    S_.y_[ State_::I_EXC ] += B_.spike_exc_.get_value( lag );
-    S_.y_[ State_::I_INH ] += B_.spike_inh_.get_value( lag );
+    //S_.y_[ State_::I_EXC ] += B_.spike_exc_.get_value( lag );
+    //S_.y_[ State_::I_INH ] += B_.spike_inh_.get_value( lag );
 
     // set new input current
     B_.I_stim_ = B_.currents_.get_value( lag );
@@ -718,6 +736,16 @@ nest::aeif_cbvg_2010::update( const Time& origin,
 }
 
 void
+nest::aeif_cbvg_2010::handle( SpikeEvent& e )
+{
+  assert( e.get_delay() > 0 );
+
+  B_.spikes_.add_value(
+    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+    e.get_weight() * e.get_multiplicity() );
+}
+
+/*void
 nest::aeif_cbvg_2010::handle( SpikeEvent& e )
 {
   assert( e.get_delay() > 0 );
@@ -735,6 +763,7 @@ nest::aeif_cbvg_2010::handle( SpikeEvent& e )
       -e.get_weight() * e.get_multiplicity() );
   } // keep conductances positive
 }
+*/
 
 void
 nest::aeif_cbvg_2010::handle( CurrentEvent& e )

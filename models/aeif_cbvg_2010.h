@@ -236,8 +236,8 @@ public:
     enum StateVecElems
     {
       V_M = 0,
-      I_EXC,       // 1
-      I_INH,       // 2
+//      I_EXC,       // 1
+//      I_INH,       // 2
       W,           // 3
       Z,           // 4
       V_T,         // 5
@@ -273,8 +273,8 @@ public:
     UniversalDataLogger< aeif_cbvg_2010 > logger_;
 
     /** buffers and sums up incoming spikes/currents */
-    RingBuffer spike_exc_;
-    RingBuffer spike_inh_;
+    RingBuffer spikes_;
+    //RingBuffer spike_inh_;
     RingBuffer currents_;
 
     /** GSL ODE stuff */
