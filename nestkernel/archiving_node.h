@@ -266,7 +266,7 @@ public:
 
   /**
    * \fn double get_LTD_value(long t)
-   * return the Kminus value at t (in ms).
+   * TODO
    */
   double get_LTD_value( double t );
 
@@ -274,33 +274,39 @@ public:
    * \fn void get_LTP_history(long t1, long t2,
    * std::deque<Archiver::histentry>::iterator* start,
    * std::deque<Archiver::histentry>::iterator* finish)
-   * return the spike times (in steps) of spikes which occurred in the range
-   * (t1,t2].
-   * TO DO: modify text, see virtual void in Node
+   * TODO
    */
   void get_LTP_history( double t1,
     double t2,
     std::deque< histentry_cl >::iterator* start,
     std::deque< histentry_cl >::iterator* finish );
 
+  /**
+   * \fn double get_theta_plus()
+   * TODO
+   */
   double get_theta_plus() const;
 
+  /**
+   * \fn double get_theta_minus()
+   * TODO
+   */
   double get_theta_minus() const;
 
 protected:
   /**
-   * \fn void set_spiketime(Time const & t_sp, double offset)
-   * record spike history
-   * TO DO: modify text
+   * \fn void write_LTD_history( Time const& t_sp,
+    double u_bar_minus, double offset = 0.0 )
+   * TODO
    */
   void write_LTD_history( Time const& t_sp,
     double u_bar_minus,
     double offset = 0.0 );
 
   /**
-   * \fn void set_spiketime(Time const & t_sp, double offset)
-   * record spike history
-   * TO DO: modify text
+   * \fn void write_LTP_history( Time const& t_sp,
+   * double u, double u_bar_plus, double offset = 0.0 )
+   * TODO
    */
   void write_LTP_history( Time const& t_sp,
     double u,

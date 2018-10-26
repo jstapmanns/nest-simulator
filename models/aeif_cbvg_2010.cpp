@@ -70,10 +70,6 @@ RecordablesMap< aeif_cbvg_2010 >::create()
   // use standard names whereever you can for consistency!
   insert_(
     names::V_m, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::V_M > );
-  //insert_( names::I_syn_ex,
-    //&aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::I_EXC > );
-  //insert_( names::I_syn_in,
-    //&aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::I_INH > );
   insert_(
     names::w, &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::W > );
   insert_(
@@ -114,17 +110,10 @@ nest::aeif_cbvg_2010_dynamics( double,
   // Clamp membrane potential to V_reset while refractory, otherwise bound
   // it to V_peak. Do not use V_.V_peak_ here, since that is set to V_th if
   // Delta_T == 0.
-  /*
-  const double& V =
-    is_refractory ? node.P_.V_reset_ : std::min( y[ S::V_M ], node.P_.V_peak_ );
-  */
   const double& V = ( is_refractory || is_clamped )
     ? ( is_clamped ? node.P_.V_clamp_ : node.P_.V_reset_ )
     : std::min( y[ S::V_M ], node.P_.V_peak_ );
   // shorthand for the other state variables
-  //const double& I_syn_ex =
-    //node.P_.C_m * y[ S::I_EXC ]; // A bit unclear in the paper
-  //const double& I_syn_in = node.P_.C_m * y[ S::I_INH ];
   const double& w = y[ S::W ];
   const double& z = y[ S::Z ];
   const double& V_T = y[ S::V_T ];
@@ -139,12 +128,8 @@ nest::aeif_cbvg_2010_dynamics( double,
   // dv/dt
   f[ S::V_M ] = ( is_refractory || is_clamped )
     ? 0.0
-    : ( -node.P_.g_L * ( V - node.P_.E_L ) + I_spike - w
-        + z + node.P_.I_e + node.B_.I_stim_ ) / node.P_.C_m;
-
-  //f[ S::I_EXC ] = -I_syn_ex / node.P_.tau_syn_ex; // Exc. synaptic current (pA)
-
-  //f[ S::I_INH ] = -I_syn_in / node.P_.tau_syn_in; // Inh. synaptic current (pA)
+    : ( -node.P_.g_L * ( V - node.P_.E_L ) + I_spike - w + z + node.P_.I_e
+        + node.B_.I_stim_ ) / node.P_.C_m;
 
   // Adaptation current w.
   f[ S::W ] =
@@ -183,15 +168,11 @@ nest::aeif_cbvg_2010::Parameters_::Parameters_()
   , a( 4.0 )          // nS
   , b( 80.5 )         // pA
   , I_sp( 400.0 )     // pA
-  , tau_syn_ex( 0.2 ) // ms
-  , tau_syn_in( 2.0 ) // ms
   , I_e( 0.0 )        // pA
   , gsl_error_tol( 1e-6 )
-  // implementation of the delay of the convolved membrane potentials
   , delay_u_bars( 5.0 ) // ms
-  // implementation of the clamping after each spike
-  , t_clamp_( 2.0 )  // ms
-  , V_clamp_( 33.0 ) // mV
+  , t_clamp_( 2.0 )     // ms
+  , V_clamp_( 33.0 )    // mV
 {
 }
 
@@ -205,11 +186,6 @@ nest::aeif_cbvg_2010::State_::State_( const Parameters_& p )
   y_[ V_T ] = p.V_T_rest;
   y_[ U_BAR_PLUS ] = p.E_L;
   y_[ U_BAR_MINUS ] = p.E_L;
-  /*
-  y_[ 5 ] = p.V_T_rest;
-  y_[ 6 ] = p.E_L;
-  y_[ 7 ] = p.E_L;
-  */
 }
 
 nest::aeif_cbvg_2010::State_::State_( const State_& s )
@@ -248,8 +224,6 @@ nest::aeif_cbvg_2010::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::g_L, g_L );
   def< double >( d, names::E_L, E_L );
   def< double >( d, names::V_reset, V_reset_ );
-  def< double >( d, names::tau_syn_ex, tau_syn_ex );
-  def< double >( d, names::tau_syn_in, tau_syn_in );
   def< double >( d, names::a, a );
   def< double >( d, names::b, b );
   def< double >( d, names::I_sp, I_sp );
@@ -261,9 +235,7 @@ nest::aeif_cbvg_2010::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::I_e, I_e );
   def< double >( d, names::V_peak, V_peak_ );
   def< double >( d, names::gsl_error_tol, gsl_error_tol );
-  // implementation of the delay of the convolved membrane potentials
   def< double >( d, names::delay_u_bars, delay_u_bars );
-  // implementation of the clamping after a spike
   def< double >( d, names::V_clamp, V_clamp_ );
   def< double >( d, names::t_clamp, t_clamp_ );
 }
@@ -282,9 +254,6 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::C_m, C_m );
   updateValue< double >( d, names::g_L, g_L );
 
-  updateValue< double >( d, names::tau_syn_ex, tau_syn_ex );
-  updateValue< double >( d, names::tau_syn_in, tau_syn_in );
-
   updateValue< double >( d, names::a, a );
   updateValue< double >( d, names::b, b );
   updateValue< double >( d, names::I_sp, I_sp );
@@ -298,9 +267,7 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
 
   updateValue< double >( d, names::gsl_error_tol, gsl_error_tol );
 
-  // implementation of the delay of the convolved membrane potentials
   updateValue< double >( d, names::delay_u_bars, delay_u_bars );
-  // implemantation of the clamping after a spike
   updateValue< double >( d, names::V_clamp, V_clamp_ );
   updateValue< double >( d, names::t_clamp, t_clamp_ );
 
@@ -313,26 +280,6 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
   {
     throw BadProperty( "Delta_T must be positive." );
   }
-  /*else if ( Delta_T > 0. )
-  {
-    // check for possible numerical overflow with the exponential divergence at
-    // spike time, keep a 1e20 margin for the subsequent calculations
-    const double max_exp_arg =
-      std::log( std::numeric_limits< double >::max() / 1e20 );
-    if ( ( V_peak_ - V_T ) / Delta_T >= max_exp_arg )
-    {
-      throw BadProperty(
-        "The current combination of V_peak, V_th and Delta_T"
-        "will lead to numerical overflow at spike time; try"
-        "for instance to increase Delta_T or to reduce V_peak"
-        "to avoid this problem." );
-    }
-  }*/
-
-  /*if ( V_peak_ < V_th )
-  {
-    throw BadProperty( "V_peak >= V_th required." );
-  }*/
 
   if ( C_m <= 0 )
   {
@@ -349,10 +296,7 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
     throw BadProperty( "Ensure that t_clamp >= 0" );
   }
 
-  if ( tau_syn_ex <= 0 or tau_syn_in <= 0 or tau_w <= 0 or tau_V_T <= 0
-    or tau_w <= 0
-    or tau_z <= 0
-    or tau_plus <= 0
+  if ( tau_w <= 0 or tau_V_T <= 0 or tau_w <= 0 or tau_z <= 0 or tau_plus <= 0
     or tau_minus <= 0 )
   {
     throw BadProperty( "All time constants must be strictly positive." );
@@ -368,9 +312,9 @@ void
 nest::aeif_cbvg_2010::State_::get( DictionaryDatum& d ) const
 {
   def< double >( d, names::V_m, y_[ V_M ] );
-  //def< double >( d, names::I_syn_ex, y_[ I_EXC ] );
-  //def< double >( d, names::I_syn_in, y_[ I_INH ] );
   def< double >( d, names::w, y_[ W ] );
+  def< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
+  def< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
 }
 
 void
@@ -378,18 +322,9 @@ nest::aeif_cbvg_2010::State_::set( const DictionaryDatum& d,
   const Parameters_& )
 {
   updateValue< double >( d, names::V_m, y_[ V_M ] );
-  updateValue< double >( d, names::V_m, y_[ U_BAR_PLUS ] );
-  updateValue< double >( d, names::V_m, y_[ U_BAR_MINUS ] );
-  // TO DO: initialization of u_bar_plus and u_bar_minus
-  //updateValue< double >( d, names::I_syn_ex, y_[ I_EXC ] );
-  //updateValue< double >( d, names::I_syn_in, y_[ I_INH ] );
   updateValue< double >( d, names::w, y_[ W ] );
-  /*
-  if ( y_[ I_EXC ] < 0 || y_[ I_INH ] < 0 )
-  {
-    throw BadProperty( "Conductances must not be negative." );
-  }
-  */
+  updateValue< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
+  updateValue< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
 }
 
 nest::aeif_cbvg_2010::Buffers_::Buffers_( aeif_cbvg_2010& n )
@@ -464,9 +399,8 @@ nest::aeif_cbvg_2010::init_state_( const Node& proto )
 void
 nest::aeif_cbvg_2010::init_buffers_()
 {
-  B_.spikes_.clear(); // includes resize
-  //B_.spike_inh_.clear(); // includes resize
-  B_.currents_.clear();  // includes resize
+  B_.spikes_.clear();   // includes resize
+  B_.currents_.clear(); // includes resize
   Extended_Archiving_Node::clear_history();
 
   B_.logger_.reset();
@@ -511,10 +445,9 @@ nest::aeif_cbvg_2010::init_buffers_()
   B_.sys_.function = aeif_cbvg_2010_dynamics;
 
   B_.I_stim_ = 0.0;
-  // implementation of the delay of the convolved membrane potentials. This
-  // delay is not described
-  // in the paper but is present in the code which was presumably used to create
-  // the figures in the paper.
+  // Implementation of the delay of the convolved membrane potentials.
+  // This delay is not described in Clopath et al. 2010 but is present in
+  // the code which was presumably used to create the figures in the paper.
   B_.delayed_u_bars_idx_ = 0;
   V_.delay_u_bars_steps_ = Time::delay_ms_to_steps( P_.delay_u_bars ) + 1;
   B_.delayed_u_bar_plus_.resize( V_.delay_u_bars_steps_ );
@@ -528,15 +461,7 @@ nest::aeif_cbvg_2010::calibrate()
   B_.logger_.init();
 
   // set the right threshold and GSL function depending on Delta_T
-  if ( P_.Delta_T > 0. )
-  {
-    V_.V_peak = P_.V_peak_;
-  }
-  else
-  {
-    std::cout << "Delta_T has to be greater than zero otherwise consider"
-              << " to use Nest's aeif_psc_exp." << std::endl;
-  }
+  V_.V_peak = P_.V_peak_;
 
   V_.refractory_counts_ = Time( Time::ms( P_.t_ref_ ) ).get_steps();
   // since t_ref_ >= 0, this can only fail in error
@@ -600,7 +525,9 @@ nest::aeif_cbvg_2010::update( const Time& origin,
         throw NumericalInstability( get_name() );
       }
 
-      if ( S_.r_ == 0 && S_.clamp_r_ == 0)
+      // spikes are handled inside the while-loop
+      // due to spike-driven adaptation
+      if ( S_.r_ == 0 && S_.clamp_r_ == 0 )
       {
         // neuron not refractory
         S_.y_[ State_::V_M ] =
@@ -608,11 +535,8 @@ nest::aeif_cbvg_2010::update( const Time& origin,
       }
       else // neuron is absolute refractory
       {
-        //S_.y_[ State_::V_M ] = P_.V_reset_; // clamp it to V_reset
         B_.spikes_.get_value( lag ); // clear buffer entry, ignore spike
       }
-      // spikes are handled inside the while-loop
-      // due to spike-driven adaptation
       if ( S_.y_[ State_::V_M ] >= V_.V_peak && S_.clamp_r_ == 0 )
       {
         S_.y_[ State_::V_M ] = P_.V_clamp_;
@@ -620,7 +544,7 @@ nest::aeif_cbvg_2010::update( const Time& origin,
         S_.y_[ State_::Z ] = P_.I_sp;
         S_.y_[ State_::V_T ] = P_.V_T_max;
 
-        S_.clamp_r_ = V_.clamp_counts_ > 0 ? V_.clamp_counts_ + 2 : 0;
+        S_.clamp_r_ = V_.clamp_counts_ > 0 ? V_.clamp_counts_ : 0;
 
         set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
         SpikeEvent se;
@@ -644,33 +568,6 @@ nest::aeif_cbvg_2010::update( const Time& origin,
       {
         S_.y_[ State_::V_M ] = P_.V_reset_;
       }
-      /*
-      else if ( S_.y_[ State_::V_M ] >= V_.V_peak )
-      {
-        //std::cout << "spike! " << S_.y_[State_::V_M] << ", " <<
-      S_.y_[State_::W] << ", ";
-        S_.y_[ State_::V_M ] = P_.V_reset_;
-        S_.y_[ State_::W ] += P_.b; // spike-driven adaptation
-        S_.y_[ State_::Z ] = P_.I_sp;
-        S_.y_[ State_::V_T] = P_.V_T_max;
-        //std::cout << P_.b << ", " << S_.y_[State_::W] << ", " << Time::step(
-      origin.get_steps() + lag ) << B_.IntegrationStep_ << std::endl;
-        */
-
-      /* Initialize refractory step counter.
-       * - We need to add 1 to compensate for count-down immediately after
-       *   while loop.
-       * - If neuron has no refractory time, set to 0 to avoid refractory
-       *   artifact inside while loop.
-       */
-      /*
-      S_.r_ = V_.refractory_counts_ > 0 ? V_.refractory_counts_ + 1 : 0;
-
-      set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
-      SpikeEvent se;
-      kernel().event_delivery_manager.send( *this, se, lag );
-    }
-    */
     }
 
     // save data for Clopath STDP
@@ -697,22 +594,7 @@ nest::aeif_cbvg_2010::update( const Time& origin,
       write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
         B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ] );
     }
-    // old version without the delay of the convolved membrane potentials
-    /*
-    if ( (S_.y_[ State_::V_M] > get_theta_plus() ) &&
-        ( S_.y_[ State_::U_BAR_PLUS ] > get_theta_minus()  ) )
-    {
-      write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
-          S_.y_[ State_::V_M ],
-          S_.y_[ State_::U_BAR_PLUS ]);
-    }
 
-    if ( S_.y_[ State_::U_BAR_MINUS ] > get_theta_minus() )
-    {
-      write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
-          S_.y_[ State_::U_BAR_MINUS ] );
-    }
-    */
     // decrement clamp count
     if ( S_.clamp_r_ > 0 )
     {
@@ -723,9 +605,6 @@ nest::aeif_cbvg_2010::update( const Time& origin,
     {
       --S_.r_;
     }
-
-    //S_.y_[ State_::I_EXC ] += B_.spike_exc_.get_value( lag );
-    //S_.y_[ State_::I_INH ] += B_.spike_inh_.get_value( lag );
 
     // set new input current
     B_.I_stim_ = B_.currents_.get_value( lag );
@@ -744,26 +623,6 @@ nest::aeif_cbvg_2010::handle( SpikeEvent& e )
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
     e.get_weight() * e.get_multiplicity() );
 }
-
-/*void
-nest::aeif_cbvg_2010::handle( SpikeEvent& e )
-{
-  assert( e.get_delay() > 0 );
-
-  if ( e.get_weight() > 0.0 )
-  {
-    B_.spike_exc_.add_value( e.get_rel_delivery_steps(
-                               kernel().simulation_manager.get_slice_origin() ),
-      e.get_weight() * e.get_multiplicity() );
-  }
-  else
-  {
-    B_.spike_inh_.add_value( e.get_rel_delivery_steps(
-                               kernel().simulation_manager.get_slice_origin() ),
-      -e.get_weight() * e.get_multiplicity() );
-  } // keep conductances positive
-}
-*/
 
 void
 nest::aeif_cbvg_2010::handle( CurrentEvent& e )
