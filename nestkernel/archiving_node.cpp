@@ -505,7 +505,7 @@ nest::Extended_Archiving_Node::set_status( const DictionaryDatum& d )
   updateValue< double >( d, names::A_LTP, new_A_LTP );
   updateValue< double >( d, names::theta_plus, new_theta_plus );
   updateValue< double >( d, names::theta_minus, new_theta_minus );
-  // TO DO: Check whether new values are allowed values
+  // TODO: Check whether new values are allowed values
   A_LTP_ = new_A_LTP;
   A_LTD_ = new_A_LTD;
   theta_plus_ = new_theta_plus;
@@ -518,17 +518,14 @@ nest::Extended_Archiving_Node::get_LTD_value( double t )
   std::deque< histentry_cl >::iterator runner;
   if ( ltd_history_.empty() || t < 0.0 )
   {
+    // TODO: find meaningful return value + condition whether history exists
     return 0.0;
-    // TO DO: find meaningful return value and condition whether
-    // history exists
   }
   else
   {
     runner = ltd_history_.begin();
     while ( runner != ltd_history_.end() )
     {
-      // std::cout << "t = " << runner->t_ << "  weight = " << runner->dw_ <<
-      // std::endl;
       if ( abs( t - runner->t_ ) < 1e-4 )
       {
         return runner->dw_;
@@ -537,8 +534,6 @@ nest::Extended_Archiving_Node::get_LTD_value( double t )
       ++runner;
     }
   }
-  // std::cout << "time LTD: " << runner->t_ << ", w LTD: " << runner->dw_
-  //  << " searched for time: " << t << std::endl;
   return 0.0;
 }
 
@@ -548,7 +543,6 @@ nest::Extended_Archiving_Node::get_LTP_history( double t1,
   std::deque< histentry_cl >::iterator* start,
   std::deque< histentry_cl >::iterator* finish )
 {
-  // std::cout << "get LTP history" << std::endl;
   *finish = ltp_history_.end();
   if ( ltp_history_.empty() )
   {
@@ -566,9 +560,6 @@ nest::Extended_Archiving_Node::get_LTP_history( double t1,
     while ( ( runner != ltp_history_.end() ) && ( runner->t_ <= t2 ) )
     {
       ( runner->access_counter_ )++;
-      // std::cout << "LTP hist: t = " << runner->t_ << "  weight = " <<
-      // runner->dw_
-      //<< "  counter = " << runner->access_counter_ << std::endl;
       ++runner;
     }
     *finish = runner;
@@ -581,7 +572,7 @@ nest::Extended_Archiving_Node::write_LTD_history( Time const& t_ltd,
   double offset )
 {
   const double t_ltd_ms = t_ltd.get_ms() - offset;
-  update_synaptic_elements( t_ltd_ms ); // TO DO: do we need this?
+  update_synaptic_elements( t_ltd_ms ); // TODO: do we need this?
 
   if ( n_incoming_ )
   {
@@ -598,7 +589,6 @@ nest::Extended_Archiving_Node::write_LTD_history( Time const& t_ltd,
         break;
       }
     }
-    // TO DO: appropriate implementation of histentry (Done)
     const double dw = A_LTD_ * ( u_bar_minus - theta_minus_ );
     ltd_history_.push_back( histentry_cl( t_ltd_ms, dw, 0 ) );
   }
@@ -611,7 +601,7 @@ nest::Extended_Archiving_Node::write_LTP_history( Time const& t_ltp,
   double offset )
 {
   const double t_ltp_ms = t_ltp.get_ms() - offset;
-  update_synaptic_elements( t_ltp_ms ); // TO DO: do we need this?
+  update_synaptic_elements( t_ltp_ms ); // TODO: do we need this?
 
   if ( n_incoming_ )
   {
@@ -628,17 +618,13 @@ nest::Extended_Archiving_Node::write_LTP_history( Time const& t_ltp,
         break;
       }
     }
-    // TO DO: appropriate implementation of histentry
+    // TODO: appropriate implementation of histentry
     // dw is not the change of the synaptic weight since the factors
-    // x_bar and dt are not includet (but later in the synapse)
-    // TO DO: get dt.
+    // x_bar and dt are not included (but later in the synapse)
+    // TODO: get dt.
     const double dw = A_LTP_ * ( u - theta_plus_ )
       * ( u_bar_plus - theta_minus_ ) * t_ltp.get_resolution().get_ms();
     ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
-    // std::cout << "wrote into LTP history: time = " << t_ltp_ms << "  weight =
-    // "
-    //  << dw <<  "  V_m = " << u << "  u_bar_plus = " << u_bar_plus <<
-    //  std::endl;
   }
 }
 
@@ -665,10 +651,10 @@ nest::Extended_Archiving_Node::write_LTP_history_exp_int( Time const& t_ltp,
         break;
       }
     }
-    // TO DO: appropriate implementation of histentry
+    // TODO: appropriate implementation of histentry
     // dw is not the change of the synaptic weight since the factors
     // x_bar and dt are not includet (but later in the synapse)
-    // TO DO: get dt.
+    // TODO: get dt.
     const double dw = A_LTP_ * ltp_factor;
     ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
   }

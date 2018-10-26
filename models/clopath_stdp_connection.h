@@ -24,18 +24,10 @@
 #define CLOPATH_STDP_CONNECTION_H
 
 /* BeginDocumentation
-  Name: clopath_stdp_connection - TODO
+  Name: clopath_stdp_connection - TODO add documentation
 
   Description:
-   stdp_synapse is a connector to create synapses with spike time
-   dependent plasticity (as defined in [1]). Here the weight dependence
-   exponent can be set separately for potentiation and depression.
 
-  Examples:
-   multiplicative STDP [2]  mu_plus = mu_minus = 1.0
-   additive STDP       [3]  mu_plus = mu_minus = 0.0
-   Guetig STDP         [1]  mu_plus = mu_minus = [0.0,1.0]
-   van Rossum STDP     [4]  mu_plus = 0.0 mu_minus = 1.0
 
   Parameters:
    tau_plus   double - Time constant of STDP window, potentiation in ms
@@ -50,25 +42,13 @@
   Transmits: SpikeEvent
 
   References:
-   [1] Guetig et al. (2003) Learning Input Correlations through Nonlinear
-       Temporally Asymmetric Hebbian Plasticity. Journal of Neuroscience
+   [1] Clopath et al. (2010) Connectivity reflects coding:
+       a model of voltage-based STDP with homeostasis.
+       Nature Neuroscience 13:3,344--352
 
-   [2] Rubin, J., Lee, D. and Sompolinsky, H. (2001). Equilibrium
-       properties of temporally asymmetric Hebbian plasticity, PRL
-       86,364-367
+  Author: Jonas Stapmanns, David Dahmen, Jan Hahne
 
-   [3] Song, S., Miller, K. D. and Abbott, L. F. (2000). Competitive
-       Hebbian learning through spike-timing-dependent synaptic
-       plasticity,Nature Neuroscience 3:9,919--926
-
-   [4] van Rossum, M. C. W., Bi, G-Q and Turrigiano, G. G. (2000).
-       Stable Hebbian learning from spike timing-dependent
-       plasticity, Journal of Neuroscience, 20:23,8812--8821
-
-  FirstVersion: March 2006
-  Author: Moritz Helias, Abigail Morrison
-  Adapted by: Philipp Weidel
-  SeeAlso: synapsedict, tsodyks_synapse, static_synapse
+  SeeAlso: synapsedict, tsodyks_synapse, stdp_synapse
 */
 
 // C++ includes:
@@ -175,7 +155,6 @@ private:
   double
   facilitate_( double w, double dw, double x_bar )
   {
-    // std::cout << "facilitate!" << std::endl;
     w += dw * x_bar;
     return w < Wmax_ ? w : Wmax_;
   }
@@ -190,7 +169,7 @@ private:
   // data members of each connection
   double weight_;
   double x_bar_;
-  double tau_x_; // TO DO: save tau_x in synapse?
+  double tau_x_; // TODO: save tau_x in synapse?
   double Wmax_;
   std::vector< double > delayed_u_bar_plus_;
   std::vector< double > delayed_u_bar_minus_;
@@ -233,8 +212,6 @@ Clopath_STDPConnection< targetidentifierT >::send( Event& e,
   // history[0, ..., t_last_spike - dendritic_delay] have been
   // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
   // details.
-  // std::cout << "t_lastspike_ = " << t_lastspike_ << "  t_spike = " << t_spike
-  // << std::endl;
   target->get_LTP_history( t_lastspike_ - dendritic_delay,
     t_spike - dendritic_delay,
     &start,
@@ -253,16 +230,11 @@ Clopath_STDPConnection< targetidentifierT >::send( Event& e,
     ++start;
   }
 
-  // const double fa_weight = weight_;
   // depression due to new pre-synaptic spike
   weight_ =
     depress_( weight_, target->get_LTD_value( t_spike - dendritic_delay ) );
 
   e.set_receiver( *target );
-  // std::cout << "facilitation:  " << fa_weight - old_w << "   depression:  "
-  // << weight_ - fa_weight
-  //  << "   delta:  " << weight_ - old_w << "   synapse weight:  " << weight_
-  //  << std::endl;
   e.set_weight( weight_ );
   // use accessor functions (inherited from Connection< >) to obtain delay in
   // steps and rport

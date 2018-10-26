@@ -132,7 +132,6 @@ hh_psc_alpha_dynamics( double, const double y[], double f[], void* pnode )
 
   // convolved membrane potentials
   f[ S::U_BAR_PLUS ] = ( -u_bar_plus + V ) / node.P_.tau_plus;
-
   f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V ) / node.P_.tau_minus;
 
   // synapses: alpha functions
@@ -150,20 +149,19 @@ hh_psc_alpha_dynamics( double, const double y[], double f[], void* pnode )
  * ---------------------------------------------------------------- */
 
 nest::hh_psc_alpha::Parameters_::Parameters_()
-  : t_ref_( 2.0 )     // ms
-  , g_Na( 12000.0 )   // nS
-  , g_K( 3600.0 )     // nS
-  , g_L( 30.0 )       // nS
-  , C_m( 100.0 )      // pF
-  , E_Na( 50.0 )      // mV
-  , E_K( -77.0 )      // mV
-  , E_L( -54.402 )    // mV
-  , tau_synE( 0.2 )   // ms
-  , tau_synI( 2.0 )   // ms
-  , I_e( 0.0 )        // pA
-  , tau_plus( 114.0 ) // ms
-  , tau_minus( 10.0 ) // ms
-  // implementation of the delay of the convolved membrane potentials
+  : t_ref_( 2.0 )       // ms
+  , g_Na( 12000.0 )     // nS
+  , g_K( 3600.0 )       // nS
+  , g_L( 30.0 )         // nS
+  , C_m( 100.0 )        // pF
+  , E_Na( 50.0 )        // mV
+  , E_K( -77.0 )        // mV
+  , E_L( -54.402 )      // mV
+  , tau_synE( 0.2 )     // ms
+  , tau_synI( 2.0 )     // ms
+  , I_e( 0.0 )          // pA
+  , tau_plus( 114.0 )   // ms
+  , tau_minus( 10.0 )   // ms
   , delay_u_bars( 5.0 ) // ms
 {
 }
@@ -233,7 +231,6 @@ nest::hh_psc_alpha::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::I_e, I_e );
   def< double >( d, names::tau_plus, tau_plus );
   def< double >( d, names::tau_minus, tau_minus );
-  // implementation of the delay of the convolved membrane potentials
   def< double >( d, names::delay_u_bars, delay_u_bars );
 }
 
@@ -255,7 +252,6 @@ nest::hh_psc_alpha::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::I_e, I_e );
   updateValue< double >( d, names::tau_plus, tau_plus );
   updateValue< double >( d, names::tau_minus, tau_minus );
-  // implementation of the delay of the convolved membrane potentials
   updateValue< double >( d, names::delay_u_bars, delay_u_bars );
   if ( C_m <= 0 )
   {
@@ -282,6 +278,8 @@ nest::hh_psc_alpha::State_::get( DictionaryDatum& d ) const
   def< double >( d, names::Act_m, y_[ HH_M ] );
   def< double >( d, names::Act_h, y_[ HH_H ] );
   def< double >( d, names::Inact_n, y_[ HH_N ] );
+  def< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
+  def< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
 }
 
 void
@@ -291,8 +289,8 @@ nest::hh_psc_alpha::State_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::Act_m, y_[ HH_M ] );
   updateValue< double >( d, names::Act_h, y_[ HH_H ] );
   updateValue< double >( d, names::Inact_n, y_[ HH_N ] );
-  updateValue< double >( d, names::V_m, y_[ U_BAR_PLUS ] );
-  updateValue< double >( d, names::V_m, y_[ U_BAR_MINUS ] );
+  updateValue< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
+  updateValue< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
   if ( y_[ HH_M ] < 0 || y_[ HH_H ] < 0 || y_[ HH_N ] < 0 )
   {
     throw BadProperty( "All (in)activation variables must be non-negative." );
@@ -416,10 +414,9 @@ nest::hh_psc_alpha::init_buffers_()
 
   B_.I_stim_ = 0.0;
 
-  // implementation of the delay of the convolved membrane potentials. This
-  // delay is not described
-  // in the paper but is present in the code which was presumably used to create
-  // the figures in the paper.
+  // Implementation of the delay of the convolved membrane potentials.
+  // This delay is not described in Clopath et al. 2010 but is present in
+  // the code which was presumably used to create the figures in the paper.
   B_.read_idx_ = 0;
   B_.delay_length_ = Time::delay_ms_to_steps( P_.delay_u_bars ) + 1;
   // std::cout << B_.read_idx_ << "  " << B_.delay_length_ << std::endl;
@@ -503,40 +500,13 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
       write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
         S_.y_[ State_::V_M ],
         B_.delayed_u_bar_plus_[ B_.read_idx_ ] );
-      // std::cout << "wrote in neuron: V_M = " << S_.y_[ State_::V_M]  -
-      // get_theta_plus()<< "  del_u_bar_plus = " <<
-      //  B_.delayed_u_bar_plus_[ B_.read_idx_ ]  - get_theta_minus() <<
-      //    "  theta_plus = " << get_theta_plus() << "  theta_minus = " <<
-      //    get_theta_minus() << std::endl;
-      // std::cout << "V_m = " << S_.y_[ State_::V_M ] << "  u_bar_plus = "
-      //  << B_.delayed_u_bar_plus_[ B_.read_idx_ ] << "  idx = " <<
-      //  B_.read_idx_
-      //  << "  theta_plus = " << get_theta_plus() << "  theta_minus = " <<
-      //  get_theta_minus() << std::endl;
     }
 
     if ( B_.delayed_u_bar_minus_[ B_.read_idx_ ] > get_theta_minus() )
     {
       write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
         B_.delayed_u_bar_minus_[ B_.read_idx_ ] );
-      // std::cout << "u_bar_minus = " << B_.delayed_u_bar_minus_[ B_.read_idx_
-      // ] << "  idx = " << B_.read_idx_ << std::endl;
     }
-
-    // save data for Clopath STDP
-    /*if ( (S_.y_[ State_::V_M] > get_theta_plus() ) &&
-        ( S_.y_[ State_::U_BAR_PLUS ] > get_theta_minus()  ) )
-    {
-      write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
-          S_.y_[ State_::V_M ],
-          S_.y_[ State_::U_BAR_PLUS ]);
-    }
-
-    if ( S_.y_[ State_::U_BAR_MINUS ] > get_theta_minus() )
-    {
-      write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
-          S_.y_[ State_::U_BAR_MINUS ] );
-    }*/
 
     // sending spikes: crossing 0 mV, pseudo-refractoriness and local maximum...
     // refractory?

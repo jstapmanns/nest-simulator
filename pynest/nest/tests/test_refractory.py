@@ -66,6 +66,7 @@ neurons_interspike = [
 ]
 
 neurons_interspike_ps = [
+    "aeif_cbvg_2010",
     "iaf_psc_alpha_canon",
     "iaf_psc_alpha_presc",
     "iaf_psc_delta_canon",
@@ -210,6 +211,11 @@ class TestRefractoryCase(unittest.TestCase):
 
             # Get and compare t_ref
             t_ref_sim = self.compute_reftime(model, sd, vm, neuron)
+
+            # For models that first clamp the membrane potential
+            # at a higher value (see e.g. aeif_cbvg_2010)
+            if "t_clamp" in nest.GetDefaults(model):
+                t_ref_sim = t_ref_sim - nest.GetStatus(neuron, "t_clamp")[0]
 
             # Approximate result for precise spikes (interpolation error)
             if model in neurons_interspike_ps:

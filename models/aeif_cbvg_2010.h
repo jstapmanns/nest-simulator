@@ -43,28 +43,9 @@
 #include "universal_data_logger.h"
 
 /* BeginDocumentation
-Name: aeif_cbvg_2010 - TODO
+Name: aeif_cbvg_2010 - TODO add documentation
 
 Description:
-
-aeif_cbvg_2010 is the adaptive exponential integrate and fire neuron
-according to Brette and Gerstner (2005), with post-synaptic currents
-in the form of truncated exponentials.
-
-This implementation uses the embedded 4th order Runge-Kutta-Fehlberg
-solver with adaptive stepsize to integrate the differential equation.
-
-The membrane potential is given by the following differential equation:
-C dV/dt= -g_L(V-E_L)+g_L*Delta_T*exp((V-V_T)/Delta_T)+I_ex(t)+I_in(t)+I_e
-
-and
-
-tau_w * dw/dt= a(V-E_L) -W
-
-
-Note that the spike detection threshold V_peak is automatically set to
-V_th+10 mV to avoid numerical instabilites that may result from
-setting V_peak too high.
 
 Parameters:
 The following parameters can be set in the status dictionary.
@@ -91,28 +72,20 @@ Spike adaptation parameters:
   V_t        double - Spike initiation threshold in mV
   V_peak     double - Spike detection threshold in mV.
 
-Synaptic parameters
-  tau_syn_ex double - Rise time of excitatory synaptic conductance in ms (exp
-                      function).
-  tau_syn_in double - Rise time of the inhibitory synaptic conductance in ms
-                      (exp function).
-
 Integration parameters
   gsl_error_tol  double - This parameter controls the admissible error of the
                           GSL integrator. Reduce it if NEST complains about
                           numerical instabilities.
 
-Author: Tanguy Fardet
+Author: Jonas Stapmanns, David Dahmen, Jan Hahne
 
 Sends: SpikeEvent
 
 Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
 
-References: Brette R and Gerstner W (2005) Adaptive Exponential
-            Integrate-and-Fire Model as an Effective Description of
-            Neuronal Activity. J Neurophysiol 94:3637-3642
+References:
 
-SeeAlso: iaf_psc_exp, aeif_cond_exp
+SeeAlso: aeif_cond_exp
 */
 
 namespace nest
@@ -199,10 +172,8 @@ private:
     double a; //!< Subthreshold adaptation in nS.
     double b; //!< Spike-triggered adaptation in pA
     double I_sp;
-    double t_ref;      //!< Refractory period in ms.
-    double tau_syn_ex; //!< Excitatory synaptic rise time.
-    double tau_syn_in; //!< Excitatory synaptic rise time.
-    double I_e;        //!< Intrinsic current in pA.
+    double t_ref; //!< Refractory period in ms.
+    double I_e;   //!< Intrinsic current in pA.
 
     double gsl_error_tol; //!< error bound for GSL integrator
 
@@ -236,13 +207,11 @@ public:
     enum StateVecElems
     {
       V_M = 0,
-//      I_EXC,       // 1
-//      I_INH,       // 2
-      W,           // 3
-      Z,           // 4
-      V_T,         // 5
-      U_BAR_PLUS,  // 6
-      U_BAR_MINUS, // 7
+      W,           // 1
+      Z,           // 2
+      V_T,         // 3
+      U_BAR_PLUS,  // 4
+      U_BAR_MINUS, // 5
       STATE_VEC_SIZE
     };
 
@@ -274,7 +243,6 @@ public:
 
     /** buffers and sums up incoming spikes/currents */
     RingBuffer spikes_;
-    //RingBuffer spike_inh_;
     RingBuffer currents_;
 
     /** GSL ODE stuff */
