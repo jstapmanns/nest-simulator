@@ -278,6 +278,8 @@ nest::hh_psc_alpha::State_::get( DictionaryDatum& d ) const
   def< double >( d, names::Act_m, y_[ HH_M ] );
   def< double >( d, names::Act_h, y_[ HH_H ] );
   def< double >( d, names::Inact_n, y_[ HH_N ] );
+  def< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
+  def< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
 }
 
 void
@@ -287,8 +289,8 @@ nest::hh_psc_alpha::State_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::Act_m, y_[ HH_M ] );
   updateValue< double >( d, names::Act_h, y_[ HH_H ] );
   updateValue< double >( d, names::Inact_n, y_[ HH_N ] );
-  updateValue< double >( d, names::V_m, y_[ U_BAR_PLUS ] );
-  updateValue< double >( d, names::V_m, y_[ U_BAR_MINUS ] );
+  updateValue< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
+  updateValue< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
   if ( y_[ HH_M ] < 0 || y_[ HH_H ] < 0 || y_[ HH_N ] < 0 )
   {
     throw BadProperty( "All (in)activation variables must be non-negative." );

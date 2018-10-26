@@ -243,7 +243,6 @@ public:
 
     /** buffers and sums up incoming spikes/currents */
     RingBuffer spikes_;
-    // RingBuffer spike_inh_;
     RingBuffer currents_;
 
     /** GSL ODE stuff */
