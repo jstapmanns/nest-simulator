@@ -244,25 +244,31 @@ private:
 };
 
 /**
- * \class Extended_Archiving_Node
- * a archiving node which additionally archives the history of third factors
- * for the purposes of third-factor plasticity
+ * \class Clopath_Archiving_Node
+ * a archiving node which additionally archives parameters
+ * needed for the Clopath plasticity rule
  */
-class Extended_Archiving_Node : public Archiving_Node
+class Clopath_Archiving_Node : public Archiving_Node
 {
 
 public:
   /**
-   * \fn Extended_Archiving_Node()
+   * \fn Clopath_Archiving_Node()
    * Constructor.
    */
-  Extended_Archiving_Node();
+  Clopath_Archiving_Node();
 
   /**
-   * \fn Extended_Archiving_Node()
+   * \fn Clopath_Archiving_Node()
    * Copy Constructor.
    */
-  Extended_Archiving_Node( const Extended_Archiving_Node& );
+  Clopath_Archiving_Node( const Clopath_Archiving_Node& );
+
+  bool
+  supports_clopath_archiving() const
+  {
+    return true;
+  }
 
   /**
    * \fn double get_LTD_value(long t)
@@ -355,13 +361,13 @@ Archiving_Node::get_Ca_minus() const
 }
 
 inline double
-Extended_Archiving_Node::get_theta_plus() const
+Clopath_Archiving_Node::get_theta_plus() const
 {
   return theta_plus_;
 }
 
 inline double
-Extended_Archiving_Node::get_theta_minus() const
+Clopath_Archiving_Node::get_theta_minus() const
 {
   return theta_minus_;
 }
