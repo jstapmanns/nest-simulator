@@ -525,7 +525,9 @@ ModelsModule::init( SLIInterpreter* )
   kernel()
     .model_manager
     .register_connection_model< Clopath_STDPConnection< TargetIdentifierPtrRport > >(
-      "clopath_stdp_synapse" );
+      "clopath_stdp_synapse",
+      /*requires_symmetric=*/false,
+      /*requires_clopath_archiving=*/true );
 
   /* BeginDocumentation
      Name: stdp_pl_synapse_hom_hpc - Variant of stdp_pl_synapse_hom with low

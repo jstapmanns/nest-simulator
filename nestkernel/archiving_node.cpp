@@ -459,9 +459,9 @@ nest::Archiving_Node::connect_synaptic_element( Name name, int n )
   }
 }
 
-// member functions for Extended_Archiving_Node
+// member functions for Clopath_Archiving_Node
 
-nest::Extended_Archiving_Node::Extended_Archiving_Node()
+nest::Clopath_Archiving_Node::Clopath_Archiving_Node()
   : Archiving_Node()
   , A_LTD_( 14.0e-5 )
   , A_LTP_( 8.0e-5 )
@@ -470,8 +470,8 @@ nest::Extended_Archiving_Node::Extended_Archiving_Node()
 {
 }
 
-nest::Extended_Archiving_Node::Extended_Archiving_Node(
-  const Extended_Archiving_Node& n )
+nest::Clopath_Archiving_Node::Clopath_Archiving_Node(
+  const Clopath_Archiving_Node& n )
   : Archiving_Node( n )
   , A_LTD_( n.A_LTD_ )
   , A_LTP_( n.A_LTP_ )
@@ -481,7 +481,7 @@ nest::Extended_Archiving_Node::Extended_Archiving_Node(
 }
 
 void
-nest::Extended_Archiving_Node::get_status( DictionaryDatum& d ) const
+nest::Clopath_Archiving_Node::get_status( DictionaryDatum& d ) const
 {
   Archiving_Node::get_status( d );
 
@@ -492,7 +492,7 @@ nest::Extended_Archiving_Node::get_status( DictionaryDatum& d ) const
 }
 
 void
-nest::Extended_Archiving_Node::set_status( const DictionaryDatum& d )
+nest::Clopath_Archiving_Node::set_status( const DictionaryDatum& d )
 {
   Archiving_Node::set_status( d );
 
@@ -513,7 +513,7 @@ nest::Extended_Archiving_Node::set_status( const DictionaryDatum& d )
 }
 
 double
-nest::Extended_Archiving_Node::get_LTD_value( double t )
+nest::Clopath_Archiving_Node::get_LTD_value( double t )
 {
   std::deque< histentry_cl >::iterator runner;
   if ( ltd_history_.empty() || t < 0.0 )
@@ -538,7 +538,7 @@ nest::Extended_Archiving_Node::get_LTD_value( double t )
 }
 
 void
-nest::Extended_Archiving_Node::get_LTP_history( double t1,
+nest::Clopath_Archiving_Node::get_LTP_history( double t1,
   double t2,
   std::deque< histentry_cl >::iterator* start,
   std::deque< histentry_cl >::iterator* finish )
@@ -567,7 +567,7 @@ nest::Extended_Archiving_Node::get_LTP_history( double t1,
 }
 
 void
-nest::Extended_Archiving_Node::write_LTD_history( Time const& t_ltd,
+nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
   double u_bar_minus,
   double offset )
 {
@@ -595,7 +595,7 @@ nest::Extended_Archiving_Node::write_LTD_history( Time const& t_ltd,
 }
 
 void
-nest::Extended_Archiving_Node::write_LTP_history( Time const& t_ltp,
+nest::Clopath_Archiving_Node::write_LTP_history( Time const& t_ltp,
   double u,
   double u_bar_plus,
   double offset )
@@ -629,7 +629,7 @@ nest::Extended_Archiving_Node::write_LTP_history( Time const& t_ltp,
 }
 
 void
-nest::Extended_Archiving_Node::write_LTP_history_exp_int( Time const& t_ltp,
+nest::Clopath_Archiving_Node::write_LTP_history_exp_int( Time const& t_ltp,
   double ltp_factor,
   double offset )
 {

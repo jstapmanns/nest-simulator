@@ -352,7 +352,7 @@ nest::aeif_cbvg_2010::Buffers_::Buffers_( const Buffers_&, aeif_cbvg_2010& n )
  * ---------------------------------------------------------------- */
 
 nest::aeif_cbvg_2010::aeif_cbvg_2010()
-  : Extended_Archiving_Node()
+  : Clopath_Archiving_Node()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -361,7 +361,7 @@ nest::aeif_cbvg_2010::aeif_cbvg_2010()
 }
 
 nest::aeif_cbvg_2010::aeif_cbvg_2010( const aeif_cbvg_2010& n )
-  : Extended_Archiving_Node( n )
+  : Clopath_Archiving_Node( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -401,7 +401,7 @@ nest::aeif_cbvg_2010::init_buffers_()
 {
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
-  Extended_Archiving_Node::clear_history();
+  Clopath_Archiving_Node::clear_history();
 
   B_.logger_.reset();
 
