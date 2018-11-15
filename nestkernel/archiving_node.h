@@ -319,10 +319,6 @@ protected:
     double u_bar_plus,
     double offset = 0.0 );
 
-  void write_LTP_history_exp_int( Time const& t_sp,
-    double ltp_factor,
-    double offset = 0.0 );
-
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
 

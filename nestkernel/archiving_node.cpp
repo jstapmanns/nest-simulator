@@ -518,7 +518,6 @@ nest::Clopath_Archiving_Node::get_LTD_value( double t )
   std::deque< histentry_cl >::iterator runner;
   if ( ltd_history_.empty() || t < 0.0 )
   {
-    // TODO: find meaningful return value + condition whether history exists
     return 0.0;
   }
   else
@@ -618,44 +617,10 @@ nest::Clopath_Archiving_Node::write_LTP_history( Time const& t_ltp,
         break;
       }
     }
-    // TODO: appropriate implementation of histentry
     // dw is not the change of the synaptic weight since the factors
     // x_bar and dt are not included (but later in the synapse)
-    // TODO: get dt.
     const double dw = A_LTP_ * ( u - theta_plus_ )
       * ( u_bar_plus - theta_minus_ ) * t_ltp.get_resolution().get_ms();
-    ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
-  }
-}
-
-void
-nest::Clopath_Archiving_Node::write_LTP_history_exp_int( Time const& t_ltp,
-  double ltp_factor,
-  double offset )
-{
-  const double t_ltp_ms = t_ltp.get_ms() - offset;
-  update_synaptic_elements( t_ltp_ms ); // TO DO: do we need this?
-
-  if ( n_incoming_ )
-  {
-    // prune all spikes from history which are no longer needed
-    // except the penultimate one. we might still need it.
-    while ( ltp_history_.size() > 1 )
-    {
-      if ( ltp_history_.front().access_counter_ >= n_incoming_ )
-      {
-        ltp_history_.pop_front();
-      }
-      else
-      {
-        break;
-      }
-    }
-    // TODO: appropriate implementation of histentry
-    // dw is not the change of the synaptic weight since the factors
-    // x_bar and dt are not includet (but later in the synapse)
-    // TODO: get dt.
-    const double dw = A_LTP_ * ltp_factor;
     ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
   }
 }
