@@ -571,7 +571,6 @@ nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
   double offset )
 {
   const double t_ltd_ms = t_ltd.get_ms() - offset;
-  update_synaptic_elements( t_ltd_ms ); // TODO: do we need this?
 
   if ( n_incoming_ )
   {
@@ -600,7 +599,6 @@ nest::Clopath_Archiving_Node::write_LTP_history( Time const& t_ltp,
   double offset )
 {
   const double t_ltp_ms = t_ltp.get_ms() - offset;
-  update_synaptic_elements( t_ltp_ms ); // TODO: do we need this?
 
   if ( n_incoming_ )
   {
