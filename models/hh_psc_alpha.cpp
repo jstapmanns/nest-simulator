@@ -505,7 +505,8 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
     if ( B_.delayed_u_bar_minus_[ B_.read_idx_ ] > get_theta_minus() )
     {
       write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
-        B_.delayed_u_bar_minus_[ B_.read_idx_ ] );
+        B_.delayed_u_bar_minus_[ B_.read_idx_ ],
+        0.0 );
     }
 
     // sending spikes: crossing 0 mV, pseudo-refractoriness and local maximum...

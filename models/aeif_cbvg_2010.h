@@ -169,6 +169,7 @@ private:
     double V_T_rest;
     double tau_plus;
     double tau_minus;
+    double tau_bar_bar;
     double a; //!< Subthreshold adaptation in nS.
     double b; //!< Spike-triggered adaptation in pA
     double I_sp;
@@ -212,6 +213,7 @@ public:
       V_T,         // 3
       U_BAR_PLUS,  // 4
       U_BAR_MINUS, // 5
+      U_BAR_BAR,   // 6
       STATE_VEC_SIZE
     };
 

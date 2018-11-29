@@ -309,6 +309,7 @@ protected:
    */
   void write_LTD_history( Time const& t_sp,
     double u_bar_minus,
+    double u_bar_bar,
     double offset = 0.0 );
 
   /**
@@ -335,9 +336,13 @@ private:
 
   double A_LTP_;
 
+  double u_ref_squared_;
+
   double theta_plus_;
 
   double theta_minus_;
+
+  bool A_LTD_const_;
 };
 
 inline double

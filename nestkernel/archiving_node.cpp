@@ -465,8 +465,10 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node()
   : Archiving_Node()
   , A_LTD_( 14.0e-5 )
   , A_LTP_( 8.0e-5 )
+  , u_ref_squared_ (60.0 )
   , theta_plus_( -45.3 )
   , theta_minus_( -70.6 )
+  , A_LTD_const_ ( true )
 {
 }
 
@@ -475,8 +477,10 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node(
   : Archiving_Node( n )
   , A_LTD_( n.A_LTD_ )
   , A_LTP_( n.A_LTP_ )
+  , u_ref_squared_( n.u_ref_squared_ )
   , theta_plus_( n.theta_plus_ )
   , theta_minus_( n.theta_minus_ )
+  , A_LTD_const_( n.A_LTD_const_ )
 {
 }
 
@@ -487,8 +491,10 @@ nest::Clopath_Archiving_Node::get_status( DictionaryDatum& d ) const
 
   def< double >( d, names::A_LTD, A_LTD_ );
   def< double >( d, names::A_LTP, A_LTP_ );
+  def< double >( d, names::u_ref_squared, u_ref_squared_ );
   def< double >( d, names::theta_plus, theta_plus_ );
   def< double >( d, names::theta_minus, theta_minus_ );
+  def< bool >( d, names::A_LTD_const, A_LTD_const_ );
 }
 
 void
@@ -501,15 +507,27 @@ nest::Clopath_Archiving_Node::set_status( const DictionaryDatum& d )
   double new_A_LTP = A_LTP_;
   double new_theta_plus = theta_plus_;
   double new_theta_minus = theta_minus_;
+  double new_u_ref_squared = u_ref_squared_;
+  double new_A_LTD_const = A_LTD_const_;
   updateValue< double >( d, names::A_LTD, new_A_LTD );
   updateValue< double >( d, names::A_LTP, new_A_LTP );
+  updateValue< double >( d, names::u_ref_squared, new_u_ref_squared );
   updateValue< double >( d, names::theta_plus, new_theta_plus );
   updateValue< double >( d, names::theta_minus, new_theta_minus );
+  updateValue< bool >( d, names::A_LTD_const, new_A_LTD_const);
   // TODO: Check whether new values are allowed values
-  A_LTP_ = new_A_LTP;
   A_LTD_ = new_A_LTD;
+  A_LTP_ = new_A_LTP;
+  u_ref_squared_ = new_u_ref_squared;
+
+  if ( u_ref_squared_ <= 0 )
+  {
+    throw BadProperty( "Ensure that u_ref_squared > 0" );
+  }
+
   theta_plus_ = new_theta_plus;
   theta_minus_ = new_theta_minus;
+  A_LTD_const_ = new_A_LTD_const;
 }
 
 double
@@ -568,6 +586,7 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
 void
 nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
   double u_bar_minus,
+  double u_bar_bar,
   double offset )
 {
   const double t_ltd_ms = t_ltd.get_ms() - offset;
@@ -587,7 +606,9 @@ nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
         break;
       }
     }
-    const double dw = A_LTD_ * ( u_bar_minus - theta_minus_ );
+    const double dw = A_LTD_const_
+      ? A_LTD_ * ( u_bar_minus - theta_minus_ )
+      : A_LTD_ * u_bar_bar * u_bar_bar * ( u_bar_minus - theta_minus_ ) / u_ref_squared_;
     ltd_history_.push_back( histentry_cl( t_ltd_ms, dw, 0 ) );
   }
 }

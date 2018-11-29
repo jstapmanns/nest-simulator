@@ -163,7 +163,7 @@ private:
   depress_( double w, double dw )
   {
     w -= dw;
-    return w > 0.0 ? w : 0.0;
+    return w > Wmin_ ? w : Wmin_;
   }
 
   // data members of each connection
@@ -171,6 +171,7 @@ private:
   double x_bar_;
   double tau_x_; // TODO: save tau_x in synapse?
   double Wmax_;
+  double Wmin_;
   std::vector< double > delayed_u_bar_plus_;
   std::vector< double > delayed_u_bar_minus_;
   size_t read_idx_;
@@ -255,6 +256,7 @@ Clopath_STDPConnection< targetidentifierT >::Clopath_STDPConnection()
   , weight_( 1.0 )
   , x_bar_( 0.0 )
   , tau_x_( 15.0 )
+  , Wmin_( 0.0 )
   , Wmax_( 100.0 )
   , read_idx_( 0 )
   , delay_length_( 100 )
@@ -271,6 +273,7 @@ Clopath_STDPConnection< targetidentifierT >::Clopath_STDPConnection(
   , weight_( rhs.weight_ )
   , x_bar_( rhs.x_bar_ )
   , tau_x_( rhs.tau_x_ )
+  , Wmin_( rhs.Wmin_ )
   , Wmax_( rhs.Wmax_ )
   , t_lastspike_( rhs.t_lastspike_ )
 {
@@ -285,6 +288,7 @@ Clopath_STDPConnection< targetidentifierT >::get_status(
   def< double >( d, names::weight, weight_ );
   def< double >( d, names::x_bar, x_bar_ );
   def< double >( d, names::tau_x, tau_x_ );
+  def< double >( d, names::Wmin, Wmin_ );
   def< double >( d, names::Wmax, Wmax_ );
   def< long >( d, names::size_of, sizeof( *this ) );
 }
@@ -299,6 +303,7 @@ Clopath_STDPConnection< targetidentifierT >::set_status(
   updateValue< double >( d, names::weight, weight_ );
   updateValue< double >( d, names::x_bar, x_bar_ );
   updateValue< double >( d, names::tau_x, tau_x_ );
+  updateValue< double >( d, names::Wmin, Wmin_ );
   updateValue< double >( d, names::Wmax, Wmax_ );
 
   // check if weight_ and Wmax_ has the same sign
@@ -306,6 +311,13 @@ Clopath_STDPConnection< targetidentifierT >::set_status(
          == ( ( Wmax_ >= 0 ) - ( Wmax_ < 0 ) ) ) )
   {
     throw BadProperty( "Weight and Wmax must have same sign." );
+  }
+
+  // check if weight_ and Wmin_ has the same sign
+  if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
+         == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
+  {
+    throw BadProperty( "Weight and Wmin must have same sign." );
   }
 }
 

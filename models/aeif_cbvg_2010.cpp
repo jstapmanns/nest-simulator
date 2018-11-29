@@ -80,6 +80,8 @@ RecordablesMap< aeif_cbvg_2010 >::create()
     &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::U_BAR_PLUS > );
   insert_( names::u_bar_minus,
     &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::U_BAR_MINUS > );
+  insert_( names::u_bar_bar,
+    &aeif_cbvg_2010::get_y_elem_< aeif_cbvg_2010::State_::U_BAR_BAR > );
 }
 }
 
@@ -119,6 +121,7 @@ nest::aeif_cbvg_2010_dynamics( double,
   const double& V_T = y[ S::V_T ];
   const double& u_bar_plus = y[ S::U_BAR_PLUS ];
   const double& u_bar_minus = y[ S::U_BAR_MINUS ];
+  const double& u_bar_bar = y[ S::U_BAR_BAR ];
 
   const double I_spike = node.P_.Delta_T == 0.
     ? 0.
@@ -143,6 +146,8 @@ nest::aeif_cbvg_2010_dynamics( double,
 
   f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V ) / node.P_.tau_minus;
 
+  f[ S::U_BAR_BAR ] = ( -u_bar_bar + u_bar_minus ) / node.P_.tau_bar_bar;
+
   return GSL_SUCCESS;
 }
 
@@ -165,6 +170,7 @@ nest::aeif_cbvg_2010::Parameters_::Parameters_()
   , V_T_rest( -50.4 ) // mV
   , tau_plus( 7.0 )   // ms
   , tau_minus( 10.0 ) // ms
+  , tau_bar_bar( 500.0 ) // ms
   , a( 4.0 )          // nS
   , b( 80.5 )         // pA
   , I_sp( 400.0 )     // pA
@@ -186,6 +192,7 @@ nest::aeif_cbvg_2010::State_::State_( const Parameters_& p )
   y_[ V_T ] = p.V_T_rest;
   y_[ U_BAR_PLUS ] = p.E_L;
   y_[ U_BAR_MINUS ] = p.E_L;
+  y_[ U_BAR_BAR ] = p.E_L;
 }
 
 nest::aeif_cbvg_2010::State_::State_( const State_& s )
@@ -232,6 +239,7 @@ nest::aeif_cbvg_2010::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::tau_z, tau_z );
   def< double >( d, names::tau_plus, tau_plus );
   def< double >( d, names::tau_minus, tau_minus );
+  def< double >( d, names::tau_bar_bar, tau_bar_bar );
   def< double >( d, names::I_e, I_e );
   def< double >( d, names::V_peak, V_peak_ );
   def< double >( d, names::gsl_error_tol, gsl_error_tol );
@@ -262,6 +270,7 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::tau_z, tau_z );
   updateValue< double >( d, names::tau_plus, tau_plus );
   updateValue< double >( d, names::tau_minus, tau_minus );
+  updateValue< double >( d, names::tau_bar_bar, tau_bar_bar );
 
   updateValue< double >( d, names::I_e, I_e );
 
@@ -297,7 +306,7 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
   }
 
   if ( tau_w <= 0 or tau_V_T <= 0 or tau_w <= 0 or tau_z <= 0 or tau_plus <= 0
-    or tau_minus <= 0 )
+    or tau_minus <= 0 or tau_bar_bar <= 0 )
   {
     throw BadProperty( "All time constants must be strictly positive." );
   }
@@ -315,6 +324,7 @@ nest::aeif_cbvg_2010::State_::get( DictionaryDatum& d ) const
   def< double >( d, names::w, y_[ W ] );
   def< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
   def< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
+  def< double >( d, names::u_bar_bar, y_[ U_BAR_BAR ] );
 }
 
 void
@@ -325,6 +335,7 @@ nest::aeif_cbvg_2010::State_::set( const DictionaryDatum& d,
   updateValue< double >( d, names::w, y_[ W ] );
   updateValue< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
   updateValue< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
+  updateValue< double >( d, names::u_bar_bar, y_[ U_BAR_BAR ] );
 }
 
 nest::aeif_cbvg_2010::Buffers_::Buffers_( aeif_cbvg_2010& n )
@@ -592,7 +603,8 @@ nest::aeif_cbvg_2010::update( const Time& origin,
     if ( B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ] > get_theta_minus() )
     {
       write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
-        B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ] );
+        B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ],
+        S_.y_[ State_::U_BAR_BAR ] );
     }
 
     // decrement clamp count
