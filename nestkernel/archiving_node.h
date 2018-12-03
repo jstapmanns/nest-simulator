@@ -274,7 +274,7 @@ public:
 
   /**
    * \fn double get_LTD_value(long t)
-   * TODO
+   * Returns value in LTD history at time t
    */
   double get_LTD_value( double t );
 
@@ -282,7 +282,8 @@ public:
    * \fn void get_LTP_history(long t1, long t2,
    * std::deque<Archiver::histentry>::iterator* start,
    * std::deque<Archiver::histentry>::iterator* finish)
-   * TODO
+   * Sets pointer start (finish) to the first (last) entry in LTP_history
+   * whose time argument is between t1 and t2
    */
   void get_LTP_history( double t1,
     double t2,
@@ -291,13 +292,13 @@ public:
 
   /**
    * \fn double get_theta_plus()
-   * TODO
+   * Returns threshold theta_plus_
    */
   double get_theta_plus() const;
 
   /**
    * \fn double get_theta_minus()
-   * TODO
+   * Returns threshold theta_minus_
    */
   double get_theta_minus() const;
 
@@ -305,7 +306,8 @@ protected:
   /**
    * \fn void write_LTD_history( Time const& t_sp,
     double u_bar_minus, double offset = 0.0 )
-   * TODO
+   * Creates a new entry in the LTD history and delets old entries that
+   * are not needed any more.
    */
   void write_LTD_history( Time const& t_sp,
     double u_bar_minus,
@@ -315,7 +317,8 @@ protected:
   /**
    * \fn void write_LTP_history( Time const& t_sp,
    * double u, double u_bar_plus, double offset = 0.0 )
-   * TODO
+   * Creates a new entry in the LTP history and delets old entries that
+   * are not needed any more.
    */
   void write_LTP_history( Time const& t_sp,
     double u,
@@ -331,6 +334,15 @@ private:
 
   /*
    * Clopath rule
+   * Parameters:
+   * A_LTD_         double - Amplitude of depression in 1/mV
+   * A_LTP_         double - Amplitude of facilitation in 1/mV^2
+   * theta_plus_    double - threshold for u in mV
+   * theta_minus_   double - threshold for u_bar_p/m in mV
+   * A_LTD_const    bool - Flag that indicates whether A_LTD_ should
+   *                  be constant (true, default) or multiplied by 
+   *                  u_bar_bar^2 / u_ref_squared (false)
+   * U_ref_squared_ double - Reference value for u_bar_bar_^2
    */
   double A_LTD_;
 

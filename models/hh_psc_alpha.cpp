@@ -74,6 +74,8 @@ RecordablesMap< hh_psc_alpha >::create()
     &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::U_BAR_PLUS > );
   insert_( names::u_bar_minus,
     &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::U_BAR_MINUS > );
+  insert_( names::u_bar_bar,
+    &hh_psc_alpha::get_y_elem_< hh_psc_alpha::State_::U_BAR_BAR > );
 }
 
 extern "C" int
@@ -104,6 +106,7 @@ hh_psc_alpha_dynamics( double, const double y[], double f[], void* pnode )
   const double& I_in = y[ S::I_INH ];
   const double& u_bar_plus = y[ S::U_BAR_PLUS ];
   const double& u_bar_minus = y[ S::U_BAR_MINUS ];
+  const double& u_bar_bar = y[ S::U_BAR_BAR ];
 
   const double alpha_n =
     ( 0.01 * ( V + 55. ) ) / ( 1. - std::exp( -( V + 55. ) / 10. ) );
@@ -130,9 +133,10 @@ hh_psc_alpha_dynamics( double, const double y[], double f[], void* pnode )
   f[ S::HH_N ] =
     alpha_n * ( 1 - y[ S::HH_N ] ) - beta_n * y[ S::HH_N ]; // n-variable
 
-  // convolved membrane potentials
+  // convolved membrane potentials for Clopath stdp
   f[ S::U_BAR_PLUS ] = ( -u_bar_plus + V ) / node.P_.tau_plus;
   f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V ) / node.P_.tau_minus;
+  f[ S::U_BAR_BAR ] = ( -u_bar_bar + u_bar_minus ) / node.P_.tau_bar_bar;
 
   // synapses: alpha functions
   f[ S::DI_EXC ] = -dI_ex / node.P_.tau_synE;
@@ -162,6 +166,7 @@ nest::hh_psc_alpha::Parameters_::Parameters_()
   , I_e( 0.0 )          // pA
   , tau_plus( 114.0 )   // ms
   , tau_minus( 10.0 )   // ms
+  , tau_bar_bar( 500.0 ) // ms
   , delay_u_bars( 5.0 ) // ms
 {
 }
@@ -231,6 +236,7 @@ nest::hh_psc_alpha::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::I_e, I_e );
   def< double >( d, names::tau_plus, tau_plus );
   def< double >( d, names::tau_minus, tau_minus );
+  def< double >( d, names::tau_bar_bar, tau_bar_bar );
   def< double >( d, names::delay_u_bars, delay_u_bars );
 }
 
@@ -252,6 +258,7 @@ nest::hh_psc_alpha::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::I_e, I_e );
   updateValue< double >( d, names::tau_plus, tau_plus );
   updateValue< double >( d, names::tau_minus, tau_minus );
+  updateValue< double >( d, names::tau_bar_bar, tau_bar_bar );
   updateValue< double >( d, names::delay_u_bars, delay_u_bars );
   if ( C_m <= 0 )
   {
@@ -261,7 +268,8 @@ nest::hh_psc_alpha::Parameters_::set( const DictionaryDatum& d )
   {
     throw BadProperty( "Refractory time cannot be negative." );
   }
-  if ( tau_synE <= 0 or tau_synI <= 0 or tau_plus <= 0 or tau_minus <= 0 )
+  if ( tau_synE <= 0 or tau_synI <= 0 or tau_plus <= 0 or tau_minus <= 0
+    or tau_bar_bar <= 0 )
   {
     throw BadProperty( "All time constants must be strictly positive." );
   }
@@ -280,6 +288,7 @@ nest::hh_psc_alpha::State_::get( DictionaryDatum& d ) const
   def< double >( d, names::Inact_n, y_[ HH_N ] );
   def< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
   def< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
+  def< double >( d, names::u_bar_bar, y_[ U_BAR_BAR ] );
 }
 
 void
@@ -291,6 +300,7 @@ nest::hh_psc_alpha::State_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::Inact_n, y_[ HH_N ] );
   updateValue< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
   updateValue< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
+  updateValue< double >( d, names::u_bar_bar, y_[ U_BAR_BAR ] );
   if ( y_[ HH_M ] < 0 || y_[ HH_H ] < 0 || y_[ HH_N ] < 0 )
   {
     throw BadProperty( "All (in)activation variables must be non-negative." );
@@ -488,12 +498,16 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
     S_.y_[ State_::DI_INH ] +=
       B_.spike_inh_.get_value( lag ) * V_.PSCurrInit_I_;
 
+    // write u_bar_p/m in buffer to account for the delay
     B_.delayed_u_bar_plus_[ B_.read_idx_ ] = S_.y_[ State_::U_BAR_PLUS ];
 
     B_.delayed_u_bar_minus_[ B_.read_idx_ ] = S_.y_[ State_::U_BAR_MINUS ];
 
+    // increment the pointer
     B_.read_idx_ = ( B_.read_idx_ + 1 ) % B_.delay_length_;
 
+    // write LTP and LTD history if the (convolved) membrane potentials are 
+    // greater than the corresponding threshold
     if ( ( S_.y_[ State_::V_M ] > get_theta_plus() )
       && ( B_.delayed_u_bar_plus_[ B_.read_idx_ ] > get_theta_minus() ) )
     {
@@ -506,7 +520,7 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
     {
       write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
         B_.delayed_u_bar_minus_[ B_.read_idx_ ],
-        0.0 );
+        S_.y_[ State_::U_BAR_BAR ] );
     }
 
     // sending spikes: crossing 0 mV, pseudo-refractoriness and local maximum...

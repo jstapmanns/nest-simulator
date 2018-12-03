@@ -24,20 +24,24 @@
 #define CLOPATH_STDP_CONNECTION_H
 
 /* BeginDocumentation
-  Name: clopath_stdp_connection - TODO add documentation
+  Name: clopath_stdp_connection
 
   Description:
-
+    clopath_stdp_synapse is a connector to create Clopath synapses (as defined in [1]).
+    In contrast to usual stdp, the change of the synaptic weight does not only depend
+    on the pre- and postsynaptic spike timing but also on the postsynaptic membrane 
+    potential. Therefore, we have to quantities that are continuous in time. This is
+    done in the Clopath_Archiving_Node. Clopath synapses can be connected only to
+    neuron models that are capable of doing this archiving. So far, this is
+    aeif_cbvg_2010 and hh_clopath_psc_alpha.
 
   Parameters:
-   tau_plus   double - Time constant of STDP window, potentiation in ms
-                       (tau_minus defined in post-synaptic neuron)
-   lambda     double - Step size
-   alpha      double - Asymmetry parameter (scales depressing increments as
-                       alpha*lambda)
-   mu_plus    double - Weight dependence exponent, potentiation
-   mu_minus   double - Weight dependence exponent, depression
+   tau_x      double - Time constant of the trace of the presynaptic spike train
    Wmax       double - Maximum allowed weight
+   Wmin       double - Minimum allowed weight
+   other parameters like the amplitudes for depression and facilitation are stored
+   in Clopath_Archiving_Node as well as in the neuron models that are compatible
+   with the Clopath synapse.
 
   Transmits: SpikeEvent
 
@@ -48,7 +52,7 @@
 
   Author: Jonas Stapmanns, David Dahmen, Jan Hahne
 
-  SeeAlso: synapsedict, tsodyks_synapse, stdp_synapse
+  SeeAlso: stdp_synapse
 */
 
 // C++ includes:
@@ -169,13 +173,9 @@ private:
   // data members of each connection
   double weight_;
   double x_bar_;
-  double tau_x_; // TODO: save tau_x in synapse?
+  double tau_x_;
   double Wmax_;
   double Wmin_;
-  std::vector< double > delayed_u_bar_plus_;
-  std::vector< double > delayed_u_bar_minus_;
-  size_t read_idx_;
-  size_t delay_length_;
 
   double t_lastspike_;
 };
@@ -193,9 +193,7 @@ Clopath_STDPConnection< targetidentifierT >::send( Event& e,
   thread t,
   const CommonSynapseProperties& )
 {
-  // const double old_w = weight_;
   double t_spike = e.get_stamp().get_ms();
-
   // use accessor functions (inherited from Connection< >) to obtain delay and
   // target
   Node* target = get_target( t );
@@ -217,7 +215,7 @@ Clopath_STDPConnection< targetidentifierT >::send( Event& e,
     t_spike - dendritic_delay,
     &start,
     &finish );
-  // facilitation due to post-synaptic spikes since last pre-synaptic spike
+  // facilitation due to post-synaptic activity since last pre-synaptic spike
   double minus_dt;
   while ( start != finish )
   {
@@ -243,6 +241,7 @@ Clopath_STDPConnection< targetidentifierT >::send( Event& e,
   e.set_rport( get_rport() );
   e();
 
+  // compute the trace of the presynaptic spike train
   x_bar_ =
     x_bar_ * std::exp( ( t_lastspike_ - t_spike ) / tau_x_ ) + 1.0 / tau_x_;
 
@@ -258,12 +257,8 @@ Clopath_STDPConnection< targetidentifierT >::Clopath_STDPConnection()
   , tau_x_( 15.0 )
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
-  , read_idx_( 0 )
-  , delay_length_( 100 )
   , t_lastspike_( 0.0 )
 {
-  delayed_u_bar_plus_.resize( delay_length_ );
-  delayed_u_bar_minus_.resize( delay_length_ );
 }
 
 template < typename targetidentifierT >

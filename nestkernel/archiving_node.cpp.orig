@@ -459,46 +459,40 @@ nest::Archiving_Node::connect_synaptic_element( Name name, int n )
   }
 }
 
-// member functions for Clopath_Archiving_Node
+// member functions for Extended_Archiving_Node
 
-nest::Clopath_Archiving_Node::Clopath_Archiving_Node()
+nest::Extended_Archiving_Node::Extended_Archiving_Node()
   : Archiving_Node()
   , A_LTD_( 14.0e-5 )
   , A_LTP_( 8.0e-5 )
-  , u_ref_squared_ (60.0 )
   , theta_plus_( -45.3 )
   , theta_minus_( -70.6 )
-  , A_LTD_const_ ( true )
 {
 }
 
-nest::Clopath_Archiving_Node::Clopath_Archiving_Node(
-  const Clopath_Archiving_Node& n )
+nest::Extended_Archiving_Node::Extended_Archiving_Node(
+  const Extended_Archiving_Node& n )
   : Archiving_Node( n )
   , A_LTD_( n.A_LTD_ )
   , A_LTP_( n.A_LTP_ )
-  , u_ref_squared_( n.u_ref_squared_ )
   , theta_plus_( n.theta_plus_ )
   , theta_minus_( n.theta_minus_ )
-  , A_LTD_const_( n.A_LTD_const_ )
 {
 }
 
 void
-nest::Clopath_Archiving_Node::get_status( DictionaryDatum& d ) const
+nest::Extended_Archiving_Node::get_status( DictionaryDatum& d ) const
 {
   Archiving_Node::get_status( d );
 
   def< double >( d, names::A_LTD, A_LTD_ );
   def< double >( d, names::A_LTP, A_LTP_ );
-  def< double >( d, names::u_ref_squared, u_ref_squared_ );
   def< double >( d, names::theta_plus, theta_plus_ );
   def< double >( d, names::theta_minus, theta_minus_ );
-  def< bool >( d, names::A_LTD_const, A_LTD_const_ );
 }
 
 void
-nest::Clopath_Archiving_Node::set_status( const DictionaryDatum& d )
+nest::Extended_Archiving_Node::set_status( const DictionaryDatum& d )
 {
   Archiving_Node::set_status( d );
 
@@ -507,36 +501,31 @@ nest::Clopath_Archiving_Node::set_status( const DictionaryDatum& d )
   double new_A_LTP = A_LTP_;
   double new_theta_plus = theta_plus_;
   double new_theta_minus = theta_minus_;
-  double new_u_ref_squared = u_ref_squared_;
-  double new_A_LTD_const = A_LTD_const_;
   updateValue< double >( d, names::A_LTD, new_A_LTD );
   updateValue< double >( d, names::A_LTP, new_A_LTP );
-  updateValue< double >( d, names::u_ref_squared, new_u_ref_squared );
   updateValue< double >( d, names::theta_plus, new_theta_plus );
   updateValue< double >( d, names::theta_minus, new_theta_minus );
-  updateValue< bool >( d, names::A_LTD_const, new_A_LTD_const);
-  A_LTD_ = new_A_LTD;
+  // TODO: Check whether new values are allowed values
   A_LTP_ = new_A_LTP;
-  u_ref_squared_ = new_u_ref_squared;
-
-  if ( u_ref_squared_ <= 0 )
-  {
-    throw BadProperty( "Ensure that u_ref_squared > 0" );
-  }
-
+  A_LTD_ = new_A_LTD;
   theta_plus_ = new_theta_plus;
   theta_minus_ = new_theta_minus;
-  A_LTD_const_ = new_A_LTD_const;
 }
 
 double
-nest::Clopath_Archiving_Node::get_LTD_value( double t )
+nest::Extended_Archiving_Node::get_LTD_value( double t )
 {
   std::deque< histentry_cl >::iterator runner;
   if ( ltd_history_.empty() || t < 0.0 )
   {
-    // Return 0.0 if history is empty
+    // TODO: find meaningful return value + condition whether history exists
     return 0.0;
+<<<<<<< HEAD
+    // TO DO: find meaningful return value and condition whether
+    // history exists 
+    // the above solution seems appropriate
+=======
+>>>>>>> 913a8cc330eefe88f3228ac03530c5f42a1914fd
   }
   else
   {
@@ -545,19 +534,17 @@ nest::Clopath_Archiving_Node::get_LTD_value( double t )
     {
       if ( abs( t - runner->t_ ) < 1e-4 )
       {
-        // Return the corresponding value if an entry at time t exists
         return runner->dw_;
       }
       ( runner->access_counter_ )++;
       ++runner;
     }
   }
-  // Return zero if there is no entry at time t
   return 0.0;
 }
 
 void
-nest::Clopath_Archiving_Node::get_LTP_history( double t1,
+nest::Extended_Archiving_Node::get_LTP_history( double t1,
   double t2,
   std::deque< histentry_cl >::iterator* start,
   std::deque< histentry_cl >::iterator* finish )
@@ -586,22 +573,20 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
 }
 
 void
-nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
+nest::Extended_Archiving_Node::write_LTD_history( Time const& t_ltd,
   double u_bar_minus,
-  double u_bar_bar,
   double offset )
 {
   const double t_ltd_ms = t_ltd.get_ms() - offset;
+  update_synaptic_elements( t_ltd_ms ); // TODO: do we need this?
 
   if ( n_incoming_ )
   {
-    // prune all entries from history which are no longer needed
+    // prune all spikes from history which are no longer needed
     // except the penultimate one. we might still need it.
     while ( ltd_history_.size() > 1 )
     {
-      if ( ltd_history_.front().t_ < t_ltd_ms - 
-          t_ltd.delay_steps_to_ms( kernel().connection_manager.get_max_delay() ) )
-      //if ( ltd_history_.front().access_counter_ >= n_incoming_ )
+      if ( ltd_history_.front().access_counter_ >= n_incoming_ )
       {
         ltd_history_.pop_front();
       }
@@ -610,26 +595,23 @@ nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
         break;
       }
     }
-    // Depending on the flag A_LTD_const_, the amplitude of the depression is given by
-    // A_LTD_ only (true) or multiplied by u_bar_bar^2 / u_ref_squared_ (false)
-    const double dw = A_LTD_const_
-      ? A_LTD_ * ( u_bar_minus - theta_minus_ )
-      : A_LTD_ * u_bar_bar * u_bar_bar * ( u_bar_minus - theta_minus_ ) / u_ref_squared_;
+    const double dw = A_LTD_ * ( u_bar_minus - theta_minus_ );
     ltd_history_.push_back( histentry_cl( t_ltd_ms, dw, 0 ) );
   }
 }
 
 void
-nest::Clopath_Archiving_Node::write_LTP_history( Time const& t_ltp,
+nest::Extended_Archiving_Node::write_LTP_history( Time const& t_ltp,
   double u,
   double u_bar_plus,
   double offset )
 {
   const double t_ltp_ms = t_ltp.get_ms() - offset;
+  update_synaptic_elements( t_ltp_ms ); // TODO: do we need this?
 
   if ( n_incoming_ )
   {
-    // prune all entries from history which are no longer needed
+    // prune all spikes from history which are no longer needed
     // except the penultimate one. we might still need it.
     while ( ltp_history_.size() > 1 )
     {
@@ -642,12 +624,56 @@ nest::Clopath_Archiving_Node::write_LTP_history( Time const& t_ltp,
         break;
       }
     }
+<<<<<<< HEAD
     // dw is not the change of the synaptic weight since the factor
-    // x_bar is not included (but later in the synapse)
+    // x_bar is not includet (but later in the synapse)
+=======
+    // TODO: appropriate implementation of histentry
+    // dw is not the change of the synaptic weight since the factors
+    // x_bar and dt are not included (but later in the synapse)
+    // TODO: get dt.
+>>>>>>> 913a8cc330eefe88f3228ac03530c5f42a1914fd
     const double dw = A_LTP_ * ( u - theta_plus_ )
       * ( u_bar_plus - theta_minus_ ) * t_ltp.get_resolution().get_ms();
     ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
   }
 }
 
+// The following function is not needed any more we could delete it
+/*
+void
+nest::Extended_Archiving_Node::write_LTP_history_exp_int( Time const& t_ltp,
+  double ltp_factor,
+  double offset )
+{
+  const double t_ltp_ms = t_ltp.get_ms() - offset;
+  update_synaptic_elements( t_ltp_ms ); // TO DO: do we need this?
+
+  if ( n_incoming_ )
+  {
+    // prune all spikes from history which are no longer needed
+    // except the penultimate one. we might still need it.
+    while ( ltp_history_.size() > 1 )
+    {
+      if ( ltp_history_.front().access_counter_ >= n_incoming_ )
+      {
+        ltp_history_.pop_front();
+      }
+      else
+      {
+        break;
+      }
+    }
+<<<<<<< HEAD
+=======
+    // TODO: appropriate implementation of histentry
+>>>>>>> 913a8cc330eefe88f3228ac03530c5f42a1914fd
+    // dw is not the change of the synaptic weight since the factors
+    // x_bar and dt are not includet (but later in the synapse)
+    // TODO: get dt.
+    const double dw = A_LTP_ * ltp_factor;
+    ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
+  }
+}
+*/
 } // of namespace nest

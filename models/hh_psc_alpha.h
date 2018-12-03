@@ -63,7 +63,7 @@ Name: hh_psc_alpha - Hodgkin-Huxley neuron model.
 Description:
 
 hh_psc_alpha is an implementation of a spiking neuron using the Hodgkin-Huxley
-formalism.
+formalism and that is capable of connecting to a Clopath synapse.
 
 (1) Post-synaptic currents
 Incoming spike events induce a post-synaptic change of current modelled
@@ -119,9 +119,10 @@ Sends: SpikeEvent
 
 Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
 
-Authors: Schrader
+Authors: Jonas Stapmanns, David Dahmen, Jan Hahne
+         adapted from hh_psc_alpha by Schrader
 
-SeeAlso: hh_cond_exp_traub
+SeeAlso: hh_psc_alpha
 */
 class hh_psc_alpha : public Clopath_Archiving_Node
 {
@@ -206,9 +207,10 @@ private:
     double tau_synE; //!< Synaptic Time Constant Excitatory Synapse in ms
     double tau_synI; //!< Synaptic Time Constant for Inhibitory Synapse in ms
     double I_e;      //!< Constant Current in pA
-    double tau_plus;
-    double tau_minus;
-    double delay_u_bars;
+    double tau_plus; //!< time constant of u_bar_plus in ms
+    double tau_minus; //!< time constant of u_bar_minus in ms
+    double tau_bar_bar; //!< time constant of u_bar_bar in ms
+    double delay_u_bars; //!< Delay of the convolved membrane potentials in ms
 
     Parameters_(); //!< Sets default parameter values
 
@@ -245,6 +247,7 @@ public:
       I_INH,       // 7
       U_BAR_PLUS,  // 8
       U_BAR_MINUS, // 9
+      U_BAR_BAR,   // 10
       STATE_VEC_SIZE
     };
 
