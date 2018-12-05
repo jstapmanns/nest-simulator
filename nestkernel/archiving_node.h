@@ -325,11 +325,13 @@ protected:
     double u_bar_plus,
     double offset = 0.0 );
 
+  void init_ltd_history();
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
 
 private:
-  std::deque< histentry_cl > ltd_history_;
+  //std::deque< histentry_cl > ltd_history_;
+  std::vector< histentry_cl > ltd_history_;
   std::deque< histentry_cl > ltp_history_;
 
   /*
@@ -355,6 +357,10 @@ private:
   double theta_minus_;
 
   bool A_LTD_const_;
+
+  std::size_t ltd_hist_len_;
+
+  std::size_t ltd_hist_current_;
 };
 
 inline double

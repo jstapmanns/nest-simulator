@@ -463,6 +463,8 @@ nest::aeif_cbvg_2010::init_buffers_()
   V_.delay_u_bars_steps_ = Time::delay_ms_to_steps( P_.delay_u_bars ) + 1;
   B_.delayed_u_bar_plus_.resize( V_.delay_u_bars_steps_ );
   B_.delayed_u_bar_minus_.resize( V_.delay_u_bars_steps_ );
+
+  init_ltd_history();
 }
 
 void

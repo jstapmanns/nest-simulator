@@ -220,10 +220,6 @@ Clopath_STDPConnection< targetidentifierT >::send( Event& e,
   while ( start != finish )
   {
     minus_dt = t_lastspike_ - ( start->t_ + dendritic_delay );
-    if ( minus_dt == 0 )
-    {
-      continue;
-    }
     weight_ =
       facilitate_( weight_, start->dw_, x_bar_ * exp( minus_dt / tau_x_ ) );
     ++start;

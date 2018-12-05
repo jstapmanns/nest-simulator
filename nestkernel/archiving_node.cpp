@@ -485,6 +485,22 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node(
 }
 
 void
+nest::Clopath_Archiving_Node::init_ltd_history()
+{
+  ltd_hist_current_ = 0;
+  ltd_hist_len_ = kernel().connection_manager.get_max_delay();
+  ltd_history_.resize( ltd_hist_len_, histentry_cl( 0.0, 0.0, 0 ) );
+  /*
+  std::cout << "constructor: " << kernel().connection_manager.get_max_delay() << ", " << ltd_hist_current_ <<
+    std::endl;
+  for ( std::size_t n = 0; n < ltd_hist_len_; n++ )
+  {
+    ltd_history_.push_back( histentry_cl( 0.0, 0.0, 0 ) );
+  }
+  */
+}
+
+void
 nest::Clopath_Archiving_Node::get_status( DictionaryDatum& d ) const
 {
   Archiving_Node::get_status( d );
@@ -532,7 +548,8 @@ nest::Clopath_Archiving_Node::set_status( const DictionaryDatum& d )
 double
 nest::Clopath_Archiving_Node::get_LTD_value( double t )
 {
-  std::deque< histentry_cl >::iterator runner;
+  //std::deque< histentry_cl >::iterator runner;
+  std::vector< histentry_cl >::iterator runner;
   if ( ltd_history_.empty() || t < 0.0 )
   {
     // Return 0.0 if history is empty
@@ -571,12 +588,15 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
   else
   {
     std::deque< histentry_cl >::iterator runner = ltp_history_.begin();
-    while ( ( runner != ltp_history_.end() ) && ( runner->t_ <= t1 ) )
+    // To have a well defined discretization of the integral, we make shure
+    // that we exclude the entry at t1 but include the one at t2 by subtracting
+    // a small number so that runner->t_ is never equal to t1/2.
+    while ( ( runner != ltp_history_.end() ) && ( runner->t_ - 0.001 < t1 ) )
     {
       ++runner;
     }
     *start = runner;
-    while ( ( runner != ltp_history_.end() ) && ( runner->t_ <= t2 ) )
+    while ( ( runner != ltp_history_.end() ) && ( runner->t_  - 0.001 < t2 ) )
     {
       ( runner->access_counter_ )++;
       ++runner;
@@ -595,6 +615,7 @@ nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
 
   if ( n_incoming_ )
   {
+    /*
     // prune all entries from history which are no longer needed
     // except the penultimate one. we might still need it.
     while ( ltd_history_.size() > 1 )
@@ -616,6 +637,13 @@ nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
       ? A_LTD_ * ( u_bar_minus - theta_minus_ )
       : A_LTD_ * u_bar_bar * u_bar_bar * ( u_bar_minus - theta_minus_ ) / u_ref_squared_;
     ltd_history_.push_back( histentry_cl( t_ltd_ms, dw, 0 ) );
+    */
+    //std::cout << ltd_hist_current_ << ", " << ltd_hist_len_ << std::endl;
+    const double dw = A_LTD_const_
+      ? A_LTD_ * ( u_bar_minus - theta_minus_ )
+      : A_LTD_ * u_bar_bar * u_bar_bar * ( u_bar_minus - theta_minus_ ) / u_ref_squared_;
+    ltd_history_[ ltd_hist_current_ ] = histentry_cl( t_ltd_ms, dw, 0 );
+    ltd_hist_current_ = ( ++ltd_hist_current_ ) % ltd_hist_len_;
   }
 }
 

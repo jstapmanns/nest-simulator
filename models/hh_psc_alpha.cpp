@@ -432,6 +432,8 @@ nest::hh_psc_alpha::init_buffers_()
   // std::cout << B_.read_idx_ << "  " << B_.delay_length_ << std::endl;
   B_.delayed_u_bar_plus_.resize( B_.delay_length_ );
   B_.delayed_u_bar_minus_.resize( B_.delay_length_ );
+
+  init_ltd_history();
 }
 
 void
