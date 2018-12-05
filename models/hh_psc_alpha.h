@@ -95,6 +95,19 @@ Act_h      double - Activation variable h
 Inact_n    double - Inactivation variable n
 I_e        double - Constant external input current in pA.
 
+Clopath rule parameters:
+u_bar_plus    double - Low-pass filtered Membrane potential in mV.
+u-bar_minus   double - Low-pass filtered Membrane potential in mV.
+u_bar_bar     double - Low-pass filtered u_bar_minus in mV.
+A_LTD         double - Amplitude of depression in 1/mV.
+A_LTP         double - Amplitude of facilitation in 1/mV^2.
+theta_plus    double - threshold for u in mV.
+theta_minus   double - threshold for u_bar_p/m in mV.
+A_LTD_const   bool   - Flag that indicates whether A_LTD_ should
+                       be constant (true, default) or multiplied by
+                       u_bar_bar^2 / u_ref_squared (false).
+U_ref_squared double - Reference value for u_bar_bar_^2.
+
 Problems/Todo:
 
 better spike detection
@@ -119,10 +132,10 @@ Sends: SpikeEvent
 
 Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
 
-Authors: Jonas Stapmanns, David Dahmen, Jan Hahne
-         adapted from hh_psc_alpha by Schrader
+Author: Schrader (adapted for clopath_stdp_synapse by
+         Jonas Stapmanns, David Dahmen, Jan Hahne)
 
-SeeAlso: hh_psc_alpha
+SeeAlso: hh_cond_exp_traub, clopath_stdp_synapse
 */
 class hh_psc_alpha : public Clopath_Archiving_Node
 {
