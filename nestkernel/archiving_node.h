@@ -330,7 +330,7 @@ protected:
   void set_status( const DictionaryDatum& d );
 
 private:
-  //std::deque< histentry_cl > ltd_history_;
+  // std::deque< histentry_cl > ltd_history_;
   std::vector< histentry_cl > ltd_history_;
   std::deque< histentry_cl > ltp_history_;
 
@@ -342,7 +342,7 @@ private:
    * theta_plus_    double - threshold for u in mV
    * theta_minus_   double - threshold for u_bar_p/m in mV
    * A_LTD_const    bool - Flag that indicates whether A_LTD_ should
-   *                  be constant (true, default) or multiplied by 
+   *                  be constant (true, default) or multiplied by
    *                  u_bar_bar^2 / u_ref_squared (false)
    * U_ref_squared_ double - Reference value for u_bar_bar_^2
    */

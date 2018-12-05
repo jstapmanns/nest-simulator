@@ -27,11 +27,16 @@
   Name: clopath_stdp_connection
 
   Description:
-    clopath_stdp_synapse is a connector to create Clopath synapses (as defined in [1]).
-    In contrast to usual stdp, the change of the synaptic weight does not only depend
-    on the pre- and postsynaptic spike timing but also on the postsynaptic membrane 
-    potential. Therefore, we have to quantities that are continuous in time. This is
-    done in the Clopath_Archiving_Node. Clopath synapses can be connected only to
+    clopath_stdp_synapse is a connector to create Clopath synapses (as defined
+  in [1]).
+    In contrast to usual stdp, the change of the synaptic weight does not only
+  depend
+    on the pre- and postsynaptic spike timing but also on the postsynaptic
+  membrane
+    potential. Therefore, we have to quantities that are continuous in time.
+  This is
+    done in the Clopath_Archiving_Node. Clopath synapses can be connected only
+  to
     neuron models that are capable of doing this archiving. So far, this is
     aeif_cbvg_2010 and hh_clopath_psc_alpha.
 
@@ -39,7 +44,8 @@
    tau_x      double - Time constant of the trace of the presynaptic spike train
    Wmax       double - Maximum allowed weight
    Wmin       double - Minimum allowed weight
-   other parameters like the amplitudes for depression and facilitation are stored
+   other parameters like the amplitudes for depression and facilitation are
+  stored
    in Clopath_Archiving_Node as well as in the neuron models that are compatible
    with the Clopath synapse.
 

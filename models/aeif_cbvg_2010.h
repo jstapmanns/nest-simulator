@@ -47,14 +47,22 @@ Name: aeif_cbvg_2010
 
 Description:
   aeif_cbvg_2010 is an implementation of the neuron model as it is used in [1].
-  It is an extension of the aeif_psc_delta model and capable of connecting to a Clopath
-  synapse. Note that there are two points that are not mentioned in the paper but
-  present in a matlab implementation by Claudia Clopath. The first one is the clamping
-  of the membrane potential to a fixed value after a spike occured to mimik a real
-  spike and not just the upswing. This is important since the finite duration of the
-  spike influences the evolution of the convolved versions (u_bar_plus/minus) of the
-  membrane potential and thus the change of the synaptic weight. Secondly, there is a
-  delay with which u_bar_plus/minus are used to compute the change of the synaptic
+  It is an extension of the aeif_psc_delta model and capable of connecting to a
+Clopath
+  synapse. Note that there are two points that are not mentioned in the paper
+but
+  present in a matlab implementation by Claudia Clopath. The first one is the
+clamping
+  of the membrane potential to a fixed value after a spike occured to mimik a
+real
+  spike and not just the upswing. This is important since the finite duration of
+the
+  spike influences the evolution of the convolved versions (u_bar_plus/minus) of
+the
+  membrane potential and thus the change of the synaptic weight. Secondly, there
+is a
+  delay with which u_bar_plus/minus are used to compute the change of the
+synaptic
   weight.
 
 Parameters:
@@ -89,13 +97,18 @@ Spike adaptation parameters:
   V_peak     double - Spike detection threshold in mV.
 
 Other parameters:
-  t_clamp     double - Duration of clamping of Membrane potential after a spike in ms
+  t_clamp     double - Duration of clamping of Membrane potential after a spike
+in ms
   V_clamp     double - Value to which the Membrane potential is clamped in mV
-  delay_u_bars  double - Delay with which u_bar_p/m are processed to compute the synaptic weights.
+  delay_u_bars  double - Delay with which u_bar_p/m are processed to compute the
+synaptic weights.
 Note:
-  Neither the clamping nor the delayed processing of u_bar_p/m are mentioned in the paper. However,
-  they are part of an reference implementation by Claudia Clopath  et al. that can be found on
-  ModelDB. The clamping is important to mimic a spike which is otherwise not described by the aeif
+  Neither the clamping nor the delayed processing of u_bar_p/m are mentioned in
+the paper. However,
+  they are part of an reference implementation by Claudia Clopath  et al. that
+can be found on
+  ModelDB. The clamping is important to mimic a spike which is otherwise not
+described by the aeif
   neuron model.
 
 Integration parameters
@@ -187,20 +200,20 @@ private:
     double V_reset_; //!< Reset Potential in mV
     double t_ref_;   //!< Refractory period in ms
 
-    double g_L;      //!< Leak Conductance in nS
-    double C_m;      //!< Membrane Capacitance in pF
-    double E_L;      //!< Leak reversal Potential (aka resting potential) in mV
-    double Delta_T;  //!< Slope faktor in ms
-    double tau_w;    //!< adaptation time-constant in ms
-    double tau_z;    //!< adaptation time-constant in ms
-    double tau_V_T;  //!< adaptive threshold time-constant in ms
-    double V_T_max;  //!< value of V_T afer a spike in mV
-    double V_T_rest; //!< resting value of V_T in mV
-    double tau_plus; //!< time constant of u_bar_plus in ms
+    double g_L;       //!< Leak Conductance in nS
+    double C_m;       //!< Membrane Capacitance in pF
+    double E_L;       //!< Leak reversal Potential (aka resting potential) in mV
+    double Delta_T;   //!< Slope faktor in ms
+    double tau_w;     //!< adaptation time-constant in ms
+    double tau_z;     //!< adaptation time-constant in ms
+    double tau_V_T;   //!< adaptive threshold time-constant in ms
+    double V_T_max;   //!< value of V_T afer a spike in mV
+    double V_T_rest;  //!< resting value of V_T in mV
+    double tau_plus;  //!< time constant of u_bar_plus in ms
     double tau_minus; //!< time constant of u_bar_minus in ms
     double tau_bar_bar; //!< time constant of u_bar_bar in ms
-    double a; //!< Subthreshold adaptation in nS.
-    double b; //!< Spike-triggered adaptation in pA
+    double a;           //!< Subthreshold adaptation in nS.
+    double b;           //!< Spike-triggered adaptation in pA
     double I_sp;
     double t_ref; //!< Refractory period in ms.
     double I_e;   //!< Intrinsic current in pA.
