@@ -158,25 +158,25 @@ public:
 
 private:
   double
-  facilitate_( double w, double dw, double x_bar )
-  {
-    w += dw * x_bar;
-    return w < Wmax_ ? w : Wmax_;
-  }
-
-  double
   depress_( double w, double dw )
   {
     w -= dw;
     return w > Wmin_ ? w : Wmin_;
   }
 
+  double
+  facilitate_( double w, double dw, double x_bar )
+  {
+    w += dw * x_bar;
+    return w < Wmax_ ? w : Wmax_;
+  }
+
   // data members of each connection
   double weight_;
   double x_bar_;
   double tau_x_;
-  double Wmax_;
   double Wmin_;
+  double Wmax_;
 
   double t_lastspike_;
 };
@@ -298,18 +298,18 @@ Clopath_STDPConnection< targetidentifierT >::set_status(
   updateValue< double >( d, names::Wmin, Wmin_ );
   updateValue< double >( d, names::Wmax, Wmax_ );
 
-  // check if weight_ and Wmax_ has the same sign
-  if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
-         == ( ( Wmax_ >= 0 ) - ( Wmax_ < 0 ) ) ) )
-  {
-    throw BadProperty( "Weight and Wmax must have same sign." );
-  }
-
   // check if weight_ and Wmin_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
          == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
   {
     throw BadProperty( "Weight and Wmin must have same sign." );
+  }
+
+  // check if weight_ and Wmax_ has the same sign
+  if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
+         == ( ( Wmax_ >= 0 ) - ( Wmax_ < 0 ) ) ) )
+  {
+    throw BadProperty( "Weight and Wmax must have same sign." );
   }
 }
 

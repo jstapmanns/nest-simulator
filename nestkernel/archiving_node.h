@@ -346,9 +346,9 @@ private:
 
   bool A_LTD_const_;
 
-  std::size_t ltd_hist_len_;
+  size_t ltd_hist_len_;
 
-  std::size_t ltd_hist_current_;
+  size_t ltd_hist_current_;
 };
 
 inline double

@@ -469,6 +469,8 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node()
   , theta_plus_( -45.3 )
   , theta_minus_( -70.6 )
   , A_LTD_const_( true )
+  , ltd_hist_len_ ( 0 )
+  , ltd_hist_current_ ( 0 )
 {
 }
 
@@ -481,6 +483,8 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node(
   , theta_plus_( n.theta_plus_ )
   , theta_minus_( n.theta_minus_ )
   , A_LTD_const_( n.A_LTD_const_ )
+  , ltd_hist_len_ ( n.ltd_hist_len_ )
+  , ltd_hist_current_ ( n.ltd_hist_current_ )
 {
 }
 
@@ -494,7 +498,7 @@ nest::Clopath_Archiving_Node::init_ltd_history()
   std::cout << "constructor: " << kernel().connection_manager.get_max_delay() <<
   ", " << ltd_hist_current_ <<
     std::endl;
-  for ( std::size_t n = 0; n < ltd_hist_len_; n++ )
+  for ( size_t n = 0; n < ltd_hist_len_; n++ )
   {
     ltd_history_.push_back( histentry_cl( 0.0, 0.0, 0 ) );
   }
@@ -647,7 +651,7 @@ nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
                                    : A_LTD_ * u_bar_bar * u_bar_bar
         * ( u_bar_minus - theta_minus_ ) / u_ref_squared_;
     ltd_history_[ ltd_hist_current_ ] = histentry_cl( t_ltd_ms, dw, 0 );
-    ltd_hist_current_ = ( ++ltd_hist_current_ ) % ltd_hist_len_;
+    ltd_hist_current_ = ( ltd_hist_current_ + 1 ) % ltd_hist_len_;
   }
 }
 
