@@ -469,8 +469,8 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node()
   , theta_plus_( -45.3 )
   , theta_minus_( -70.6 )
   , A_LTD_const_( true )
-  , ltd_hist_len_ ( 0 )
-  , ltd_hist_current_ ( 0 )
+  , ltd_hist_len_( 0 )
+  , ltd_hist_current_( 0 )
 {
 }
 
@@ -483,8 +483,8 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node(
   , theta_plus_( n.theta_plus_ )
   , theta_minus_( n.theta_minus_ )
   , A_LTD_const_( n.A_LTD_const_ )
-  , ltd_hist_len_ ( n.ltd_hist_len_ )
-  , ltd_hist_current_ ( n.ltd_hist_current_ )
+  , ltd_hist_len_( n.ltd_hist_len_ )
+  , ltd_hist_current_( n.ltd_hist_current_ )
 {
 }
 
@@ -593,7 +593,7 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
   else
   {
     std::deque< histentry_cl >::iterator runner = ltp_history_.begin();
-    // To have a well defined discretization of the integral, we make shure
+    // To have a well defined discretization of the integral, we make sure
     // that we exclude the entry at t1 but include the one at t2 by subtracting
     // a small number so that runner->t_ is never equal to t1/2.
     while ( ( runner != ltp_history_.end() ) && ( runner->t_ - 0.001 < t1 ) )
