@@ -23,38 +23,6 @@
 #ifndef CLOPATH_STDP_CONNECTION_H
 #define CLOPATH_STDP_CONNECTION_H
 
-/* BeginDocumentation
-  Name: clopath_stdp_connection
-
-  Description:
-    clopath_stdp_synapse is a connector to create Clopath synapses (as defined in [1]).
-    In contrast to usual stdp, the change of the synaptic weight does not only depend
-    on the pre- and postsynaptic spike timing but also on the postsynaptic membrane 
-    potential. Therefore, we have to quantities that are continuous in time. This is
-    done in the Clopath_Archiving_Node. Clopath synapses can be connected only to
-    neuron models that are capable of doing this archiving. So far, this is
-    aeif_cbvg_2010 and hh_clopath_psc_alpha.
-
-  Parameters:
-   tau_x      double - Time constant of the trace of the presynaptic spike train
-   Wmax       double - Maximum allowed weight
-   Wmin       double - Minimum allowed weight
-   other parameters like the amplitudes for depression and facilitation are stored
-   in Clopath_Archiving_Node as well as in the neuron models that are compatible
-   with the Clopath synapse.
-
-  Transmits: SpikeEvent
-
-  References:
-   [1] Clopath et al. (2010) Connectivity reflects coding:
-       a model of voltage-based STDP with homeostasis.
-       Nature Neuroscience 13:3,344--352
-
-  Author: Jonas Stapmanns, David Dahmen, Jan Hahne
-
-  SeeAlso: stdp_synapse
-*/
-
 // C++ includes:
 #include <cmath>
 
@@ -69,10 +37,43 @@
 #include "dictdatum.h"
 #include "dictutils.h"
 
-
 namespace nest
 {
 
+/** @BeginDocumentation
+Name: clopath_stdp_connection - Synapse type for Clopath spike time dependent
+                                plasticity.
+
+Description:
+
+clopath_stdp_synapse is a connector to create Clopath synapses (as defined
+in [1]). In contrast to usual stdp, the change of the synaptic weight does
+not only depend on the pre- and postsynaptic spike timing but also on the
+postsynaptic membrane potential.
+
+Clopath synapses require archiving of continuous quantities. Therefore Clopath
+synapses can only be connected to neuron models that are capable of doing this
+archiving. So far, compatible models are aeif_cbvg_2010 and hh_psc_alpha.
+
+Parameters:
+
+tau_x    double - Time constant of the trace of the presynaptic spike train.
+Wmax     double - Maximum allowed weight.
+Wmin     double - Minimum allowed weight.
+
+Other parameters like the amplitudes for depression and facilitation are
+stored in in the neuron models that are compatible with the Clopath synapse.
+
+Transmits: SpikeEvent
+
+References:  [1] Clopath et al. (2010) Connectivity reflects coding:
+                a model of voltage-based STDP with homeostasis.
+                Nature Neuroscience 13:3,344--352
+
+Authors: Jonas Stapmanns, David Dahmen, Jan Hahne
+
+SeeAlso: stdp_synapse, aeif_cbvg_2010, hh_psc_alpha
+*/
 // connections are templates of target identifier type (used for pointer /
 // target index addressing) derived from generic connection template
 template < typename targetidentifierT >
@@ -157,25 +158,25 @@ public:
 
 private:
   double
-  facilitate_( double w, double dw, double x_bar )
-  {
-    w += dw * x_bar;
-    return w < Wmax_ ? w : Wmax_;
-  }
-
-  double
   depress_( double w, double dw )
   {
     w -= dw;
     return w > Wmin_ ? w : Wmin_;
   }
 
+  double
+  facilitate_( double w, double dw, double x_bar )
+  {
+    w += dw * x_bar;
+    return w < Wmax_ ? w : Wmax_;
+  }
+
   // data members of each connection
   double weight_;
   double x_bar_;
   double tau_x_;
-  double Wmax_;
   double Wmin_;
+  double Wmax_;
 
   double t_lastspike_;
 };
@@ -297,18 +298,18 @@ Clopath_STDPConnection< targetidentifierT >::set_status(
   updateValue< double >( d, names::Wmin, Wmin_ );
   updateValue< double >( d, names::Wmax, Wmax_ );
 
-  // check if weight_ and Wmax_ has the same sign
-  if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
-         == ( ( Wmax_ >= 0 ) - ( Wmax_ < 0 ) ) ) )
-  {
-    throw BadProperty( "Weight and Wmax must have same sign." );
-  }
-
   // check if weight_ and Wmin_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
          == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
   {
     throw BadProperty( "Weight and Wmin must have same sign." );
+  }
+
+  // check if weight_ and Wmax_ has the same sign
+  if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
+         == ( ( Wmax_ >= 0 ) - ( Wmax_ < 0 ) ) ) )
+  {
+    throw BadProperty( "Weight and Wmax must have same sign." );
   }
 }
 

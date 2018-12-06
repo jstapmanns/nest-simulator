@@ -153,21 +153,21 @@ hh_psc_alpha_dynamics( double, const double y[], double f[], void* pnode )
  * ---------------------------------------------------------------- */
 
 nest::hh_psc_alpha::Parameters_::Parameters_()
-  : t_ref_( 2.0 )       // ms
-  , g_Na( 12000.0 )     // nS
-  , g_K( 3600.0 )       // nS
-  , g_L( 30.0 )         // nS
-  , C_m( 100.0 )        // pF
-  , E_Na( 50.0 )        // mV
-  , E_K( -77.0 )        // mV
-  , E_L( -54.402 )      // mV
-  , tau_synE( 0.2 )     // ms
-  , tau_synI( 2.0 )     // ms
-  , I_e( 0.0 )          // pA
-  , tau_plus( 114.0 )   // ms
-  , tau_minus( 10.0 )   // ms
+  : t_ref_( 2.0 )        // ms
+  , g_Na( 12000.0 )      // nS
+  , g_K( 3600.0 )        // nS
+  , g_L( 30.0 )          // nS
+  , C_m( 100.0 )         // pF
+  , E_Na( 50.0 )         // mV
+  , E_K( -77.0 )         // mV
+  , E_L( -54.402 )       // mV
+  , tau_synE( 0.2 )      // ms
+  , tau_synI( 2.0 )      // ms
+  , I_e( 0.0 )           // pA
+  , tau_plus( 114.0 )    // ms
+  , tau_minus( 10.0 )    // ms
   , tau_bar_bar( 500.0 ) // ms
-  , delay_u_bars( 5.0 ) // ms
+  , delay_u_bars( 5.0 )  // ms
 {
 }
 
@@ -508,7 +508,7 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
     // increment the pointer
     B_.read_idx_ = ( B_.read_idx_ + 1 ) % B_.delay_length_;
 
-    // write LTP and LTD history if the (convolved) membrane potentials are 
+    // write LTP and LTD history if the (convolved) membrane potentials are
     // greater than the corresponding threshold
     if ( ( S_.y_[ State_::V_M ] > get_theta_plus() )
       && ( B_.delayed_u_bar_plus_[ B_.read_idx_ ] > get_theta_minus() ) )

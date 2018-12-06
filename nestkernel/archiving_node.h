@@ -330,22 +330,10 @@ protected:
   void set_status( const DictionaryDatum& d );
 
 private:
-  //std::deque< histentry_cl > ltd_history_;
+  // std::deque< histentry_cl > ltd_history_;
   std::vector< histentry_cl > ltd_history_;
   std::deque< histentry_cl > ltp_history_;
 
-  /*
-   * Clopath rule
-   * Parameters:
-   * A_LTD_         double - Amplitude of depression in 1/mV
-   * A_LTP_         double - Amplitude of facilitation in 1/mV^2
-   * theta_plus_    double - threshold for u in mV
-   * theta_minus_   double - threshold for u_bar_p/m in mV
-   * A_LTD_const    bool - Flag that indicates whether A_LTD_ should
-   *                  be constant (true, default) or multiplied by 
-   *                  u_bar_bar^2 / u_ref_squared (false)
-   * U_ref_squared_ double - Reference value for u_bar_bar_^2
-   */
   double A_LTD_;
 
   double A_LTP_;
@@ -358,9 +346,9 @@ private:
 
   bool A_LTD_const_;
 
-  std::size_t ltd_hist_len_;
+  size_t ltd_hist_len_;
 
-  std::size_t ltd_hist_current_;
+  size_t ltd_hist_current_;
 };
 
 inline double

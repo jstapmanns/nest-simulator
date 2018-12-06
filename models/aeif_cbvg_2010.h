@@ -42,81 +42,6 @@
 #include "ring_buffer.h"
 #include "universal_data_logger.h"
 
-/* BeginDocumentation
-Name: aeif_cbvg_2010
-
-Description:
-  aeif_cbvg_2010 is an implementation of the neuron model as it is used in [1].
-  It is an extension of the aeif_psc_delta model and capable of connecting to a Clopath
-  synapse. Note that there are two points that are not mentioned in the paper but
-  present in a matlab implementation by Claudia Clopath. The first one is the clamping
-  of the membrane potential to a fixed value after a spike occured to mimik a real
-  spike and not just the upswing. This is important since the finite duration of the
-  spike influences the evolution of the convolved versions (u_bar_plus/minus) of the
-  membrane potential and thus the change of the synaptic weight. Secondly, there is a
-  delay with which u_bar_plus/minus are used to compute the change of the synaptic
-  weight.
-
-Parameters:
-The following parameters can be set in the status dictionary.
-
-Dynamic state variables:
-  V_m         double - Membrane potential in mV
-  w           double - Spike-adaptation current in pA.
-  z           double - Spike-adaptation current in pA.
-  V_T         double - Spike-adaptation current in pA.
-  u_bar_plus  double - Low-pass filtered Membrane potential in mV
-  u-bar_minus double - Low-pass filtered Membrane potential in mV
-  u_bar_bar   double - Low-pass filtered u_bar_minus in mV
-
-Membrane Parameters:
-  C_m        double - Capacity of the membrane in pF
-  t_ref      double - Duration of refractory period in ms.
-  V_reset    double - Reset value for V_m after a spike. In mV.
-  E_L        double - Leak reversal potential in mV.
-  g_L        double - Leak conductance in nS.
-  I_e        double - Constant external input current in pA.
-  tau_plus   double - Time constant of u_bar_plus
-  tau_minus  double - Time constant of u_bar_minus
-  tau_bar_bar double - Time constant of u_bar_bar
-
-Spike adaptation parameters:
-  a          double - Subthreshold adaptation in nS.
-  b          double - Spike-triggered adaptation in pA.
-  Delta_T    double - Slope factor in mV
-  tau_w      double - Adaptation time constant in ms
-  V_t        double - Spike initiation threshold in mV
-  V_peak     double - Spike detection threshold in mV.
-
-Other parameters:
-  t_clamp     double - Duration of clamping of Membrane potential after a spike in ms
-  V_clamp     double - Value to which the Membrane potential is clamped in mV
-  delay_u_bars  double - Delay with which u_bar_p/m are processed to compute the synaptic weights.
-Note:
-  Neither the clamping nor the delayed processing of u_bar_p/m are mentioned in the paper. However,
-  they are part of an reference implementation by Claudia Clopath  et al. that can be found on
-  ModelDB. The clamping is important to mimic a spike which is otherwise not described by the aeif
-  neuron model.
-
-Integration parameters
-  gsl_error_tol  double - This parameter controls the admissible error of the
-                          GSL integrator. Reduce it if NEST complains about
-                          numerical instabilities.
-
-Author: Jonas Stapmanns, David Dahmen, Jan Hahne
-
-Sends: SpikeEvent
-
-Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
-
-References:
-   [1] Clopath et al. (2010) Connectivity reflects coding:
-       a model of voltage-based STDP with homeostasis.
-       Nature Neuroscience 13:3,344--352
-
-SeeAlso: aeif_cond_exp
-*/
-
 namespace nest
 {
 /**
@@ -131,6 +56,98 @@ namespace nest
  */
 extern "C" int aeif_cbvg_2010_dynamics( double, const double*, double*, void* );
 
+/** @BeginDocumentation
+Name: aeif_cbvg_2010 - Exponential integrate-and-fire neuron
+                        model according to Clopath et al. (2010).
+
+Description:
+
+aeif_cbvg_2010 is an implementation of the neuron model as it is used in [1].
+It is an extension of the aeif_psc_delta model and capable of connecting to a
+Clopath synapse.
+
+Note that there are two points that are not mentioned in the paper but
+present in a Matlab implementation by Claudia Clopath. The first one is the
+clamping of the membrane potential to a fixed value after a spike occured to
+mimik a real spike and not just the upswing. This is important since the finite
+duration of the spike influences the evolution of the convolved versions
+(u_bar_plus/minus) of the membrane potential and thus the change of the
+synaptic weight. Secondly, there is a delay with which u_bar_plus/minus are
+used to compute the change of the synaptic weight.
+
+Parameters:
+
+The following parameters can be set in the status dictionary.
+
+Dynamic state variables:
+V_m         double - Membrane potential in mV.
+w           double - Spike-adaptation current in pA.
+z           double - Spike-adaptation current in pA.
+V_T         double - Spike-adaptation current in pA.
+
+Membrane Parameters:
+C_m         double - Capacity of the membrane in pF
+t_ref       double - Duration of refractory period in ms.
+V_reset     double - Reset value for V_m after a spike. In mV.
+E_L         double - Leak reversal potential in mV.
+g_L         double - Leak conductance in nS.
+I_e         double - Constant external input current in pA.
+tau_plus    double - Time constant of u_bar_plus.
+tau_minus   double - Time constant of u_bar_minus.
+tau_bar_bar double - Time constant of u_bar_bar.
+
+Spike adaptation parameters:
+a          double - Subthreshold adaptation in nS.
+b          double - Spike-triggered adaptation in pA.
+Delta_T    double - Slope factor in mV.
+tau_w      double - Adaptation time constant in ms.
+V_t        double - Spike initiation threshold in mV
+V_peak     double - Spike detection threshold in mV.
+
+Clopath rule parameters:
+u_bar_plus    double - Low-pass filtered Membrane potential in mV.
+u-bar_minus   double - Low-pass filtered Membrane potential in mV.
+u_bar_bar     double - Low-pass filtered u_bar_minus in mV.
+A_LTD         double - Amplitude of depression in 1/mV.
+A_LTP         double - Amplitude of facilitation in 1/mV^2.
+theta_plus    double - threshold for u in mV.
+theta_minus   double - threshold for u_bar_p/m in mV.
+A_LTD_const   bool   - Flag that indicates whether A_LTD_ should
+                       be constant (true, default) or multiplied by
+                       u_bar_bar^2 / u_ref_squared (false).
+U_ref_squared double - Reference value for u_bar_bar_^2.
+
+Other parameters:
+t_clamp      double - Duration of clamping of Membrane potential after a spike
+                      in ms.
+V_clamp      double - Value to which the Membrane potential is clamped in mV.
+delay_u_bars double - Delay with which u_bar_p/m are processed to compute the
+                      synaptic weights.
+
+Integration parameters:
+gsl_error_tol double - This parameter controls the admissible error of the
+                       GSL integrator. Reduce it if NEST complains about
+                       numerical instabilities.
+
+Note:
+
+Neither the clamping nor the delayed processing of u_bar_p/m are mentioned in
+the paper. However, they are part of an reference implementation by Claudia
+Clopath  et al. that can be found on ModelDB. The clamping is important to
+mimic a spike which is otherwise not described by the aeif neuron model.
+
+Author: Jonas Stapmanns, David Dahmen, Jan Hahne
+
+Sends: SpikeEvent
+
+Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
+
+References:  [1] Clopath et al. (2010) Connectivity reflects coding:
+                a model of voltage-based STDP with homeostasis.
+                Nature Neuroscience 13:3,344--352
+
+SeeAlso: aeif_cond_exp, clopath_stdp_synapse
+*/
 class aeif_cbvg_2010 : public Clopath_Archiving_Node
 {
 
@@ -187,20 +204,20 @@ private:
     double V_reset_; //!< Reset Potential in mV
     double t_ref_;   //!< Refractory period in ms
 
-    double g_L;      //!< Leak Conductance in nS
-    double C_m;      //!< Membrane Capacitance in pF
-    double E_L;      //!< Leak reversal Potential (aka resting potential) in mV
-    double Delta_T;  //!< Slope faktor in ms
-    double tau_w;    //!< adaptation time-constant in ms
-    double tau_z;    //!< adaptation time-constant in ms
-    double tau_V_T;  //!< adaptive threshold time-constant in ms
-    double V_T_max;  //!< value of V_T afer a spike in mV
-    double V_T_rest; //!< resting value of V_T in mV
-    double tau_plus; //!< time constant of u_bar_plus in ms
+    double g_L;       //!< Leak Conductance in nS
+    double C_m;       //!< Membrane Capacitance in pF
+    double E_L;       //!< Leak reversal Potential (aka resting potential) in mV
+    double Delta_T;   //!< Slope faktor in ms
+    double tau_w;     //!< adaptation time-constant in ms
+    double tau_z;     //!< adaptation time-constant in ms
+    double tau_V_T;   //!< adaptive threshold time-constant in ms
+    double V_T_max;   //!< value of V_T afer a spike in mV
+    double V_T_rest;  //!< resting value of V_T in mV
+    double tau_plus;  //!< time constant of u_bar_plus in ms
     double tau_minus; //!< time constant of u_bar_minus in ms
     double tau_bar_bar; //!< time constant of u_bar_bar in ms
-    double a; //!< Subthreshold adaptation in nS.
-    double b; //!< Spike-triggered adaptation in pA
+    double a;           //!< Subthreshold adaptation in nS.
+    double b;           //!< Spike-triggered adaptation in pA
     double I_sp;
     double t_ref; //!< Refractory period in ms.
     double I_e;   //!< Intrinsic current in pA.

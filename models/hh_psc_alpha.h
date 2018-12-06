@@ -95,6 +95,19 @@ Act_h      double - Activation variable h
 Inact_n    double - Inactivation variable n
 I_e        double - Constant external input current in pA.
 
+Clopath rule parameters:
+u_bar_plus    double - Low-pass filtered Membrane potential in mV.
+u-bar_minus   double - Low-pass filtered Membrane potential in mV.
+u_bar_bar     double - Low-pass filtered u_bar_minus in mV.
+A_LTD         double - Amplitude of depression in 1/mV.
+A_LTP         double - Amplitude of facilitation in 1/mV^2.
+theta_plus    double - threshold for u in mV.
+theta_minus   double - threshold for u_bar_p/m in mV.
+A_LTD_const   bool   - Flag that indicates whether A_LTD_ should
+                       be constant (true, default) or multiplied by
+                       u_bar_bar^2 / u_ref_squared (false).
+U_ref_squared double - Reference value for u_bar_bar_^2.
+
 Problems/Todo:
 
 better spike detection
@@ -119,10 +132,10 @@ Sends: SpikeEvent
 
 Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
 
-Authors: Jonas Stapmanns, David Dahmen, Jan Hahne
-         adapted from hh_psc_alpha by Schrader
+Author: Schrader (adapted for clopath_stdp_synapse by
+         Jonas Stapmanns, David Dahmen, Jan Hahne)
 
-SeeAlso: hh_psc_alpha
+SeeAlso: hh_cond_exp_traub, clopath_stdp_synapse
 */
 class hh_psc_alpha : public Clopath_Archiving_Node
 {
@@ -196,20 +209,20 @@ private:
   //! Independent parameters
   struct Parameters_
   {
-    double t_ref_;   //!< refractory time in ms
-    double g_Na;     //!< Sodium Conductance in nS
-    double g_K;      //!< Potassium Conductance in nS
-    double g_L;      //!< Leak Conductance in nS
-    double C_m;      //!< Membrane Capacitance in pF
-    double E_Na;     //!< Sodium Reversal Potential in mV
-    double E_K;      //!< Potassium Reversal Potential in mV
-    double E_L;      //!< Leak reversal Potential (aka resting potential) in mV
-    double tau_synE; //!< Synaptic Time Constant Excitatory Synapse in ms
-    double tau_synI; //!< Synaptic Time Constant for Inhibitory Synapse in ms
-    double I_e;      //!< Constant Current in pA
-    double tau_plus; //!< time constant of u_bar_plus in ms
+    double t_ref_;    //!< refractory time in ms
+    double g_Na;      //!< Sodium Conductance in nS
+    double g_K;       //!< Potassium Conductance in nS
+    double g_L;       //!< Leak Conductance in nS
+    double C_m;       //!< Membrane Capacitance in pF
+    double E_Na;      //!< Sodium Reversal Potential in mV
+    double E_K;       //!< Potassium Reversal Potential in mV
+    double E_L;       //!< Leak reversal Potential (aka resting potential) in mV
+    double tau_synE;  //!< Synaptic Time Constant Excitatory Synapse in ms
+    double tau_synI;  //!< Synaptic Time Constant for Inhibitory Synapse in ms
+    double I_e;       //!< Constant Current in pA
+    double tau_plus;  //!< time constant of u_bar_plus in ms
     double tau_minus; //!< time constant of u_bar_minus in ms
-    double tau_bar_bar; //!< time constant of u_bar_bar in ms
+    double tau_bar_bar;  //!< time constant of u_bar_bar in ms
     double delay_u_bars; //!< Delay of the convolved membrane potentials in ms
 
     Parameters_(); //!< Sets default parameter values

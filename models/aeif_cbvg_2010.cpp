@@ -156,25 +156,25 @@ nest::aeif_cbvg_2010_dynamics( double,
  * ---------------------------------------------------------------- */
 
 nest::aeif_cbvg_2010::Parameters_::Parameters_()
-  : V_peak_( 0.0 )    // mV
-  , V_reset_( -60.0 ) // mV
-  , t_ref_( 0.0 )     // ms
-  , g_L( 30.0 )       // nS
-  , C_m( 281.0 )      // pF
-  , E_L( -70.6 )      // mV
-  , Delta_T( 2.0 )    // mV
-  , tau_w( 144.0 )    // ms
-  , tau_z( 40.0 )     // ms
-  , tau_V_T( 50.0 )   // ms
-  , V_T_max( 30.4 )   // mV
-  , V_T_rest( -50.4 ) // mV
-  , tau_plus( 7.0 )   // ms
-  , tau_minus( 10.0 ) // ms
+  : V_peak_( 0.0 )       // mV
+  , V_reset_( -60.0 )    // mV
+  , t_ref_( 0.0 )        // ms
+  , g_L( 30.0 )          // nS
+  , C_m( 281.0 )         // pF
+  , E_L( -70.6 )         // mV
+  , Delta_T( 2.0 )       // mV
+  , tau_w( 144.0 )       // ms
+  , tau_z( 40.0 )        // ms
+  , tau_V_T( 50.0 )      // ms
+  , V_T_max( 30.4 )      // mV
+  , V_T_rest( -50.4 )    // mV
+  , tau_plus( 7.0 )      // ms
+  , tau_minus( 10.0 )    // ms
   , tau_bar_bar( 500.0 ) // ms
-  , a( 4.0 )          // nS
-  , b( 80.5 )         // pA
-  , I_sp( 400.0 )     // pA
-  , I_e( 0.0 )        // pA
+  , a( 4.0 )             // nS
+  , b( 80.5 )            // pA
+  , I_sp( 400.0 )        // pA
+  , I_e( 0.0 )           // pA
   , gsl_error_tol( 1e-6 )
   , delay_u_bars( 5.0 ) // ms
   , t_clamp_( 2.0 )     // ms
@@ -306,7 +306,8 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
   }
 
   if ( tau_w <= 0 or tau_V_T <= 0 or tau_w <= 0 or tau_z <= 0 or tau_plus <= 0
-    or tau_minus <= 0 or tau_bar_bar <= 0 )
+    or tau_minus <= 0
+    or tau_bar_bar <= 0 )
   {
     throw BadProperty( "All time constants must be strictly positive." );
   }
