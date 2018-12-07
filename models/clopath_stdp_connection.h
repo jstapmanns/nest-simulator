@@ -307,7 +307,7 @@ Clopath_STDPConnection< targetidentifierT >::set_status(
 
   // check if weight_ and Wmax_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
-         == ( ( Wmax_ >= 0 ) - ( Wmax_ < 0 ) ) ) )
+         == ( ( Wmax_ > 0 ) - ( Wmax_ <= 0 ) ) ) )
   {
     throw BadProperty( "Weight and Wmax must have same sign." );
   }

@@ -305,32 +305,42 @@ public:
 protected:
   /**
    * \fn void write_LTD_history( Time const& t_sp,
-    double u_bar_minus, double offset = 0.0 )
+    double u_bar_minus )
    * Creates a new entry in the LTD history and delets old entries that
    * are not needed any more.
    */
-  void write_LTD_history( Time const& t_sp,
+  void write_LTD_history( const double t_ltd_ms,
     double u_bar_minus,
-    double u_bar_bar,
-    double offset = 0.0 );
+    double u_bar_bar );
+
+  /**
+   * \fn void write_LTP_history( Time const& t_sp,
+   * double u, double u_bar_plus )
+   * Creates a new entry in the LTP history and delets old entries that
+   * are not needed any more.
+   */
+  void write_LTP_history( const double t_ltp_ms,
+    double u,
+    double u_bar_plus );
 
   /**
    * \fn void write_LTP_history( Time const& t_sp,
    * double u, double u_bar_plus, double offset = 0.0 )
-   * Creates a new entry in the LTP history and delets old entries that
-   * are not needed any more.
+   * Writes and reads the delayed_u_bar_p/m buffers and
+   * calls write_LTD_history and write_LTP_history if
+   * the corresponding Heaviside functions yield 1.
    */
-  void write_LTP_history( Time const& t_sp,
+  void write_LTP_LTD_history( Time const& t_sp,
     double u,
     double u_bar_plus,
-    double offset = 0.0 );
+    double u_bar_minus,
+    double u_bar_bar );
 
-  void init_ltd_history();
+  void init_clopath_buffers();
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
 
 private:
-  // std::deque< histentry_cl > ltd_history_;
   std::vector< histentry_cl > ltd_history_;
   std::deque< histentry_cl > ltp_history_;
 
@@ -345,6 +355,12 @@ private:
   double theta_minus_;
 
   bool A_LTD_const_;
+
+  double delay_u_bars_;
+  size_t delay_u_bars_steps_;
+  std::vector< double > delayed_u_bar_plus_;
+  std::vector< double > delayed_u_bar_minus_;
+  size_t delayed_u_bars_idx_;
 
   size_t ltd_hist_len_;
 

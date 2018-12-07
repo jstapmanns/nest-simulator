@@ -317,10 +317,6 @@ private:
      * the first simulation, but not modified before later Simulate calls.
      */
     double I_stim_;
-    std::vector< double > delayed_u_bar_plus_;
-    std::vector< double > delayed_u_bar_minus_;
-    size_t read_idx_;
-    size_t delay_length_;
   };
 
   // ----------------------------------------------------------------

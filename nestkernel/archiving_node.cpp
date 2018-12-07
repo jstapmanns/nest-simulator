@@ -471,6 +471,7 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node()
   , A_LTD_const_( true )
   , ltd_hist_len_( 0 )
   , ltd_hist_current_( 0 )
+  , delay_u_bars_( 5.0 )
 {
 }
 
@@ -485,24 +486,25 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node(
   , A_LTD_const_( n.A_LTD_const_ )
   , ltd_hist_len_( n.ltd_hist_len_ )
   , ltd_hist_current_( n.ltd_hist_current_ )
+  , delay_u_bars_( n.delay_u_bars_ )
 {
 }
 
 void
-nest::Clopath_Archiving_Node::init_ltd_history()
+nest::Clopath_Archiving_Node::init_clopath_buffers()
 {
+  // Implementation of the delay of the convolved membrane potentials.
+  // This delay is not described in Clopath et al. 2010 but is present in
+  // the code which was presumably used to create the figures in the paper.
+  delayed_u_bars_idx_ = 0;
+  delay_u_bars_steps_ = Time::delay_ms_to_steps( delay_u_bars_ ) + 1;
+  delayed_u_bar_plus_.resize( delay_u_bars_steps_ );
+  delayed_u_bar_minus_.resize( delay_u_bars_steps_ );
+
+  // initialize the ltp-history
   ltd_hist_current_ = 0;
   ltd_hist_len_ = kernel().connection_manager.get_max_delay();
   ltd_history_.resize( ltd_hist_len_, histentry_cl( 0.0, 0.0, 0 ) );
-  /*
-  std::cout << "constructor: " << kernel().connection_manager.get_max_delay() <<
-  ", " << ltd_hist_current_ <<
-    std::endl;
-  for ( size_t n = 0; n < ltd_hist_len_; n++ )
-  {
-    ltd_history_.push_back( histentry_cl( 0.0, 0.0, 0 ) );
-  }
-  */
 }
 
 void
@@ -516,6 +518,7 @@ nest::Clopath_Archiving_Node::get_status( DictionaryDatum& d ) const
   def< double >( d, names::theta_plus, theta_plus_ );
   def< double >( d, names::theta_minus, theta_minus_ );
   def< bool >( d, names::A_LTD_const, A_LTD_const_ );
+  def< double >( d, names::delay_u_bars, delay_u_bars_ );
 }
 
 void
@@ -530,12 +533,14 @@ nest::Clopath_Archiving_Node::set_status( const DictionaryDatum& d )
   double new_theta_minus = theta_minus_;
   double new_u_ref_squared = u_ref_squared_;
   double new_A_LTD_const = A_LTD_const_;
+  double new_delay_u_bars = delay_u_bars_;
   updateValue< double >( d, names::A_LTD, new_A_LTD );
   updateValue< double >( d, names::A_LTP, new_A_LTP );
   updateValue< double >( d, names::u_ref_squared, new_u_ref_squared );
   updateValue< double >( d, names::theta_plus, new_theta_plus );
   updateValue< double >( d, names::theta_minus, new_theta_minus );
   updateValue< bool >( d, names::A_LTD_const, new_A_LTD_const );
+  updateValue< double >( d, names::delay_u_bars, new_delay_u_bars );
   A_LTD_ = new_A_LTD;
   A_LTP_ = new_A_LTP;
   u_ref_squared_ = new_u_ref_squared;
@@ -548,12 +553,12 @@ nest::Clopath_Archiving_Node::set_status( const DictionaryDatum& d )
   theta_plus_ = new_theta_plus;
   theta_minus_ = new_theta_minus;
   A_LTD_const_ = new_A_LTD_const;
+  delay_u_bars_ = new_delay_u_bars;
 }
 
 double
 nest::Clopath_Archiving_Node::get_LTD_value( double t )
 {
-  // std::deque< histentry_cl >::iterator runner;
   std::vector< histentry_cl >::iterator runner;
   if ( ltd_history_.empty() || t < 0.0 )
   {
@@ -595,13 +600,13 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
     std::deque< histentry_cl >::iterator runner = ltp_history_.begin();
     // To have a well defined discretization of the integral, we make sure
     // that we exclude the entry at t1 but include the one at t2 by subtracting
-    // a small number so that runner->t_ is never equal to t1/2.
-    while ( ( runner != ltp_history_.end() ) && ( runner->t_ - 0.001 < t1 ) )
+    // a small number so that runner->t_ is never equal to t1 or t2.
+    while ( ( runner != ltp_history_.end() ) && ( runner->t_ - 1.0e-6 < t1 ) )
     {
       ++runner;
     }
     *start = runner;
-    while ( ( runner != ltp_history_.end() ) && ( runner->t_ - 0.001 < t2 ) )
+    while ( ( runner != ltp_history_.end() ) && ( runner->t_ - 1.0e-6 < t2 ) )
     {
       ( runner->access_counter_ )++;
       ++runner;
@@ -611,42 +616,47 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
 }
 
 void
-nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
+nest::Clopath_Archiving_Node::write_LTP_LTD_history( Time const& t_sp,
+  double u,
+  double u_bar_plus,
   double u_bar_minus,
-  double u_bar_bar,
-  double offset )
+  double u_bar_bar )
 {
-  const double t_ltd_ms = t_ltd.get_ms() - offset;
+  const double t_ms = t_sp.get_ms();
 
+  // write u_bar_p/m in ring buffer
+  delayed_u_bar_plus_[ delayed_u_bars_idx_ ] = u_bar_plus;
+
+  delayed_u_bar_minus_[ delayed_u_bars_idx_ ] = u_bar_minus;
+
+  // increment pointer
+  delayed_u_bars_idx_ =
+    ( delayed_u_bars_idx_ + 1 ) % delay_u_bars_steps_;
+
+  // read oldest values from buffers
+  double del_u_bar_plus = delayed_u_bar_plus_[ delayed_u_bars_idx_ ];
+  double del_u_bar_minus = delayed_u_bar_minus_[ delayed_u_bars_idx_ ];
+
+  // save data for Clopath STDP if necessary
+  if ( ( u > theta_plus_ ) && ( del_u_bar_plus > theta_minus_ ) )
+  {
+    write_LTP_history( t_ms, u, del_u_bar_plus );
+  }
+
+  if ( del_u_bar_minus > theta_minus_ )
+  {
+    write_LTD_history( t_ms, del_u_bar_minus, u_bar_bar );
+  }
+
+}
+
+void
+nest::Clopath_Archiving_Node::write_LTD_history( const double t_ltd_ms,
+  double u_bar_minus,
+  double u_bar_bar )
+{
   if ( n_incoming_ )
   {
-    /*
-    // prune all entries from history which are no longer needed
-    // except the penultimate one. we might still need it.
-    while ( ltd_history_.size() > 1 )
-    {
-      if ( ltd_history_.front().t_ < t_ltd_ms -
-          t_ltd.delay_steps_to_ms( kernel().connection_manager.get_max_delay() )
-    )
-      //if ( ltd_history_.front().access_counter_ >= n_incoming_ )
-      {
-        ltd_history_.pop_front();
-      }
-      else
-      {
-        break;
-      }
-    }
-    // Depending on the flag A_LTD_const_, the amplitude of the depression is
-    given by
-    // A_LTD_ only (true) or multiplied by u_bar_bar^2 / u_ref_squared_ (false)
-    const double dw = A_LTD_const_
-      ? A_LTD_ * ( u_bar_minus - theta_minus_ )
-      : A_LTD_ * u_bar_bar * u_bar_bar * ( u_bar_minus - theta_minus_ ) /
-    u_ref_squared_;
-    ltd_history_.push_back( histentry_cl( t_ltd_ms, dw, 0 ) );
-    */
-    // std::cout << ltd_hist_current_ << ", " << ltd_hist_len_ << std::endl;
     const double dw = A_LTD_const_ ? A_LTD_ * ( u_bar_minus - theta_minus_ )
                                    : A_LTD_ * u_bar_bar * u_bar_bar
         * ( u_bar_minus - theta_minus_ ) / u_ref_squared_;
@@ -656,13 +666,10 @@ nest::Clopath_Archiving_Node::write_LTD_history( Time const& t_ltd,
 }
 
 void
-nest::Clopath_Archiving_Node::write_LTP_history( Time const& t_ltp,
+nest::Clopath_Archiving_Node::write_LTP_history( const double t_ltp_ms,
   double u,
-  double u_bar_plus,
-  double offset )
+  double u_bar_plus )
 {
-  const double t_ltp_ms = t_ltp.get_ms() - offset;
-
   if ( n_incoming_ )
   {
     // prune all entries from history which are no longer needed
@@ -681,7 +688,7 @@ nest::Clopath_Archiving_Node::write_LTP_history( Time const& t_ltp,
     // dw is not the change of the synaptic weight since the factor
     // x_bar is not included (but later in the synapse)
     const double dw = A_LTP_ * ( u - theta_plus_ )
-      * ( u_bar_plus - theta_minus_ ) * t_ltp.get_resolution().get_ms();
+      * ( u_bar_plus - theta_minus_ ) * Time::get_resolution().get_ms();
     ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
   }
 }

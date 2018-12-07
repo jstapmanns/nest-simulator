@@ -224,8 +224,6 @@ private:
 
     double gsl_error_tol; //!< error bound for GSL integrator
 
-    double delay_u_bars; //!< Delay of the convolved membrane potentials in ms
-
     double t_clamp_; //!< The membrane potential is clamped to V_clamp (in mV)
     double V_clamp_; //!< for the duration of t_clamp (in ms) after each spike.
 
@@ -314,9 +312,6 @@ public:
      * the first simulation, but not modified before later Simulate calls.
      */
     double I_stim_;
-    std::vector< double > delayed_u_bar_plus_;
-    std::vector< double > delayed_u_bar_minus_;
-    size_t delayed_u_bars_idx_;
   };
 
   // ----------------------------------------------------------------
@@ -334,8 +329,6 @@ public:
 
     unsigned int refractory_counts_;
     unsigned int clamp_counts_;
-
-    size_t delay_u_bars_steps_;
   };
 
   // Access functions for UniversalDataLogger -------------------------------

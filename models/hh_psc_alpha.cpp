@@ -167,7 +167,6 @@ nest::hh_psc_alpha::Parameters_::Parameters_()
   , tau_plus( 114.0 )    // ms
   , tau_minus( 10.0 )    // ms
   , tau_bar_bar( 500.0 ) // ms
-  , delay_u_bars( 5.0 )  // ms
 {
 }
 
@@ -237,7 +236,6 @@ nest::hh_psc_alpha::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::tau_plus, tau_plus );
   def< double >( d, names::tau_minus, tau_minus );
   def< double >( d, names::tau_bar_bar, tau_bar_bar );
-  def< double >( d, names::delay_u_bars, delay_u_bars );
 }
 
 void
@@ -259,7 +257,6 @@ nest::hh_psc_alpha::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::tau_plus, tau_plus );
   updateValue< double >( d, names::tau_minus, tau_minus );
   updateValue< double >( d, names::tau_bar_bar, tau_bar_bar );
-  updateValue< double >( d, names::delay_u_bars, delay_u_bars );
   if ( C_m <= 0 )
   {
     throw BadProperty( "Capacitance must be strictly positive." );
@@ -424,16 +421,7 @@ nest::hh_psc_alpha::init_buffers_()
 
   B_.I_stim_ = 0.0;
 
-  // Implementation of the delay of the convolved membrane potentials.
-  // This delay is not described in Clopath et al. 2010 but is present in
-  // the code which was presumably used to create the figures in the paper.
-  B_.read_idx_ = 0;
-  B_.delay_length_ = Time::delay_ms_to_steps( P_.delay_u_bars ) + 1;
-  // std::cout << B_.read_idx_ << "  " << B_.delay_length_ << std::endl;
-  B_.delayed_u_bar_plus_.resize( B_.delay_length_ );
-  B_.delayed_u_bar_minus_.resize( B_.delay_length_ );
-
-  init_ltd_history();
+  init_clopath_buffers();
 }
 
 void
@@ -500,30 +488,12 @@ nest::hh_psc_alpha::update( Time const& origin, const long from, const long to )
     S_.y_[ State_::DI_INH ] +=
       B_.spike_inh_.get_value( lag ) * V_.PSCurrInit_I_;
 
-    // write u_bar_p/m in buffer to account for the delay
-    B_.delayed_u_bar_plus_[ B_.read_idx_ ] = S_.y_[ State_::U_BAR_PLUS ];
-
-    B_.delayed_u_bar_minus_[ B_.read_idx_ ] = S_.y_[ State_::U_BAR_MINUS ];
-
-    // increment the pointer
-    B_.read_idx_ = ( B_.read_idx_ + 1 ) % B_.delay_length_;
-
-    // write LTP and LTD history if the (convolved) membrane potentials are
-    // greater than the corresponding threshold
-    if ( ( S_.y_[ State_::V_M ] > get_theta_plus() )
-      && ( B_.delayed_u_bar_plus_[ B_.read_idx_ ] > get_theta_minus() ) )
-    {
-      write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
-        S_.y_[ State_::V_M ],
-        B_.delayed_u_bar_plus_[ B_.read_idx_ ] );
-    }
-
-    if ( B_.delayed_u_bar_minus_[ B_.read_idx_ ] > get_theta_minus() )
-    {
-      write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
-        B_.delayed_u_bar_minus_[ B_.read_idx_ ],
-        S_.y_[ State_::U_BAR_BAR ] );
-    }
+    // save data for Clopath STDP
+    write_LTP_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
+      S_.y_[ State_::V_M ],
+      S_.y_[ State_::U_BAR_PLUS ],
+      S_.y_[ State_::U_BAR_MINUS ],
+      S_.y_[ State_::U_BAR_BAR ] );
 
     // sending spikes: crossing 0 mV, pseudo-refractoriness and local maximum...
     // refractory?

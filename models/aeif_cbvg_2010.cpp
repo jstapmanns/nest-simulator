@@ -176,7 +176,6 @@ nest::aeif_cbvg_2010::Parameters_::Parameters_()
   , I_sp( 400.0 )        // pA
   , I_e( 0.0 )           // pA
   , gsl_error_tol( 1e-6 )
-  , delay_u_bars( 5.0 ) // ms
   , t_clamp_( 2.0 )     // ms
   , V_clamp_( 33.0 )    // mV
 {
@@ -243,7 +242,6 @@ nest::aeif_cbvg_2010::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::I_e, I_e );
   def< double >( d, names::V_peak, V_peak_ );
   def< double >( d, names::gsl_error_tol, gsl_error_tol );
-  def< double >( d, names::delay_u_bars, delay_u_bars );
   def< double >( d, names::V_clamp, V_clamp_ );
   def< double >( d, names::t_clamp, t_clamp_ );
 }
@@ -276,7 +274,6 @@ nest::aeif_cbvg_2010::Parameters_::set( const DictionaryDatum& d )
 
   updateValue< double >( d, names::gsl_error_tol, gsl_error_tol );
 
-  updateValue< double >( d, names::delay_u_bars, delay_u_bars );
   updateValue< double >( d, names::V_clamp, V_clamp_ );
   updateValue< double >( d, names::t_clamp, t_clamp_ );
 
@@ -457,15 +454,8 @@ nest::aeif_cbvg_2010::init_buffers_()
   B_.sys_.function = aeif_cbvg_2010_dynamics;
 
   B_.I_stim_ = 0.0;
-  // Implementation of the delay of the convolved membrane potentials.
-  // This delay is not described in Clopath et al. 2010 but is present in
-  // the code which was presumably used to create the figures in the paper.
-  B_.delayed_u_bars_idx_ = 0;
-  V_.delay_u_bars_steps_ = Time::delay_ms_to_steps( P_.delay_u_bars ) + 1;
-  B_.delayed_u_bar_plus_.resize( V_.delay_u_bars_steps_ );
-  B_.delayed_u_bar_minus_.resize( V_.delay_u_bars_steps_ );
 
-  init_ltd_history();
+  init_clopath_buffers();
 }
 
 void
@@ -585,30 +575,11 @@ nest::aeif_cbvg_2010::update( const Time& origin,
     }
 
     // save data for Clopath STDP
-    B_.delayed_u_bar_plus_[ B_.delayed_u_bars_idx_ ] =
-      S_.y_[ State_::U_BAR_PLUS ];
-
-    B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ] =
-      S_.y_[ State_::U_BAR_MINUS ];
-
-    B_.delayed_u_bars_idx_ =
-      ( B_.delayed_u_bars_idx_ + 1 ) % V_.delay_u_bars_steps_;
-
-    if ( ( S_.y_[ State_::V_M ] > get_theta_plus() )
-      && ( B_.delayed_u_bar_plus_[ B_.delayed_u_bars_idx_ ]
-           > get_theta_minus() ) )
-    {
-      write_LTP_history( Time::step( origin.get_steps() + lag + 1 ),
-        S_.y_[ State_::V_M ],
-        B_.delayed_u_bar_plus_[ B_.delayed_u_bars_idx_ ] );
-    }
-
-    if ( B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ] > get_theta_minus() )
-    {
-      write_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
-        B_.delayed_u_bar_minus_[ B_.delayed_u_bars_idx_ ],
-        S_.y_[ State_::U_BAR_BAR ] );
-    }
+    write_LTP_LTD_history( Time::step( origin.get_steps() + lag + 1 ),
+      S_.y_[ State_::V_M ],
+      S_.y_[ State_::U_BAR_PLUS ],
+      S_.y_[ State_::U_BAR_MINUS ],
+      S_.y_[ State_::U_BAR_BAR ] );
 
     // decrement clamp count
     if ( S_.clamp_r_ > 0 )
