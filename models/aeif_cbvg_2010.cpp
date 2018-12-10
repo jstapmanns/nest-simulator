@@ -183,6 +183,7 @@ nest::aeif_cbvg_2010::Parameters_::Parameters_()
 
 nest::aeif_cbvg_2010::State_::State_( const Parameters_& p )
   : r_( 0 )
+  , clamp_r_( 0 )
 {
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
@@ -196,6 +197,7 @@ nest::aeif_cbvg_2010::State_::State_( const Parameters_& p )
 
 nest::aeif_cbvg_2010::State_::State_( const State_& s )
   : r_( s.r_ )
+  , clamp_r_( s.clamp_r_ )
 {
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
@@ -212,6 +214,7 @@ nest::aeif_cbvg_2010::State_& nest::aeif_cbvg_2010::State_::operator=(
     y_[ i ] = s.y_[ i ];
   }
   r_ = s.r_;
+  clamp_r_ = s.clamp_r_;
   return *this;
 }
 
