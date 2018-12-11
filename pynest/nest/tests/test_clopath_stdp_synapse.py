@@ -67,6 +67,88 @@ class ClopathSynapseTestCase(unittest.TestCase):
 
 
 
+    def test_SynapseDepressionFacilitation(self):
+        """
+        Ensure that depression and facilitation work correctly using the spike pairing experiment of Clopath et al.
+        2010.
+        """
+        resolution = 0.1
+        nrn_params = {  'V_m':-70.6,
+                        'E_L':-70.6,
+                        'C_m':281.0,
+                        'theta_minus':-70.6,
+                        'theta_plus':-45.3,
+                        'A_LTD':14.0e-5,
+                        'A_LTP':8.0e-5,
+                        'tau_minus':10.0,
+                        'tau_plus':7.0,
+                        'delay_u_bars':4.0,
+                        'a':4.0,
+                        'b':0.0805,
+                        'V_reset':-70.6 + 21.0,
+                        'V_clamp':33.0,
+                        't_clamp':2.0,
+                        't_ref':0.0, }
+
+        # Parameters of the experimental protocol
+        spike_times_pre = [
+                [  29.,  129.,  229.,  329.,  429.],
+                [  29. ,   62.3,   95.7,  129. ,  162.3],
+                [  29.,   49.,   69.,   89.,  109.],
+                [ 129.,  229.,  329.,  429.,  529.,  629.],
+                [  62.3,   95.6,  129. ,  162.3,  195.6,  229. ],
+                [  49.,   69.,   89.,  109.,  129.,  149.] ]
+        spike_times_post = [
+                [  19.,  119.,  219.,  319.,  419.],
+                [  19. ,   52.3,   85.7,  119. ,  152.3],
+                [ 19.,  39.,  59.,  79.,  99.],
+                [ 139.,  239.,  339.,  439.,  539.,  639.],
+                [  72.3,  105.6,  139. ,  172.3,  205.6,  239. ],
+                [  59.,   79.,   99.,  119.,  139.,  159.] ]
+        init_w = 0.5
+        syn_weights = []
+        # outer loop over delays between the two spikes (post-pre, pre-post)
+        for (s_t_pre, s_t_post) in zip(spike_times_pre, spike_times_post):
+            nest.ResetKernel()
+            nest.SetKernelStatus({"resolution":resolution})
+
+            # Create one neuron
+            nrn = nest.Create("aeif_cbvg_2010", 1, nrn_params)
+            prrt_nrn = nest.Create("parrot_neuron", 1)
+
+            # Create and connect spike generator
+            spike_gen_pre = nest.Create("spike_generator", 1, {"spike_times":s_t_pre})
+
+            nest.Connect(spike_gen_pre, prrt_nrn, syn_spec = {"delay":resolution})
+
+            spike_gen_params_post = {"spike_times":s_t_post}
+            spike_gen_post = nest.Create("spike_generator", 1, {"spike_times":s_t_post})
+
+            nest.Connect(spike_gen_post, nrn, syn_spec = {"delay":resolution, "weight":80.0})
+
+            # Create weight recorder
+            wr = nest.Create('weight_recorder', 1)
+
+            # Create Clopath-STDP synapse with weight recorder
+            nest.CopyModel("clopath_stdp_synapse", "clopath_stdp_synapse_rec", {"weight_recorder": wr[0]})
+            syn_dict = {"model":"clopath_stdp_synapse_rec", "weight":init_w, "delay":resolution}
+            nest.Connect(prrt_nrn, nrn, syn_spec = syn_dict)
+
+            # Simulation
+            simulation_time = (10.0 + max(s_t_pre[-1], s_t_post[-1]))
+            nest.Simulate(simulation_time)
+
+            # Read out
+            w_events = nest.GetStatus(wr)[0]["events"]
+            weights = w_events["weights"]
+            syn_weights.append(weights[-1])
+
+        syn_weights = np.array(syn_weights)
+        syn_weights = 100.0*15.0*(syn_weights - init_w)/init_w + 100.0
+        correct_weights = [60.30296718, 72.94189621, 142.07728365, 102.75517661, 120.12121792, 148.93067228]
+
+        self.assertTrue(np.allclose(syn_weights,correct_weights,rtol=1e-7))
+
     def test_SynapseFunctionWithAeifModel(self):
         """Ensure that spikes are properly processed by the
         aeif_cbvg_2010 model and that spikes send through the
@@ -100,15 +182,15 @@ class ClopathSynapseTestCase(unittest.TestCase):
 
         # Simulation using nest
         nest.Simulate(20.)
-        
+
         # Read out
         data = nest.GetStatus(mm)
         senders = data[0]['events']['senders']
         voltages = data[0]['events']['V_m']
-        
+
         vm1 = voltages[np.where(senders==1)]
         vm2 = voltages[np.where(senders==1)]
-        
+
         self.assertTrue(np.allclose(vm1,vm2,rtol=1e-5))
         self.assertTrue(np.isclose(vm2[11]-vm2[10],2,rtol=1e-5))
 
