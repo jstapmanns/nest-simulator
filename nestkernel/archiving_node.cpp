@@ -469,9 +469,9 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node()
   , theta_plus_( -45.3 )
   , theta_minus_( -70.6 )
   , A_LTD_const_( true )
+  , delay_u_bars_( 5.0 ) 
   , ltd_hist_len_( 0 )
   , ltd_hist_current_( 0 )
-  , delay_u_bars_( 5.0 )
 {
 }
 
@@ -484,9 +484,9 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node(
   , theta_plus_( n.theta_plus_ )
   , theta_minus_( n.theta_minus_ )
   , A_LTD_const_( n.A_LTD_const_ )
+  , delay_u_bars_( n.delay_u_bars_ )
   , ltd_hist_len_( n.ltd_hist_len_ )
   , ltd_hist_current_( n.ltd_hist_current_ )
-  , delay_u_bars_( n.delay_u_bars_ )
 {
 }
 
