@@ -50,6 +50,7 @@ set( models_sources
     ginzburg_neuron.h ginzburg_neuron.cpp
     hh_cond_exp_traub.h hh_cond_exp_traub.cpp
     hh_psc_alpha.h hh_psc_alpha.cpp
+    hh_psc_alpha_clopath.h hh_psc_alpha_clopath.cpp
     hh_psc_alpha_gap.h hh_psc_alpha_gap.cpp
     ht_connection.h
     ht_neuron.h ht_neuron.cpp

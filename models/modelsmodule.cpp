@@ -58,6 +58,7 @@
 #include "ginzburg_neuron.h"
 #include "hh_cond_exp_traub.h"
 #include "hh_psc_alpha.h"
+#include "hh_psc_alpha_clopath.h"
 #include "hh_psc_alpha_gap.h"
 #include "ht_neuron.h"
 #include "iaf_chs_2007.h"
@@ -384,6 +385,8 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< iaf_cond_alpha_mc >(
     "iaf_cond_alpha_mc" );
   kernel().model_manager.register_node_model< hh_psc_alpha >( "hh_psc_alpha" );
+  kernel().model_manager.register_node_model< hh_psc_alpha_clopath >(
+    "hh_psc_alpha_clopath" );
   kernel().model_manager.register_node_model< hh_psc_alpha_gap >(
     "hh_psc_alpha_gap" );
   kernel().model_manager.register_node_model< hh_cond_exp_traub >(

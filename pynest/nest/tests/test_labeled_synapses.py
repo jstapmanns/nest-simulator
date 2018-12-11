@@ -74,7 +74,7 @@ class LabeledSynapsesTestCase(unittest.TestCase):
 
         # in case of the clopath stdp synapse use the a supported model instead
         if syn_model in self.clopath_connections:
-            neurons = nest.Create("hh_psc_alpha", 5)
+            neurons = nest.Create("hh_psc_alpha_clopath", 5)
 
         return neurons
 
