@@ -189,6 +189,7 @@ nest::aeif_cbvg_2010::State_::State_( const Parameters_& p )
   {
     y_[ i ] = 0;
   }
+  y_[ V_M ] = p.E_L;
   y_[ V_T ] = p.V_T_rest;
   y_[ U_BAR_PLUS ] = p.E_L;
   y_[ U_BAR_MINUS ] = p.E_L;
