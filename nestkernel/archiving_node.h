@@ -319,9 +319,7 @@ protected:
    * Creates a new entry in the LTP history and delets old entries that
    * are not needed any more.
    */
-  void write_LTP_history( const double t_ltp_ms,
-    double u,
-    double u_bar_plus );
+  void write_LTP_history( const double t_ltp_ms, double u, double u_bar_plus );
 
   /**
    * \fn void write_LTP_history( Time const& t_sp,

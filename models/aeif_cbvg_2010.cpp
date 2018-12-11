@@ -176,8 +176,8 @@ nest::aeif_cbvg_2010::Parameters_::Parameters_()
   , I_sp( 400.0 )        // pA
   , I_e( 0.0 )           // pA
   , gsl_error_tol( 1e-6 )
-  , t_clamp_( 2.0 )     // ms
-  , V_clamp_( 33.0 )    // mV
+  , t_clamp_( 2.0 )  // ms
+  , V_clamp_( 33.0 ) // mV
 {
 }
 

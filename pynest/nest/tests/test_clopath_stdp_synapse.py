@@ -41,7 +41,7 @@ class ClopathSynapseTestCase(unittest.TestCase):
 
         supported_models = [
             'aeif_cbvg_2010',
-            'hh_psc_alpha',
+            'hh_psc_alpha_clopath',
         ]
 
         for nm in supported_models:

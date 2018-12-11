@@ -469,7 +469,7 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node()
   , theta_plus_( -45.3 )
   , theta_minus_( -70.6 )
   , A_LTD_const_( true )
-  , delay_u_bars_( 5.0 ) 
+  , delay_u_bars_( 5.0 )
   , ltd_hist_len_( 0 )
   , ltd_hist_current_( 0 )
 {
@@ -630,8 +630,7 @@ nest::Clopath_Archiving_Node::write_LTP_LTD_history( Time const& t_sp,
   delayed_u_bar_minus_[ delayed_u_bars_idx_ ] = u_bar_minus;
 
   // increment pointer
-  delayed_u_bars_idx_ =
-    ( delayed_u_bars_idx_ + 1 ) % delay_u_bars_steps_;
+  delayed_u_bars_idx_ = ( delayed_u_bars_idx_ + 1 ) % delay_u_bars_steps_;
 
   // read oldest values from buffers
   double del_u_bar_plus = delayed_u_bar_plus_[ delayed_u_bars_idx_ ];
@@ -647,7 +646,6 @@ nest::Clopath_Archiving_Node::write_LTP_LTD_history( Time const& t_sp,
   {
     write_LTD_history( t_ms, del_u_bar_minus, u_bar_bar );
   }
-
 }
 
 void

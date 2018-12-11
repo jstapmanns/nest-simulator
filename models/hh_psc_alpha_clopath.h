@@ -1,5 +1,5 @@
 /*
- *  hh_psc_alpha.h
+ *  hh_psc_alpha_clopath.h
  *
  *  This file is part of NEST.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef HH_PSC_ALPHA_H
-#define HH_PSC_ALPHA_H
+#ifndef HH_PSC_ALPHA_CLOPATH_H
+#define HH_PSC_ALPHA_CLOPATH_H
 
 // Generated includes:
 #include "config.h"
@@ -55,15 +55,17 @@ namespace nest
  *       through a function pointer.
  * @param void* Pointer to model neuron instance.
  */
-extern "C" int hh_psc_alpha_dynamics( double, const double*, double*, void* );
+extern "C" int
+hh_psc_alpha_clopath_dynamics( double, const double*, double*, void* );
 
 /** @BeginDocumentation
-Name: hh_psc_alpha - Hodgkin-Huxley neuron model.
+Name: hh_psc_alpha_clopath - Hodgkin-Huxley neuron model.
 
 Description:
 
-hh_psc_alpha is an implementation of a spiking neuron using the Hodgkin-Huxley
-formalism.
+hh_psc_alpha_clopath is an implementation of a spiking neuron using the
+Hodgkin-Huxley
+formalism and that is capable of connecting to a Clopath synapse.
 
 (1) Post-synaptic currents
 Incoming spike events induce a post-synaptic change of current modelled
@@ -95,6 +97,19 @@ Act_h      double - Activation variable h
 Inact_n    double - Inactivation variable n
 I_e        double - Constant external input current in pA.
 
+Clopath rule parameters:
+u_bar_plus    double - Low-pass filtered Membrane potential in mV.
+u-bar_minus   double - Low-pass filtered Membrane potential in mV.
+u_bar_bar     double - Low-pass filtered u_bar_minus in mV.
+A_LTD         double - Amplitude of depression in 1/mV.
+A_LTP         double - Amplitude of facilitation in 1/mV^2.
+theta_plus    double - threshold for u in mV.
+theta_minus   double - threshold for u_bar_p/m in mV.
+A_LTD_const   bool   - Flag that indicates whether A_LTD_ should
+                       be constant (true, default) or multiplied by
+                       u_bar_bar^2 / u_ref_squared (false).
+U_ref_squared double - Reference value for u_bar_bar_^2.
+
 Problems/Todo:
 
 better spike detection
@@ -119,17 +134,18 @@ Sends: SpikeEvent
 
 Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
 
-Authors: Schrader
+Author: Schrader (adapted for clopath_stdp_synapse by
+         Jonas Stapmanns, David Dahmen, Jan Hahne)
 
-SeeAlso: hh_cond_exp_traub
+SeeAlso: hh_cond_exp_traub, clopath_stdp_synapse
 */
-class hh_psc_alpha : public Archiving_Node
+class hh_psc_alpha_clopath : public Clopath_Archiving_Node
 {
 
 public:
-  hh_psc_alpha();
-  hh_psc_alpha( const hh_psc_alpha& );
-  ~hh_psc_alpha();
+  hh_psc_alpha_clopath();
+  hh_psc_alpha_clopath( const hh_psc_alpha_clopath& );
+  ~hh_psc_alpha_clopath();
 
   /**
    * Import sets of overloaded virtual functions.
@@ -183,11 +199,12 @@ private:
   // Friends --------------------------------------------------------
 
   // make dynamics function quasi-member
-  friend int hh_psc_alpha_dynamics( double, const double*, double*, void* );
+  friend int
+  hh_psc_alpha_clopath_dynamics( double, const double*, double*, void* );
 
   // The next two classes need to be friend to access the State_ class/member
-  friend class RecordablesMap< hh_psc_alpha >;
-  friend class UniversalDataLogger< hh_psc_alpha >;
+  friend class RecordablesMap< hh_psc_alpha_clopath >;
+  friend class UniversalDataLogger< hh_psc_alpha_clopath >;
 
 private:
   // ----------------------------------------------------------------
@@ -195,17 +212,21 @@ private:
   //! Independent parameters
   struct Parameters_
   {
-    double t_ref_;   //!< refractory time in ms
-    double g_Na;     //!< Sodium Conductance in nS
-    double g_K;      //!< Potassium Conductance in nS
-    double g_L;      //!< Leak Conductance in nS
-    double C_m;      //!< Membrane Capacitance in pF
-    double E_Na;     //!< Sodium Reversal Potential in mV
-    double E_K;      //!< Potassium Reversal Potential in mV
-    double E_L;      //!< Leak reversal Potential (aka resting potential) in mV
-    double tau_synE; //!< Synaptic Time Constant Excitatory Synapse in ms
-    double tau_synI; //!< Synaptic Time Constant for Inhibitory Synapse in ms
-    double I_e;      //!< Constant Current in pA
+    double t_ref_;    //!< refractory time in ms
+    double g_Na;      //!< Sodium Conductance in nS
+    double g_K;       //!< Potassium Conductance in nS
+    double g_L;       //!< Leak Conductance in nS
+    double C_m;       //!< Membrane Capacitance in pF
+    double E_Na;      //!< Sodium Reversal Potential in mV
+    double E_K;       //!< Potassium Reversal Potential in mV
+    double E_L;       //!< Leak reversal Potential (aka resting potential) in mV
+    double tau_synE;  //!< Synaptic Time Constant Excitatory Synapse in ms
+    double tau_synI;  //!< Synaptic Time Constant for Inhibitory Synapse in ms
+    double I_e;       //!< Constant Current in pA
+    double tau_plus;  //!< time constant of u_bar_plus in ms
+    double tau_minus; //!< time constant of u_bar_minus in ms
+    double tau_bar_bar;  //!< time constant of u_bar_bar in ms
+    double delay_u_bars; //!< Delay of the convolved membrane potentials in ms
 
     Parameters_(); //!< Sets default parameter values
 
@@ -233,13 +254,16 @@ public:
     enum StateVecElems
     {
       V_M = 0,
-      HH_M,   // 1
-      HH_H,   // 2
-      HH_N,   // 3
-      DI_EXC, // 4
-      I_EXC,  // 5
-      DI_INH, // 6
-      I_INH,  // 7
+      HH_M,        // 1
+      HH_H,        // 2
+      HH_N,        // 3
+      DI_EXC,      // 4
+      I_EXC,       // 5
+      DI_INH,      // 6
+      I_INH,       // 7
+      U_BAR_PLUS,  // 8
+      U_BAR_MINUS, // 9
+      U_BAR_BAR,   // 10
       STATE_VEC_SIZE
     };
 
@@ -264,11 +288,12 @@ private:
    */
   struct Buffers_
   {
-    Buffers_( hh_psc_alpha& );                  //!<Sets buffer pointers to 0
-    Buffers_( const Buffers_&, hh_psc_alpha& ); //!<Sets buffer pointers to 0
+    Buffers_( hh_psc_alpha_clopath& ); //!<Sets buffer pointers to 0
+    Buffers_( const Buffers_&,
+      hh_psc_alpha_clopath& ); //!<Sets buffer pointers to 0
 
     //! Logger for all analog data
-    UniversalDataLogger< hh_psc_alpha > logger_;
+    UniversalDataLogger< hh_psc_alpha_clopath > logger_;
 
     /** buffers and sums up incoming spikes/currents */
     RingBuffer spike_exc_;
@@ -332,12 +357,12 @@ private:
   Buffers_ B_;
 
   //! Mapping of recordables names to access functions
-  static RecordablesMap< hh_psc_alpha > recordablesMap_;
+  static RecordablesMap< hh_psc_alpha_clopath > recordablesMap_;
 };
 
 
 inline port
-hh_psc_alpha::send_test_event( Node& target,
+hh_psc_alpha_clopath::send_test_event( Node& target,
   rport receptor_type,
   synindex,
   bool )
@@ -350,7 +375,7 @@ hh_psc_alpha::send_test_event( Node& target,
 
 
 inline port
-hh_psc_alpha::handles_test_event( SpikeEvent&, rport receptor_type )
+hh_psc_alpha_clopath::handles_test_event( SpikeEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
@@ -360,7 +385,7 @@ hh_psc_alpha::handles_test_event( SpikeEvent&, rport receptor_type )
 }
 
 inline port
-hh_psc_alpha::handles_test_event( CurrentEvent&, rport receptor_type )
+hh_psc_alpha_clopath::handles_test_event( CurrentEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
@@ -370,7 +395,8 @@ hh_psc_alpha::handles_test_event( CurrentEvent&, rport receptor_type )
 }
 
 inline port
-hh_psc_alpha::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
+hh_psc_alpha_clopath::handles_test_event( DataLoggingRequest& dlr,
+  rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
@@ -380,17 +406,17 @@ hh_psc_alpha::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
 }
 
 inline void
-hh_psc_alpha::get_status( DictionaryDatum& d ) const
+hh_psc_alpha_clopath::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Archiving_Node::get_status( d );
+  Clopath_Archiving_Node::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
 
 inline void
-hh_psc_alpha::set_status( const DictionaryDatum& d )
+hh_psc_alpha_clopath::set_status( const DictionaryDatum& d )
 {
   Parameters_ ptmp = P_; // temporary copy in case of errors
   ptmp.set( d );         // throws if BadProperty
@@ -401,7 +427,7 @@ hh_psc_alpha::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  Clopath_Archiving_Node::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
@@ -411,4 +437,4 @@ hh_psc_alpha::set_status( const DictionaryDatum& d )
 } // namespace
 
 #endif // HAVE_GSL
-#endif // HH_PSC_ALPHA_H
+#endif // HH_PSC_ALPHA_CLOPATH_H

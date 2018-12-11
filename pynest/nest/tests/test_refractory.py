@@ -79,6 +79,7 @@ ignore_model = [
      "gif_pop_psc_exp",          # This one commits spikes at same time
      "hh_cond_exp_traub",        # This one does not support V_reset
      "hh_psc_alpha",             # This one does not support V_reset
+     "hh_psc_alpha_clopath",         # This one does not support V_reset
      "hh_psc_alpha_gap",         # This one does not support V_reset
      "iaf_psc_exp_ps_lossless",  # This one use presice times
      "sli_neuron",               # This one is not optimal for PyNEST
