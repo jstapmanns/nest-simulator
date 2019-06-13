@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef CLOPATH_ARCHIVING_NODE_H
-#define CLOPATH_ARCHIVING_NODE_H
+#ifndef EPROP_ARCHIVING_NODE_H
+#define EPROP_ARCHIVING_NODE_H
 
 // C++ includes:
 #include <deque>

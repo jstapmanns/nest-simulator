@@ -27,6 +27,7 @@ set( models_sources
     aeif_psc_alpha.h aeif_psc_alpha.cpp
     aeif_psc_exp.h aeif_psc_exp.cpp
     aeif_psc_delta.h aeif_psc_delta.cpp
+    aeif_psc_delta_eprop.h aeif_psc_delta_eprop.cpp
     aeif_psc_delta_clopath.h aeif_psc_delta_clopath.cpp
     amat2_psc_exp.h amat2_psc_exp.cpp
     bernoulli_connection.h
