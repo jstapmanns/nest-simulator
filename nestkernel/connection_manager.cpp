@@ -46,6 +46,7 @@
 #include "connector_base.h"
 #include "connector_model.h"
 #include "delay_checker.h"
+#include "eprop_archiving_node.h"
 #include "exceptions.h"
 #include "kernel_manager.h"
 #include "mpi_manager_impl.h"
