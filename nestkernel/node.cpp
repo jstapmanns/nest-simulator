@@ -463,6 +463,15 @@ nest::Node::get_LTP_history( double,
 }
 
 void
+nest::Node::get_eprop_history( double,
+  double,
+  std::deque< histentry_cl >::iterator*,
+  std::deque< histentry_cl >::iterator* )
+{
+  throw UnexpectedEvent();
+}
+
+void
 Node::event_hook( DSSpikeEvent& e )
 {
   e.get_receiver().handle( e );

@@ -703,6 +703,11 @@ public:
     std::deque< histentry_cl >::iterator* start,
     std::deque< histentry_cl >::iterator* finish );
 
+  virtual void get_eprop_history( double t1,
+    double t2,
+    std::deque< histentry_cl >::iterator* start,
+    std::deque< histentry_cl >::iterator* finish );
+
   /**
    * Modify Event object parameters during event delivery.
    * Some Nodes want to perform a function on an event for each
