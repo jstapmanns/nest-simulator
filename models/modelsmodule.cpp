@@ -128,6 +128,7 @@
 #include "cont_delay_connection.h"
 #include "cont_delay_connection_impl.h"
 #include "diffusion_connection.h"
+#include "eprop_connection.h"
 #include "gap_junction.h"
 #include "ht_connection.h"
 #include "quantal_stp_connection.h"
