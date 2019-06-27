@@ -573,48 +573,25 @@ void
 nest::aeif_psc_delta_eprop::handle(
   DelayedRateConnectionEvent& e )
 {
+  /*
   const double weight = e.get_weight();
   const long delay = e.get_delay_steps();
   const Time stamp = e.get_stamp();
 
   std::vector< unsigned int >::iterator it = e.begin();
-  // The call to get_coeffvalue( it ) in this loop also advances the iterator it
+  */
+
+  // Add learning signal to hist entries
   nest::aeif_psc_delta_eprop::add_learning_to_hist( e );
+  /*
   std::cout << "weight: " << weight << ", delay: " << delay << ", rate events: " << std::endl;
   while ( it != e.end() )
   {
-    /*
-    if ( P_.linear_summation_ )
-    {
-      if ( weight >= 0.0 )
-      {
-        B_.delayed_rates_ex_.add_value(
-          delay + i, weight * e.get_coeffvalue( it ) );
-      }
-      else
-      {
-        B_.delayed_rates_in_.add_value(
-          delay + i, weight * e.get_coeffvalue( it ) );
-      }
-    }
-    else
-    {
-      if ( weight >= 0.0 )
-      {
-        B_.delayed_rates_ex_.add_value(
-          delay + i, weight * nonlinearities_.input( e.get_coeffvalue( it ) ) );
-      }
-      else
-      {
-        B_.delayed_rates_in_.add_value(
-          delay + i, weight * nonlinearities_.input( e.get_coeffvalue( it ) ) );
-      }
-    }
     ++i;
-    */
     std::cout << e.get_coeffvalue( it ) << ", ";
   }
   std::cout << std::endl;
+  */
 }
 
 void

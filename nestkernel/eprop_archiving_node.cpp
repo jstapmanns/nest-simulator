@@ -72,6 +72,7 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
   std::deque< histentry_cl >::iterator* start,
   std::deque< histentry_cl >::iterator* finish )
 {
+  /*
   std::cout << "read hist from " << t1 << " to " << t2 << std::endl;
   std::cout << "whole history: ";
   for ( std::deque< histentry_cl >::iterator itr = eprop_history_.begin();
@@ -80,6 +81,7 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
     std::cout << itr->dw_ << ", ";
   }
   std::cout << std::endl;
+  */
   *finish = eprop_history_.end();
   if ( eprop_history_.empty() )
   {
@@ -141,23 +143,30 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e 
 
   // TODO: Do we need to sutract the resolution? Examine delays in the network.
   double t_ms = stamp.get_ms() - Time::get_resolution().get_ms();
-  std::cout << "t_ms = " << t_ms << std::endl;
 
   std::deque< histentry_cl >::iterator start;
   std::deque< histentry_cl >::iterator finish;
   
+  // Get part of history to which the learning signal is added
+  // This increases the access counter which is undone below
   nest::Eprop_Archiving_Node::get_eprop_history(
      t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish );
 
   std::vector< unsigned int >::iterator it = e.begin();
-  std::cout << "learning to hist: " << std::endl;
-  for (start; start != finish; start++ )
+
+  //std::cout << "t_ms = " << t_ms << std::endl;
+  //std::cout << "learning to hist: " << std::endl;
+
+  // The call to get_coeffvalue( it ) in this loop also advances the iterator it
+  while ( start != finish && it != e.end() )
   {
-    std::cout << start->t_ << ", ";
-    start->dw_ += e.get_coeffvalue( it );
+    //std::cout << start->t_ << ", ";
+    // Add learning signal and reduce access counter
+    start->dw_ += weight * e.get_coeffvalue( it );
     ( start->access_counter_ )--;
+    start++;
   }
-  std::cout << std::endl;
+  //std::cout << std::endl;
 }
 
 } // of namespace nest
