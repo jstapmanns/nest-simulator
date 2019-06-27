@@ -529,9 +529,8 @@ nest::aeif_psc_delta_eprop::update( const Time& origin,
     }
 
     // save learning signal for eprop algorithm
-    // TODO: subtract learning signal from V_m
     write_eprop_history( Time::step( origin.get_steps() + lag + 1 ),
-      S_.y_[ State_::V_M ] );
+      -S_.y_[ State_::V_M ] );
 
     if ( S_.r_ > 0 )
     {
@@ -568,6 +567,54 @@ nest::aeif_psc_delta_eprop::handle( CurrentEvent& e )
   B_.currents_.add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
     w * c );
+}
+
+void
+nest::aeif_psc_delta_eprop::handle(
+  DelayedRateConnectionEvent& e )
+{
+  const double weight = e.get_weight();
+  const long delay = e.get_delay_steps();
+  const Time stamp = e.get_stamp();
+
+  std::vector< unsigned int >::iterator it = e.begin();
+  // The call to get_coeffvalue( it ) in this loop also advances the iterator it
+  nest::aeif_psc_delta_eprop::add_learning_to_hist( e );
+  std::cout << "weight: " << weight << ", delay: " << delay << ", rate events: " << std::endl;
+  while ( it != e.end() )
+  {
+    /*
+    if ( P_.linear_summation_ )
+    {
+      if ( weight >= 0.0 )
+      {
+        B_.delayed_rates_ex_.add_value(
+          delay + i, weight * e.get_coeffvalue( it ) );
+      }
+      else
+      {
+        B_.delayed_rates_in_.add_value(
+          delay + i, weight * e.get_coeffvalue( it ) );
+      }
+    }
+    else
+    {
+      if ( weight >= 0.0 )
+      {
+        B_.delayed_rates_ex_.add_value(
+          delay + i, weight * nonlinearities_.input( e.get_coeffvalue( it ) ) );
+      }
+      else
+      {
+        B_.delayed_rates_in_.add_value(
+          delay + i, weight * nonlinearities_.input( e.get_coeffvalue( it ) ) );
+      }
+    }
+    ++i;
+    */
+    std::cout << e.get_coeffvalue( it ) << ", ";
+  }
+  std::cout << std::endl;
 }
 
 void

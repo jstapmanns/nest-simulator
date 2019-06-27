@@ -88,6 +88,7 @@ protected:
    */
   void write_eprop_history( Time const& t_sp,
     double learning_signal );
+  void add_learning_to_hist( DelayedRateConnectionEvent& e );
 
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
