@@ -162,7 +162,7 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e 
   {
     //std::cout << start->t_ << ", ";
     // Add learning signal and reduce access counter
-    start->dw_ += weight * e.get_coeffvalue( it );
+    start->dw_ = weight * ( e.get_coeffvalue( it ) + start->dw_ );
     ( start->access_counter_ )--;
     start++;
   }
