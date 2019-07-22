@@ -180,13 +180,20 @@ private:
 
   // data members of each connection
   double weight_;
-  double x_bar_;
-  double tau_Delta_;
+  // TODO: tau_alpha_ can be determined from neuron params
+  double tau_alpha_; // time constant corresponding to leak term of rec neurons
+  double tau_kappa_; // time constant corresponding to leak term of output neurons
   double eta_;
+  double update_interval_;
   double Wmin_;
   double Wmax_;
 
   double t_lastspike_;
+  double t_lastupdate_;
+  double t_nextupdate_;
+  double last_e_trace_;
+
+  std::vector< double > pre_syn_spike_times_;
 };
 
 
@@ -208,43 +215,92 @@ EpropConnection< targetidentifierT >::send( Event& e,
   Node* target = get_target( t );
   double dendritic_delay = get_delay();
 
-  // get spike history in relevant range (t1, t2] from post-synaptic neuron
-  std::deque< histentry_cl >::iterator start;
-  std::deque< histentry_cl >::iterator finish;
-
-  // For a new synapse, t_lastspike_ contains the point in time of the last
-  // spike. So we initially read the
-  // history(t_last_spike - dendritic_delay, ..., T_spike-dendritic_delay]
-  // which increases the access counter for these entries.
-  // At registration, all entries' access counters of
-  // history[0, ..., t_last_spike - dendritic_delay] have been
-  // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
-  // details.
-  target->get_eprop_history( t_lastspike_ - dendritic_delay,
-    t_spike - dendritic_delay,
-    &start,
-    &finish );
-
-  double Delta_T = t_spike - t_lastspike_;
-  double dw = 0.0;
-  double const dt = Time::get_resolution().get_ms();
-  while ( start != finish )
+  std::cout << "t_spike: " << t_spike << " next update: " << t_nextupdate_ << std::endl;
+  // do update only 
+  if ( t_spike > t_nextupdate_ )
   {
-    // TODO: implement integration over time
-    dw += start->dw_;
-    start++;
+    // get spike history in relevant range (t1, t2] from post-synaptic neuron
+    std::deque< histentry_eprop >::iterator start;
+    std::deque< histentry_eprop >::iterator finish;
+
+    // For a new synapse, t_lastspike_ contains the point in time of the last
+    // spike. So we initially read the
+    // history(t_last_spike - dendritic_delay, ..., T_spike-dendritic_delay]
+    // which increases the access counter for these entries.
+    // At registration, all entries' access counters of
+    // history[0, ..., t_last_spike - dendritic_delay] have been
+    // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
+    // details.
+    target->get_eprop_history( t_lastupdate_ - dendritic_delay,
+      t_spike - dendritic_delay,
+      &start,
+      &finish );
+
+    double const dt = Time::get_resolution().get_ms();
+    double alpha = target->get_leak_propagator();
+    double kappa = std::exp( -dt / tau_kappa_ );
+    std::cout << "alpha = " << alpha << ", kappa = " << kappa << ", tau_kappa = " << tau_kappa_ << std::endl;
+    std::vector< double > elegibility_trace;
+    std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
+    double dw = 0.0;
+    std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
+    for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
+    {
+      last_e_trace_ *= alpha;
+      if ( std::fabs( *t_pre_spike - runner->t_ ) < 1.0e-6 )
+      {
+        last_e_trace_ += 1.0;
+        t_pre_spike++;
+      }
+      elegibility_trace.push_back( runner->V_m_ * last_e_trace_ );
+    }
+
+    /*
+    std::cout << "elegibility trace: " << std::endl;
+    for ( std::vector< double >::iterator it = elegibility_trace.begin(); it !=
+        elegibility_trace.end(); it++)
+    {
+      std::cout << *it << ", ";
+    }
+    std::cout << std::endl;
+    */
+    int t_prime_counter = 0;
+    //std::cout << "history: " << std::endl;
+    while ( start != finish )
+    {
+      double sum_t_prime = 0.0;
+      for ( int t_prime = 0; t_prime <= t_prime_counter; t_prime++)
+      {
+        sum_t_prime += std::pow( kappa, t_prime_counter - t_prime ) * elegibility_trace[ t_prime ];
+      }
+      sum_t_prime *= dt;
+      dw += sum_t_prime * start->learning_signal_;
+      //std::cout << start->V_m_ << ", ";
+      t_prime_counter++;
+      start++;
+    }
+    //std::cout << std::endl;
+    dw *= dt*eta_;
+    //std::cout << "dw: " << dw << std::endl;
+
+    weight_ += 0.0*dw;
+
+    if ( weight_ > Wmax_ )
+    {
+      weight_ = Wmax_;
+    }
+    else if ( weight_ < Wmin_ )
+    {
+      weight_ = Wmin_;
+    }
+    t_lastupdate_ = t_spike;
+    t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) * update_interval_;
+    // clear history of presynaptic spike because we don't need them any more
+    pre_syn_spike_times_.clear();
   }
 
-  weight_ += dw;
-
-  if ( weight_ > Wmax_ )
-  {
-    weight_ = Wmax_;
-  }
-  else if ( weight_ < Wmin_ )
-  {
-    weight_ = Wmin_;
-  }
+  // store times of incoming spikes to enable computation of eligibility trace
+  pre_syn_spike_times_.push_back( t_spike );
 
   e.set_receiver( *target );
   e.set_weight( weight_ );
@@ -262,12 +318,16 @@ template < typename targetidentifierT >
 EpropConnection< targetidentifierT >::EpropConnection()
   : ConnectionBase()
   , weight_( 1.0 )
-  , x_bar_( 0.0 )
-  , tau_Delta_( 100.0 )
-  , eta_( 0.07 )
+  , tau_alpha_( 10.0 )
+  , tau_kappa_( 10.0 )
+  , eta_( 1.0 )
+  , update_interval_( 100.0 )
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
   , t_lastspike_( 0.0 )
+  , t_lastupdate_( 0.0 )
+  , t_nextupdate_( 100.0 )
+  , last_e_trace_( 0.0 )
 {
 }
 
@@ -276,12 +336,16 @@ EpropConnection< targetidentifierT >::EpropConnection(
   const EpropConnection< targetidentifierT >& rhs )
   : ConnectionBase( rhs )
   , weight_( rhs.weight_ )
-  , x_bar_( rhs.x_bar_ )
-  , tau_Delta_( rhs.tau_Delta_ )
+  , tau_alpha_( rhs.tau_alpha_ )
+  , tau_kappa_( rhs.tau_kappa_ )
   , eta_( rhs.eta_ )
+  , update_interval_( rhs.update_interval_ )
   , Wmin_( rhs.Wmin_ )
   , Wmax_( rhs.Wmax_ )
   , t_lastspike_( rhs.t_lastspike_ )
+  , t_lastupdate_( rhs.t_lastupdate_ )
+  , t_nextupdate_( rhs.t_nextupdate_ )
+  , last_e_trace_( rhs.last_e_trace_ )
 {
 }
 
@@ -291,6 +355,10 @@ EpropConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
 {
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
+  def< double >( d, names::tau_alpha, tau_alpha_ );
+  def< double >( d, names::tau_kappa, tau_kappa_ );
+  def< double >( d, names::eta, eta_ );
+  def< double >( d, names::update_interval, update_interval_ );
   def< double >( d, names::Wmin, Wmin_ );
   def< double >( d, names::Wmax, Wmax_ );
   def< long >( d, names::size_of, sizeof( *this ) );
@@ -303,8 +371,14 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
 {
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );
+  updateValue< double >( d, names::tau_alpha, tau_alpha_ );
+  updateValue< double >( d, names::tau_kappa, tau_kappa_ );
+  updateValue< double >( d, names::eta, eta_ );
+  updateValue< double >( d, names::update_interval, update_interval_ );
   updateValue< double >( d, names::Wmin, Wmin_ );
   updateValue< double >( d, names::Wmax, Wmax_ );
+
+  t_nextupdate_ = update_interval_; // TODO: is this waht we want?
 
   // check if weight_ and Wmin_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
@@ -318,6 +392,16 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
          == ( ( Wmax_ > 0 ) - ( Wmax_ <= 0 ) ) ) )
   {
     throw BadProperty( "Weight and Wmax must have same sign." );
+  }
+
+  if ( tau_alpha_ <= 0.0 )
+  {
+    throw BadProperty( "The synaptic time constant tau must be greater than zero." );
+  }
+
+  if ( update_interval_ <= 0.0 )
+  {
+    throw BadProperty( "The synaptic update interval must be greater than zero." );
   }
 }
 
