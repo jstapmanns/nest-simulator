@@ -36,6 +36,7 @@ namespace nest
 nest::Eprop_Archiving_Node::Eprop_Archiving_Node()
   : Archiving_Node()
   , theta_plus_( -45.3 )
+  , eta_( 0.3 )
 {
 }
 
@@ -43,6 +44,7 @@ nest::Eprop_Archiving_Node::Eprop_Archiving_Node(
   const Eprop_Archiving_Node& n )
   : Archiving_Node( n )
   , theta_plus_( n.theta_plus_ )
+  , eta_( n.eta_ )
 {
 }
 
@@ -52,6 +54,7 @@ nest::Eprop_Archiving_Node::get_status( DictionaryDatum& d ) const
   Archiving_Node::get_status( d );
 
   def< double >( d, names::theta_plus, theta_plus_ );
+  def< double >( d, names::eta, eta_ );
 }
 
 void
@@ -61,21 +64,24 @@ nest::Eprop_Archiving_Node::set_status( const DictionaryDatum& d )
 
   // We need to preserve values in case invalid values are set
   double new_theta_plus = theta_plus_;
+  double new_eta = eta_;
   updateValue< double >( d, names::theta_plus, new_theta_plus );
+  updateValue< double >( d, names::eta, new_eta );
 
   theta_plus_ = new_theta_plus;
+  eta_ = new_eta;
 }
 
 void
 nest::Eprop_Archiving_Node::get_eprop_history( double t1,
   double t2,
-  std::deque< histentry_cl >::iterator* start,
-  std::deque< histentry_cl >::iterator* finish )
+  std::deque< histentry_eprop >::iterator* start,
+  std::deque< histentry_eprop >::iterator* finish )
 {
   /*
   std::cout << "read hist from " << t1 << " to " << t2 << std::endl;
   std::cout << "whole history: ";
-  for ( std::deque< histentry_cl >::iterator itr = eprop_history_.begin();
+  for ( std::deque< histentry_eprop >::iterator itr = eprop_history_.begin();
       itr != eprop_history_.end(); itr++ )
   {
     std::cout << itr->dw_ << ", ";
@@ -90,7 +96,7 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
   }
   else
   {
-    std::deque< histentry_cl >::iterator runner = eprop_history_.begin();
+    std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
     // To have a well defined discretization of the integral, we make sure
     // that we exclude the entry at t1 but include the one at t2 by subtracting
     // a small number so that runner->t_ is never equal to t1 or t2.
@@ -110,7 +116,8 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
 
 void
 nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
-  double learning_signal )
+  double V_m,
+  double V_th )
 {
   const double t_ms = t_sp.get_ms();
 
@@ -130,7 +137,8 @@ nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
       }
     }
     // create new entry in history
-    eprop_history_.push_back( histentry_cl( t_ms, learning_signal, 0 ) );
+    double h = pseudo_deriv( V_m, V_th );
+    eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0 ) );
   }
 }
 
@@ -144,8 +152,8 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e 
   // TODO: Do we need to sutract the resolution? Examine delays in the network.
   double t_ms = stamp.get_ms() - Time::get_resolution().get_ms();
 
-  std::deque< histentry_cl >::iterator start;
-  std::deque< histentry_cl >::iterator finish;
+  std::deque< histentry_eprop >::iterator start;
+  std::deque< histentry_eprop >::iterator finish;
   
   // Get part of history to which the learning signal is added
   // This increases the access counter which is undone below
@@ -160,14 +168,20 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e 
   // The call to get_coeffvalue( it ) in this loop also advances the iterator it
   while ( start != finish && it != e.end() )
   {
-    //std::cout << start->t_ << ", ";
     // Add learning signal and reduce access counter
-    // TODO: store learning signal in separate entry of history
-    start->dw_ = weight * ( e.get_coeffvalue( it ) + start->dw_ );
+    start->learning_signal_ += weight * e.get_coeffvalue( it );
     ( start->access_counter_ )--;
+    //std::cout << start->t_ << ", " << start->V_m_ << ", " << start->learning_signal_ << "; ";
     start++;
   }
   //std::cout << std::endl;
+}
+
+double
+nest::Eprop_Archiving_Node::pseudo_deriv( double V_m, double V_th ) const
+{
+  double norm_diff_threshold = 1.0 - std::fabs( ( V_m - V_th ) / V_th );
+  return eta_ * ( ( norm_diff_threshold > 0.0 ) ? norm_diff_threshold : 0.0 );
 }
 
 } // of namespace nest

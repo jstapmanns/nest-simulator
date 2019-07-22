@@ -530,7 +530,7 @@ nest::aeif_psc_delta_eprop::update( const Time& origin,
 
     // save learning signal for eprop algorithm
     write_eprop_history( Time::step( origin.get_steps() + lag + 1 ),
-      -S_.y_[ State_::V_M ] );
+      S_.y_[ State_::V_M ], V_.V_peak_ );
 
     if ( S_.r_ > 0 )
     {

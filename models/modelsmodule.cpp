@@ -73,6 +73,7 @@
 #include "iaf_psc_alpha.h"
 #include "iaf_psc_alpha_multisynapse.h"
 #include "iaf_psc_delta.h"
+#include "iaf_psc_delta_eprop.h"
 #include "iaf_psc_exp.h"
 #include "iaf_psc_exp_multisynapse.h"
 #include "iaf_tum_2000.h"
@@ -241,6 +242,8 @@ ModelsModule::init( SLIInterpreter* )
     "iaf_psc_alpha_multisynapse" );
   kernel().model_manager.register_node_model< iaf_psc_delta >(
     "iaf_psc_delta" );
+  kernel().model_manager.register_node_model< iaf_psc_delta_eprop >(
+    "iaf_psc_delta_eprop" );
   kernel().model_manager.register_node_model< iaf_psc_exp >( "iaf_psc_exp" );
   kernel().model_manager.register_node_model< iaf_psc_exp_multisynapse >(
     "iaf_psc_exp_multisynapse" );
@@ -544,6 +547,10 @@ ModelsModule::init( SLIInterpreter* )
       "clopath_synapse",
       /*requires_symmetric=*/false,
       /*requires_clopath_archiving=*/true );
+  kernel()
+    .model_manager
+    .register_connection_model< EpropConnection< TargetIdentifierPtrRport > >(
+      "eprop_synapse" );
 
   /** @BeginDocumentation
      Name: stdp_pl_synapse_hom_hpc - Variant of stdp_pl_synapse_hom with low

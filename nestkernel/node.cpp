@@ -432,6 +432,12 @@ Node::get_LTD_value( double )
 }
 
 double
+Node::get_leak_propagator() const
+{
+  throw UnexpectedEvent();
+}
+
+double
 Node::get_K_value( double )
 {
   throw UnexpectedEvent();
@@ -465,8 +471,8 @@ nest::Node::get_LTP_history( double,
 void
 nest::Node::get_eprop_history( double,
   double,
-  std::deque< histentry_cl >::iterator*,
-  std::deque< histentry_cl >::iterator* )
+  std::deque< histentry_eprop >::iterator*,
+  std::deque< histentry_eprop >::iterator* )
 {
   throw UnexpectedEvent();
 }

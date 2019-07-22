@@ -69,8 +69,8 @@ public:
    */
   void get_eprop_history( double t1,
     double t2,
-    std::deque< histentry_cl >::iterator* start,
-    std::deque< histentry_cl >::iterator* finish );
+    std::deque< histentry_eprop >::iterator* start,
+    std::deque< histentry_eprop >::iterator* finish );
 
   /**
    * \fn double get_theta_plus()
@@ -87,16 +87,22 @@ protected:
    * the corresponding Heaviside functions yield 1.
    */
   void write_eprop_history( Time const& t_sp,
-    double learning_signal );
+    double V_m,
+    double V_th );
   void add_learning_to_hist( DelayedRateConnectionEvent& e );
+
+  double pseudo_deriv( double V_m, double V_th ) const;
+  // TODO: V_th as variable of archiving node? Or archiving node as template class?
 
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
 
 private:
-  std::deque< histentry_cl > eprop_history_;
+  std::deque< histentry_eprop > eprop_history_;
 
   double theta_plus_;
+  double eta_; // called gamma in paper
+
 };
 
 inline double

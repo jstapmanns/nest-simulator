@@ -47,3 +47,11 @@ nest::histentry_cl::histentry_cl( double t, double dw, size_t access_counter )
   , access_counter_( access_counter )
 {
 }
+
+nest::histentry_eprop::histentry_eprop( double t, double V_m, double learning_signal, size_t access_counter )
+  : t_( t )
+  , V_m_( V_m )
+  , learning_signal_( learning_signal )
+  , access_counter_( access_counter )
+{
+}

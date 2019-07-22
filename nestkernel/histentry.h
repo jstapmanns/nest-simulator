@@ -67,6 +67,20 @@ public:
   //! neurons which need it)
   size_t access_counter_;
 };
+
+// entry for eprop with two entries: one for the learning signal and one for the membrane potential
+class histentry_eprop
+{
+public:
+  histentry_eprop( double t, double V_m, double learning_signal, size_t access_counter );
+
+  double t_; //!< point in time when spike occurred (in ms)
+  double V_m_;
+  double learning_signal_;
+  //! how often this entry was accessed (to enable removal, once read by all
+  //! neurons which need it)
+  size_t access_counter_;
+};
 }
 
 #endif
