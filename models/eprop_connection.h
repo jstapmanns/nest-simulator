@@ -283,6 +283,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     dw *= dt*eta_;
     //std::cout << "dw: " << dw << std::endl;
 
+    // TODO: remove factor 0.0
     weight_ += 0.0*dw;
 
     if ( weight_ > Wmax_ )
