@@ -60,6 +60,18 @@ public:
   double dw_;             //!< value dependend on the additional factor
   size_t access_counter_; //!< access counter to enable removal of the entry, once all neurons read it
 };
+
+// entry in the history of plasticity rules which consider additional factors
+class histentry_eextended
+{
+public:
+  histentry_eextended( double t_start, double t_stop, double dw, size_t access_counter );
+
+  double t_start_;              //!< point in time when spike occurred (in ms)
+  double t_stop_;              //!< point in time when spike occurred (in ms)
+  double dw_;             //!< value dependend on the additional factor
+  size_t access_counter_; //!< access counter to enable removal of the entry, once all neurons read it
+};
 }
 
 #endif

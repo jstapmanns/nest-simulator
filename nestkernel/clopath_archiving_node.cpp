@@ -233,6 +233,61 @@ nest::Clopath_Archiving_Node::write_LTD_history( const double t_ltd_ms, double u
 }
 
 void
+nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr_end )
+{
+  // t_compr_end = t_spike - dendritic_delay
+  if ( n_incoming_ )
+  {
+    // prune all entries from history which are no longer needed
+    // except the penultimate one. we might still need it.
+    while ( ltp_history_compressed_.size() > 1 )
+    {
+      if ( ltp_history_compressed_.front().access_counter_ >= n_incoming_ )
+      {
+        ltp_history_compressed_.pop_front();
+      }
+      else
+      {
+        break;
+      }
+    }
+
+    double delta_t = Time::get_resolution().get_ms();
+
+    while ( ( !ltp_history_.empty() ) && ( ltp_history_.begin()->t_ - 1.0e-6 < t_compr_end ) )
+    {
+      /* Due to the Heaviside functions, the history might not be continuous in time. We therefore
+       * have to compress each segment separately. The following loop finds the end of the current
+       * segment. */
+      double t_first = ltp_history_.begin()->t_;
+      double t_last = t_first;
+      std::deque< histentry_extended >::iterator end_section = ltp_history_.begin() + 1;
+      while ( ( end_section != ltp_history_.end() ) &&
+          ( std::abs( end_section->t_ - t_last - delta_t ) < 1.0e-6 ) &&
+          ( end_section->t_ - 1.0e-6 < t_compr_end ) )
+      {
+        t_last = end_section->t_;
+        end_section++;
+      }
+      
+      /* compress the current segment and save the weighted sum and the time stamp of the first
+       * and the last entry in the compressed history. */
+      double hist_sum = 0.0;
+      double exp_factor = std::exp( -delta_t / tau_x );
+      double prefactor = 1.0;
+      while ( ( !ltp_history_.empty() ) && ( ltp_history_.begin() != end_section ) )
+      {
+        hist_sum += prefactor*(ltp_history_.begin()->dw_);
+        ltp_history_.pop_front();
+        prefactor *= exp_factor;
+      }
+      ltp_history_compressed_.push_back( histentry_eextended( t_first, t_last,
+          hist_sum*delta_t, 0 ) );
+    }
+  }
+}
+
+void
 nest::Clopath_Archiving_Node::write_LTP_history( const double t_ltp_ms, double u, double u_bar_plus )
 {
   if ( n_incoming_ )

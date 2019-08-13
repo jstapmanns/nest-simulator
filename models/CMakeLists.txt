@@ -32,6 +32,7 @@ set( models_sources
     bernoulli_connection.h
     binary_neuron.h
     clopath_connection.h
+    clopath_connection_bc.h
     cont_delay_connection.h cont_delay_connection_impl.h
     correlation_detector.h correlation_detector.cpp
     correlomatrix_detector.h correlomatrix_detector.cpp

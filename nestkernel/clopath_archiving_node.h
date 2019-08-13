@@ -116,6 +116,8 @@ protected:
    */
   void write_clopath_history( Time const& t_sp, double u, double u_bar_plus, double u_bar_minus, double u_bar_bar );
 
+  void compress_LTP_history( double tau_x, double dendritic_delay );
+
   void init_clopath_buffers();
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
@@ -123,6 +125,7 @@ protected:
 private:
   std::vector< histentry_extended > ltd_history_;
   std::deque< histentry_extended > ltp_history_;
+  std::deque< histentry_eextended > ltp_history_compressed_;
 
   double A_LTD_;
 

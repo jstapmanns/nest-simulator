@@ -124,6 +124,7 @@
 // Prototypes for synapses
 #include "bernoulli_connection.h"
 #include "clopath_connection.h"
+#include "clopath_connection_bc.h"
 #include "common_synapse_properties.h"
 #include "cont_delay_connection.h"
 #include "cont_delay_connection_impl.h"
@@ -442,6 +443,11 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_connection_model< STDPConnection< TargetIdentifierIndex > >( "stdp_synapse_hpc" );
 
   kernel().model_manager.register_connection_model< ClopathConnection< TargetIdentifierPtrRport > >( "clopath_synapse",
+    /*requires_symmetric=*/false,
+    /*requires_clopath_archiving=*/true );
+
+  kernel().model_manager.register_connection_model< ClopathConnectionBC< TargetIdentifierPtrRport >
+    >( "clopath_synapse_bc",
     /*requires_symmetric=*/false,
     /*requires_clopath_archiving=*/true );
 

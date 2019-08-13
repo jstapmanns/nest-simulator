@@ -44,3 +44,11 @@ nest::histentry_extended::histentry_extended( double t, double dw, size_t access
   , access_counter_( access_counter )
 {
 }
+
+nest::histentry_eextended::histentry_eextended( double t_start, double t_stop, double dw, size_t access_counter )
+  : t_start_( t_start )
+  , t_stop_( t_stop )
+  , dw_( dw )
+  , access_counter_( access_counter )
+{
+}
