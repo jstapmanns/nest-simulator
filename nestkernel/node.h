@@ -681,6 +681,8 @@ public:
 
   virtual double get_LTD_value( double t );
 
+  virtual double get_LTP_value( double t );
+
   /**
    * write the Kminus and triplet_Kminus values at t (in ms) to
    * the provided locations.

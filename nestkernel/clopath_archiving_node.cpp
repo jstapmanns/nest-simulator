@@ -235,6 +235,9 @@ nest::Clopath_Archiving_Node::write_LTD_history( const double t_ltd_ms, double u
 void
 nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr_end )
 {
+  /* For this procedure to work we have to assume that: 1) incoming spikes are processed in the
+   * order of their time stamps and 2) that each presynaptic neuron sends at most one spike event per
+   * delta_t (resolution of the simulation). */
   // t_compr_end = t_spike - dendritic_delay
   if ( n_incoming_ )
   {
@@ -242,7 +245,7 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
     // except the penultimate one. we might still need it.
     while ( ltp_history_compressed_.size() > 1 )
     {
-      if ( ltp_history_compressed_.front().access_counter_ >= n_incoming_ )
+      if ( ltp_history_compressed_.front().access_counter_ == 0 )
       {
         ltp_history_compressed_.pop_front();
       }
@@ -253,12 +256,46 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
     }
 
     double delta_t = Time::get_resolution().get_ms();
+    double t_last_update = 0.0;
 
+    if ( !ltp_history_compressed_.empty() )
+    {
+      t_last_update = ltp_history_compressed_.rbegin()->t_;
+    }
+
+    // if this is not the first spike in this time step, it must not process the history
+    if ( std::abs( t_last_update - t_compr_end ) < 1.0e-6 )
+    {
+      ltp_history_compressed_.rbegin()->access_counter_ += 1;
+    }
+    else
+    {
+      // first update history
+      double hist_sum = 0.0;
+      double exp_factor = std::exp( -delta_t / tau_x );
+      double prefactor = 1.0;
+      while ( ( !ltp_history_.empty() ) && ( ltp_history_.begin()->t_ - 1.0e-6 < t_compr_end ) )
+      {
+        std::deque< histentry_extended >::iterator he = ltp_history_.begin();
+        hist_sum += std::exp( ( he->t_ - t_last_update ) / tau_x )*( he->dw_ );
+        ltp_history_.pop_front();
+        prefactor *= exp_factor;
+      }
+      hist_sum *= delta_t;
+      for ( std::deque< histentry_extended >::iterator runner = ltp_history_compressed_.begin();
+          runner != ltp_history_compressed_.end(); runner++ )
+      {
+        runner->dw_ += std::exp( ( runner->t_ - t_last_update ) / tau_x )*hist_sum;
+      }
+      // secondly, create new entry for current spike
+      ltp_history_compressed_.push_back( histentry_extended( t_compr_end, 0.0, 1 ) );
+    }
+    /*
     while ( ( !ltp_history_.empty() ) && ( ltp_history_.begin()->t_ - 1.0e-6 < t_compr_end ) )
     {
-      /* Due to the Heaviside functions, the history might not be continuous in time. We therefore
-       * have to compress each segment separately. The following loop finds the end of the current
-       * segment. */
+      // Due to the Heaviside functions, the history might not be continuous in time. We therefore
+      // have to compress each segment separately. The following loop finds the end of the current
+      // segment.
       double t_first = ltp_history_.begin()->t_;
       double t_last = t_first;
       std::deque< histentry_extended >::iterator end_section = ltp_history_.begin() + 1;
@@ -268,10 +305,10 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
       {
         t_last = end_section->t_;
         end_section++;
-      }
+      } 
       
-      /* compress the current segment and save the weighted sum and the time stamp of the first
-       * and the last entry in the compressed history. */
+      // compress the current segment and save the weighted sum and the time stamp of the first
+      // and the last entry in the compressed history.
       double hist_sum = 0.0;
       double exp_factor = std::exp( -delta_t / tau_x );
       double prefactor = 1.0;
@@ -284,6 +321,27 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
       ltp_history_compressed_.push_back( histentry_eextended( t_first, t_last,
           hist_sum*delta_t, 0 ) );
     }
+    */
+
+  }
+}
+
+double
+nest::Clopath_Archiving_Node::get_LTP_value( double t_lastspike )
+{
+  if ( ltp_history_compressed_.empty() )
+  {
+    return 0.0;
+  }
+  else
+  {
+    std::deque< histentry_extended >::iterator runner = ltp_history_compressed_.begin();
+    while ( t_lastspike - runner->t_ > 1.0e-6 )
+    {
+      runner++;
+    }
+    runner->access_counter_ -= 1;
+    return runner->dw_;
   }
 }
 

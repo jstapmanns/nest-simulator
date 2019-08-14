@@ -428,6 +428,12 @@ Node::get_LTD_value( double )
 }
 
 double
+Node::get_LTP_value( double )
+{
+  throw UnexpectedEvent();
+}
+
+double
 Node::get_K_value( double )
 {
   throw UnexpectedEvent();

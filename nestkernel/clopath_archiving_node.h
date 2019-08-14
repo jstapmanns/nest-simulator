@@ -67,6 +67,12 @@ public:
   double get_LTD_value( double t );
 
   /**
+   * \fn double get_LTP_value(long t)
+   * Returns value in LTP history at time t
+   */
+  double get_LTP_value( double t );
+
+  /**
    * \fn void get_LTP_history(long t1, long t2,
    * std::deque<Archiver::histentry>::iterator* start,
    * std::deque<Archiver::histentry>::iterator* finish)
@@ -125,7 +131,7 @@ protected:
 private:
   std::vector< histentry_extended > ltd_history_;
   std::deque< histentry_extended > ltp_history_;
-  std::deque< histentry_eextended > ltp_history_compressed_;
+  std::deque< histentry_extended > ltp_history_compressed_;
 
   double A_LTD_;
 
