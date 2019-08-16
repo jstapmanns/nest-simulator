@@ -433,6 +433,12 @@ Node::get_LTP_value( double )
   throw UnexpectedEvent();
 }
 
+void
+Node::compress_LTP_history( double, double )
+{
+  throw UnexpectedEvent();
+}
+
 double
 Node::get_K_value( double )
 {

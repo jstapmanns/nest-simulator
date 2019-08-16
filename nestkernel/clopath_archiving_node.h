@@ -84,6 +84,8 @@ public:
     std::deque< histentry_extended >::iterator* start,
     std::deque< histentry_extended >::iterator* finish );
 
+  void compress_LTP_history( double tau_x, double dendritic_delay );
+
   /**
    * \fn double get_theta_plus()
    * Returns threshold theta_plus_
@@ -121,8 +123,6 @@ protected:
    * the corresponding Heaviside functions yield 1.
    */
   void write_clopath_history( Time const& t_sp, double u, double u_bar_plus, double u_bar_minus, double u_bar_bar );
-
-  void compress_LTP_history( double tau_x, double dendritic_delay );
 
   void init_clopath_buffers();
   void get_status( DictionaryDatum& d ) const;
