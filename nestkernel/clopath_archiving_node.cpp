@@ -270,7 +270,8 @@ nest::Clopath_Archiving_Node::get_LTP_value( double t_lastspike )
 }
 
 void
-nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr_end )
+nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr_end,
+    std::deque< histentry_extended >* ltp_entry )
 {
   /* For this procedure to work we have to assume that: 1) incoming spikes are processed in the
    * order of their time stamps and 2) that each presynaptic neuron sends at most one spike event per
@@ -279,27 +280,27 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
   //std::cout << "n_incoming = " << n_incoming_ << std::endl;
   if ( n_incoming_ )
   {
+    double t_last_update = 0.0;
+
     //std::cout << "compress" << std::endl;
     // prune all entries from history which are no longer needed
     // except the penultimate one. we might still need it.
-    while ( ltp_history_compressed_.size() > 1 )
-    {
-      if ( ltp_history_compressed_.front().access_counter_ == 0 )
-      {
-        ltp_history_compressed_.pop_front();
-      }
-      else
-      {
-        break;
-      }
-    }
-
-    //double delta_t = Time::get_resolution().get_ms();
-    double t_last_update = 0.0;
-
     if ( !ltp_history_compressed_.empty() )
     {
+      // if hist is not empty, the time of the last entry is the time of the last update
       t_last_update = ltp_history_compressed_.rbegin()->t_;
+      std::deque< histentry_extended >::iterator runner = ltp_history_compressed_.begin();
+      while ( runner != ltp_history_compressed_.end() )
+      {
+        if ( runner->access_counter_ == 0 )
+        {
+          runner = ltp_history_compressed_.erase( runner );
+        }
+        else
+        {
+          runner++;
+        }
+      }
     }
 
     // if this is not the first spike in this time step, it must not process the history
@@ -334,6 +335,7 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
       // secondly, create new entry for current spike
       ltp_history_compressed_.push_back( histentry_extended( t_compr_end, 0.0, 1 ) );
     }
+    ltp_entry = &ltp_history_compressed_.back();
     /*
     while ( ( !ltp_history_.empty() ) && ( ltp_history_.begin()->t_ - 1.0e-6 < t_compr_end ) )
     {

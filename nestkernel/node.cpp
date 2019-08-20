@@ -434,7 +434,7 @@ Node::get_LTP_value( double )
 }
 
 void
-Node::compress_LTP_history( double, double )
+Node::compress_LTP_history( double, double, std::deque< histentry_extended >* ltp_entry )
 {
   throw UnexpectedEvent();
 }

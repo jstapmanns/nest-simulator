@@ -84,7 +84,8 @@ public:
     std::deque< histentry_extended >::iterator* start,
     std::deque< histentry_extended >::iterator* finish );
 
-  void compress_LTP_history( double tau_x, double dendritic_delay );
+  void compress_LTP_history( double tau_x, double dendritic_delay,
+    std::deque< histentry_extended >* ltp_entry );
 
   /**
    * \fn double get_theta_plus()
@@ -127,11 +128,11 @@ protected:
   void init_clopath_buffers();
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
+  std::deque< histentry_extended > ltp_history_compressed_; // TODO: make hist private again!
+  std::deque< histentry_extended > ltp_history_;
 
 private:
   std::vector< histentry_extended > ltd_history_;
-  std::deque< histentry_extended > ltp_history_;
-  std::deque< histentry_extended > ltp_history_compressed_;
 
   double A_LTD_;
 
