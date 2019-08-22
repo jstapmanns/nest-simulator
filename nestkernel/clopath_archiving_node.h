@@ -84,8 +84,7 @@ public:
     std::deque< histentry_extended >::iterator* start,
     std::deque< histentry_extended >::iterator* finish );
 
-  void compress_LTP_history( double tau_x, double dendritic_delay,
-    std::deque< histentry_extended >* ltp_entry );
+  void compress_LTP_history( double tau_x, double dendritic_delay );
 
   /**
    * \fn double get_theta_plus()

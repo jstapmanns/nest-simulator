@@ -232,6 +232,7 @@ ClopathConnection< targetidentifierT >::send( Event& e, thread t, const CommonSy
     weight_ = facilitate_( weight_, start->dw_, x_bar_ * exp( minus_dt / tau_x_ ) );
     ++start;
   }
+  //std::cout << "orig facilitation: " << weight_ - old_w << "  x_bar = " << x_bar_ << std::endl;
 
   // depression due to new pre-synaptic spike
   weight_ = depress_( weight_, target->get_LTD_value( t_spike - dendritic_delay ) );

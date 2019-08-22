@@ -270,19 +270,16 @@ nest::Clopath_Archiving_Node::get_LTP_value( double t_lastspike )
 }
 
 void
-nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr_end,
-    std::deque< histentry_extended >* ltp_entry )
+nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr_end )
 {
   /* For this procedure to work we have to assume that: 1) incoming spikes are processed in the
    * order of their time stamps and 2) that each presynaptic neuron sends at most one spike event per
    * delta_t (resolution of the simulation). */
   // t_compr_end = t_spike - dendritic_delay
-  //std::cout << "n_incoming = " << n_incoming_ << std::endl;
   if ( n_incoming_ )
   {
     double t_last_update = 0.0;
 
-    //std::cout << "compress" << std::endl;
     // prune all entries from history which are no longer needed
     // except the penultimate one. we might still need it.
     if ( !ltp_history_compressed_.empty() )
@@ -320,13 +317,14 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
         ltp_history_.pop_front();
       }
       std::deque< histentry_extended >::iterator runner = ltp_history_compressed_.begin();
+      /*
       while ( ( runner != ltp_history_compressed_.end() ) && ( runner->t_ < t_compr_end - 5.0*tau_x
             ) )
       {
         runner++;
+        std::cout << runner->t_ << "  " << t_compr_end << "  " << tau_x << "; ";
       }
-      //for ( std::deque< histentry_extended >::iterator runner = ltp_history_compressed_.begin();
-      //    runner != ltp_history_compressed_.end(); runner++ )
+      */
       while ( runner != ltp_history_compressed_.end() )
       {
         runner->dw_ += std::exp( ( runner->t_ - t_last_update ) / tau_x )*hist_sum;
@@ -335,7 +333,6 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
       // secondly, create new entry for current spike
       ltp_history_compressed_.push_back( histentry_extended( t_compr_end, 0.0, 1 ) );
     }
-    ltp_entry = &ltp_history_compressed_.back();
     /*
     while ( ( !ltp_history_.empty() ) && ( ltp_history_.begin()->t_ - 1.0e-6 < t_compr_end ) )
     {

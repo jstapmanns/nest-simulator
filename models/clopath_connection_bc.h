@@ -193,7 +193,6 @@ private:
   double Wmax_;
 
   double t_lastspike_;
-  std::deque< histentry_extended >* ltp_entry_;
 };
 
 
@@ -213,8 +212,9 @@ ClopathConnectionBC< targetidentifierT >::send( Event& e, thread t, const Common
   Node* target = get_target( t );
   double dendritic_delay = get_delay();
 
-  target->compress_LTP_history( tau_x_, t_spike - dendritic_delay, ltp_entry_ );
+  target->compress_LTP_history( tau_x_, t_spike - dendritic_delay );
   // facilitation due to post-synaptic activity since last pre-synaptic spike
+  //double old_w = weight_;
   weight_ = facilitate_( weight_, target->get_LTP_value( t_lastspike_ - dendritic_delay ), x_bar_ );
   //std::cout << "facilitation: " << weight_ - old_w << "  x_bar = " << x_bar_ << std::endl;
 
