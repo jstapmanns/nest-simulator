@@ -299,6 +299,7 @@ public:
       U_BAR_MINUS, // 5
       U_BAR_BAR,   // 6
       HIST_LEN,    // 7 TODO: remove. only for debugging
+      HIST_LEN_C,  // 8 TODO: remove. only for debugging
       STATE_VEC_SIZE
     };
 
