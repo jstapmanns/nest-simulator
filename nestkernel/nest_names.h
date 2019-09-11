@@ -542,6 +542,7 @@ extern const Name vt;
 
 extern const Name w;
 extern const Name weight;
+extern const Name weight_factor;
 extern const Name weight_per_lut_entry;
 extern const Name weight_recorder;
 extern const Name weighted_spikes_ex;

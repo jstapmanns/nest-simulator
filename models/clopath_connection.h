@@ -174,14 +174,14 @@ private:
   double
   depress_( double w, double dw )
   {
-    w -= dw;
+    w -= weight_factor * dw;
     return w > Wmin_ ? w : Wmin_;
   }
 
   double
   facilitate_( double w, double dw, double x_bar )
   {
-    w += dw * x_bar;
+    w += weight_factor * dw * x_bar;
     return w < Wmax_ ? w : Wmax_;
   }
 
@@ -191,6 +191,7 @@ private:
   double tau_x_;
   double Wmin_;
   double Wmax_;
+  double weight_factor;
 
   double t_lastspike_;
 };
@@ -226,14 +227,17 @@ ClopathConnection< targetidentifierT >::send( Event& e, thread t, const CommonSy
   // details.
   target->get_LTP_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish );
   // facilitation due to post-synaptic activity since last pre-synaptic spike
+  double dw_sum = 0.0;
   while ( start != finish )
   {
     const double minus_dt = t_lastspike_ - ( start->t_ + dendritic_delay );
-    weight_ = facilitate_( weight_, start->dw_, x_bar_ * exp( minus_dt / tau_x_ ) );
+    dw_sum += start->dw_ * x_bar_ * exp( minus_dt / tau_x_ );
+    //weight_ = facilitate_( weight_, start->dw_, x_bar_ * exp( minus_dt / tau_x_ ) );
     ++start;
   }
   //std::cout << "orig facilitation: " << weight_ - old_w << "  x_bar = " << x_bar_ << std::endl;
 
+  weight_ = facilitate_( weight_, dw_sum, 1.0 );
   // depression due to new pre-synaptic spike
   weight_ = depress_( weight_, target->get_LTD_value( t_spike - dendritic_delay ) );
 
@@ -260,6 +264,7 @@ ClopathConnection< targetidentifierT >::ClopathConnection()
   , tau_x_( 15.0 )
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
+  , weight_factor( 1.0 )
   , t_lastspike_( 0.0 )
 {
 }
@@ -272,6 +277,7 @@ ClopathConnection< targetidentifierT >::ClopathConnection( const ClopathConnecti
   , tau_x_( rhs.tau_x_ )
   , Wmin_( rhs.Wmin_ )
   , Wmax_( rhs.Wmax_ )
+  , weight_factor( rhs.weight_factor )
   , t_lastspike_( rhs.t_lastspike_ )
 {
 }
@@ -286,6 +292,7 @@ ClopathConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::tau_x, tau_x_ );
   def< double >( d, names::Wmin, Wmin_ );
   def< double >( d, names::Wmax, Wmax_ );
+  def< double >( d, names::weight_factor, weight_factor );
   def< long >( d, names::size_of, sizeof( *this ) );
 }
 
@@ -299,6 +306,7 @@ ClopathConnection< targetidentifierT >::set_status( const DictionaryDatum& d, Co
   updateValue< double >( d, names::tau_x, tau_x_ );
   updateValue< double >( d, names::Wmin, Wmin_ );
   updateValue< double >( d, names::Wmax, Wmax_ );
+  updateValue< double >( d, names::weight_factor, weight_factor );
 
   // check if weight_ and Wmin_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )

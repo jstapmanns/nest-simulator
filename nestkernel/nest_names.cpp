@@ -521,6 +521,7 @@ const Name vt( "vt" );
 
 const Name w( "w" );
 const Name weight( "weight" );
+const Name weight_factor( "weight_factor" );
 const Name weight_per_lut_entry( "weight_per_lut_entry" );
 const Name weight_recorder( "weight_recorder" );
 const Name weighted_spikes_ex( "weighted_spikes_ex" );
