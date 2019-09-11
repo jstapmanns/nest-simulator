@@ -278,7 +278,7 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
   // t_compr_end = t_spike - dendritic_delay
   if ( n_incoming_ )
   {
-    double t_last_update = 0.0;
+    double t_last_update = -1000.0;
 
     // prune all entries from history which are no longer needed
     // except the penultimate one. we might still need it.
