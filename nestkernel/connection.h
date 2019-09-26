@@ -150,6 +150,8 @@ public:
    */
   void set_status( const DictionaryDatum& d, ConnectorModel& cm );
 
+  static bool requires_time_driven_update() { return false; }
+
   /**
    * Check syn_spec dictionary for parameters that are not allowed with the
    * given connection.
@@ -226,6 +228,8 @@ public:
   {
     return UNLABELED_CONNECTION;
   }
+
+  void time_driven_update( const long, const thread, const CommonSynapseProperties& );
 
   /**
    * triggers an update of a synaptic weight
@@ -402,6 +406,16 @@ Connection< targetidentifierT >::trigger_update_weight( const thread,
     "Connection::trigger_update_weight: "
     "Connection does not support updates that are triggered by the volume "
     "transmitter." );
+}
+
+template < typename targetidentifierT >
+inline void
+time_driven_update(
+  const long,
+  const thread,
+  const CommonSynapseProperties& )
+{
+  throw UnsupportedEvent();
 }
 
 } // namespace nest

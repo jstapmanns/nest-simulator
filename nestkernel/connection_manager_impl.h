@@ -62,6 +62,20 @@ ConnectionManager::send_from_device( const thread tid, const index ldid, Event& 
   target_table_devices_.send_from_device( tid, ldid, e, kernel().model_manager.get_synapse_prototypes( tid ) );
 }
 
+inline void
+ConnectionManager::trigger_time_driven_update( const long t_up_steps, const thread tid )
+{
+  for ( std::vector< ConnectorBase* >::iterator conn = connections_[ tid ].begin();
+      conn != connections_[ tid ].end(); ++conn )
+  {
+    if ( (*conn) != NULL )
+    {
+      (*conn)->trigger_time_driven_update( t_up_steps, tid,
+          kernel().model_manager.get_synapse_prototypes( tid ) );
+    }
+  }
+}
+
 } // namespace nest
 
 #endif /* CONNECTION_MANAGER_IMPL_H */

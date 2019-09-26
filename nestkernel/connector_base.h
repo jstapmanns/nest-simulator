@@ -160,6 +160,9 @@ public:
   virtual void
   send_weight_event( const thread tid, const unsigned int lcid, Event& e, const CommonSynapseProperties& cp ) = 0;
 
+  virtual void trigger_time_driven_update( const long t_up_steps, const thread tid,
+      const std::vector< ConnectorModel* >& cm ) = 0;
+
   /**
    * Update weights of dopamine modulated STDP connections.
    */
@@ -412,6 +415,20 @@ public:
 
   // Implemented in connector_base_impl.h
   void send_weight_event( const thread tid, const unsigned int lcid, Event& e, const CommonSynapseProperties& cp );
+
+  void trigger_time_driven_update( const long t_up_steps, const thread tid, const std::vector< ConnectorModel* >& cm )
+  {
+    if ( ConnectionT::requires_time_driven_update() )
+    {
+      typename ConnectionT::CommonPropertiesType const& cp =
+        static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id_ ] )
+        ->get_common_properties();
+      for( typename BlockVector< ConnectionT >::iterator it = C_.begin(); it < C_.end(); ++it )
+      {
+        it->time_driven_update( t_up_steps, tid, cp );
+      }
+    }
+  }
 
   void
   trigger_update_weight( const long vt_gid,

@@ -884,6 +884,11 @@ nest::SimulationManager::update_()
       // end of preliminary update
 
       const std::vector< Node* >& thread_local_nodes = kernel().node_manager.get_nodes_on_thread( tid );
+
+      //std::cerr << "synaptic update at " << clock_.get_steps() << " + " << to_step_ << std::endl;
+      //Time syn_update_stamp = clock_ + Time::step( to_step_ );
+      kernel().connection_manager.trigger_time_driven_update( clock_.get_steps(), tid );
+
       for ( std::vector< Node* >::const_iterator node = thread_local_nodes.begin(); node != thread_local_nodes.end();
             ++node )
       {
