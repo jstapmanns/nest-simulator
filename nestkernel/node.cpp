@@ -426,6 +426,12 @@ Node::sends_secondary_event( DelayedRateConnectionEvent& )
 
 
 double
+Node::get_K_value( double )
+{
+  throw UnexpectedEvent();
+}
+
+double
 Node::get_LTD_value( double )
 {
   throw UnexpectedEvent();
@@ -437,12 +443,11 @@ Node::get_leak_propagator() const
   throw UnexpectedEvent();
 }
 
-double
-Node::get_K_value( double )
+bool
+Node::is_eprop_readout()
 {
   throw UnexpectedEvent();
 }
-
 
 void
 Node::get_K_values( double, double&, double& )

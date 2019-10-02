@@ -355,6 +355,12 @@ nest::iaf_psc_delta_eprop::get_leak_propagator() const
   return V_.P33_;
 }
 
+bool
+nest::iaf_psc_delta_eprop::is_eprop_readout()
+{
+  return false;
+}
+
 void
 nest::iaf_psc_delta_eprop::handle( SpikeEvent& e )
 {

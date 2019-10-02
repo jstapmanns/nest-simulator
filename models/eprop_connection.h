@@ -240,47 +240,66 @@ EpropConnection< targetidentifierT >::send( Event& e,
     double alpha = target->get_leak_propagator();
     double kappa = std::exp( -dt / tau_kappa_ );
     std::cout << "alpha = " << alpha << ", kappa = " << kappa << ", tau_kappa = " << tau_kappa_ << std::endl;
-    std::vector< double > elegibility_trace;
     std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
     double dw = 0.0;
-    std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
-    for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
+    if (target->is_eprop_readout() )  // if target is a readout neuron    
     {
-      last_e_trace_ *= alpha;
-      if ( std::fabs( *t_pre_spike - runner->t_ ) < 1.0e-6 )
+      std::cout << "I'm a readout neuron" << std::endl;
+      while ( start != finish )
       {
-        last_e_trace_ += 1.0;
-        t_pre_spike++;
+        last_e_trace_ *= kappa;
+        if ( std::fabs( *t_pre_spike - start->t_ ) < 1.0e-6 )
+        {
+          last_e_trace_ += 1.0;
+          t_pre_spike++;
+        }
+        dw += start->learning_signal_ * last_e_trace_;
       }
-      elegibility_trace.push_back( runner->V_m_ * last_e_trace_ );
+      dw *= eta_;  // TODO: multiply by dt?
     }
+    else  // if target is a neuron of the recurrent network
+    {
+      std::cout << "I'm a eprop lif neuron" << std::endl;
+      std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
+      std::vector< double > elegibility_trace;
+      for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
+      {
+        last_e_trace_ *= alpha;
+        if ( std::fabs( *t_pre_spike - runner->t_ ) < 1.0e-6 )
+        {
+          last_e_trace_ += 1.0;
+          t_pre_spike++;
+        }
+        elegibility_trace.push_back( runner->V_m_ * last_e_trace_ );
+      }
 
-    /*
-    std::cout << "elegibility trace: " << std::endl;
-    for ( std::vector< double >::iterator it = elegibility_trace.begin(); it !=
-        elegibility_trace.end(); it++)
-    {
-      std::cout << *it << ", ";
-    }
-    std::cout << std::endl;
-    */
-    int t_prime_counter = 0;
-    //std::cout << "history: " << std::endl;
-    while ( start != finish )
-    {
-      double sum_t_prime = 0.0;
-      for ( int t_prime = 0; t_prime <= t_prime_counter; t_prime++)
+      /*
+      std::cout << "elegibility trace: " << std::endl;
+      for ( std::vector< double >::iterator it = elegibility_trace.begin(); it !=
+          elegibility_trace.end(); it++)
       {
-        sum_t_prime += std::pow( kappa, t_prime_counter - t_prime ) * elegibility_trace[ t_prime ];
+        std::cout << *it << ", ";
       }
-      sum_t_prime *= dt;
-      dw += sum_t_prime * start->learning_signal_;
-      //std::cout << start->V_m_ << ", ";
-      t_prime_counter++;
-      start++;
-    }
-    //std::cout << std::endl;
+      std::cout << std::endl;
+      */
+      int t_prime_counter = 0;
+      //std::cout << "history: " << std::endl;
+      while ( start != finish )
+      {
+        double sum_t_prime = 0.0;
+        for ( int t_prime = 0; t_prime <= t_prime_counter; t_prime++)
+        {
+          sum_t_prime += std::pow( kappa, t_prime_counter - t_prime ) * elegibility_trace[ t_prime ];
+        }
+        sum_t_prime *= dt;
+        dw += sum_t_prime * start->learning_signal_;
+        //std::cout << start->V_m_ << ", ";
+        t_prime_counter++;
+        start++;
+      }
+      //std::cout << std::endl;
     dw *= dt*eta_;
+    }
     //std::cout << "dw: " << dw << std::endl;
 
     // TODO: remove factor 0.0

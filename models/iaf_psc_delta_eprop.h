@@ -163,6 +163,7 @@ public:
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
   double get_leak_propagator() const;
+  bool is_eprop_readout();
 
 private:
   void init_state_( const Node& proto );

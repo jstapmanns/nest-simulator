@@ -684,6 +684,8 @@ public:
 
   virtual double get_leak_propagator() const;
 
+  virtual bool is_eprop_readout();
+
   /**
    * write the Kminus and triplet_Kminus values at t (in ms) to
    * the provided locations.
