@@ -447,7 +447,7 @@ Node::get_K_value( double )
 
 
 void
-Node::get_K_values( double, double&, double& )
+Node::get_K_values( double, double&, double&, double& )
 {
   throw UnexpectedEvent();
 }
