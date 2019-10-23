@@ -153,6 +153,7 @@
 #include "tsodyks_connection.h"
 #include "tsodyks_connection_hom.h"
 #include "urbanczik_connection.h"
+#include "urbanczik_connection_td.h"
 #include "vogels_sprekeler_connection.h"
 
 // Includes from nestkernel:
@@ -462,6 +463,12 @@ ModelsModule::init( SLIInterpreter* )
 
   kernel().model_manager.register_connection_model< UrbanczikConnection< TargetIdentifierPtrRport > >(
     "urbanczik_synapse",
+    /*requires_symmetric=*/false,
+    /*requires_clopath_archiving=*/false,
+    /*requires_urbanczik_archiving=*/true );
+
+  kernel().model_manager.register_connection_model< UrbanczikConnectionTD< TargetIdentifierPtrRport > >(
+    "urbanczik_synapse_td",
     /*requires_symmetric=*/false,
     /*requires_clopath_archiving=*/false,
     /*requires_urbanczik_archiving=*/true );

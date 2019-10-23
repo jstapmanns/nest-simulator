@@ -1,5 +1,5 @@
 /*
- *  clopath_connection.h
+ *  urbanczik_connection.h
  *
  *  This file is part of NEST.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef CLOPATH_CONNECTION_TD_H
-#define CLOPATH_CONNECTION_TD_H
+#ifndef URBANCZIK_CONNECTION_TD_H
+#define URBANCZIK_CONNECTION_TD_H
 
 // C++ includes:
 #include <cmath>
@@ -43,58 +43,50 @@ namespace nest
 /** @BeginDocumentation
 @ingroup Synapses
 @ingroup stdp
-@ingroup clopath_s
 
-Name: clopath_synapse - Synapse type for voltage-based STDP after Clopath.
+Name: urbanczik_synapse - Synapse type for a plastic synapse after Urbanczik and Senn.
 
 Description:
 
-clopath_synapse is a connector to create Clopath synapses as defined
-in [1]. In contrast to usual STDP, the change of the synaptic weight does
-not only depend on the pre- and postsynaptic spike timing but also on the
-postsynaptic membrane potential.
+urbanczik_synapse is a connector to create Urbanczik synapses as defined in [1] that can connect suitable
+multicompartment models. In contrast to usual STDP, the change of the synaptic weight does not only depend on the pre-
+and postsynaptic spike timing but also on the postsynaptic dendritic potential.
 
-Clopath synapses require archiving of continuous quantities. Therefore Clopath
-synapses can only be connected to neuron models that are capable of doing this
-archiving. So far, compatible models are aeif_psc_delta_clopath and
-hh_psc_alpha_clopath.
+Urbanczik synapses require archiving of continuous quantities. Therefore they can only be connected to neuron models
+that are capable of doing this archiving. So far, the only compatible model is pp_cond_exp_mc_urbanczik.
 
 Parameters:
 
 \verbatim embed:rst
-=======  ======  ==========================================================
-tau_x    ms      Time constant of the trace of the presynaptic spike train
-Wmax     real    Maximum allowed weight
-Wmin     real    Minimum allowed weight
-=======  ======  ==========================================================
+=======   ======  ==========================================================
+eta       real    Learning rate
+tau_Delta real    Time constant of low pass filtering of the weight change
+Wmax      real    Maximum allowed weight
+Wmin      real    Minimum allowed weight
+=======   ======  ==========================================================
 \endverbatim
 
-Other parameters like the amplitudes for long-term potentiation (LTP) and
-depression (LTD) are stored in in the neuron models that are compatible with the
-Clopath synapse.
+All other parameters are stored in in the neuron models that are compatible with the Urbanczik synapse.
+
+Remarks:
+
+So far the implementation of the urbanczik_synapse only supports two-compartment neurons.
 
 Transmits: SpikeEvent
 
 References:
 
 \verbatim embed:rst
-.. [1] Clopath et al. (2010). Connectivity reflects coding:
-       a model of voltage-based STDP with homeostasis.
-       Nature Neuroscience 13:3, 344--352. DOI: https://doi.org/10.1038/nn.2479
-.. [2] Clopath and Gerstner (2010). Voltage and spike timing interact
-       in STDP – a unified model. Frontiers in Synaptic Neuroscience 2:25.
-       DOI: https://doi.org/10.3389/fnsyn.2010.00025
-.. [3] Voltage-based STDP synapse (Clopath et al. 2010) on ModelDB
-       https://senselab.med.yale.edu/ModelDB/showmodel.cshtml?model=144566
+.. [1] R. Urbanczik, W. Senn (2014). Learning by the Dendritic Prediction of Somatic Spiking. Neuron, 81, 521 - 528.
 \endverbatim
 Authors: Jonas Stapmanns, David Dahmen, Jan Hahne
 
-SeeAlso: stdp_synapse, aeif_psc_delta_clopath, hh_psc_alpha_clopath
+SeeAlso: stdp_synapse, clopath_synapse, pp_cond_exp_mc_urbanczik
 */
 // connections are templates of target identifier type (used for pointer /
 // target index addressing) derived from generic connection template
 template < typename targetidentifierT >
-class ClopathConnectionTD : public Connection< targetidentifierT >
+class UrbanczikConnectionTD : public Connection< targetidentifierT >
 {
 
 public:
@@ -105,14 +97,14 @@ public:
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
    */
-  ClopathConnectionTD();
+  UrbanczikConnectionTD();
 
 
   /**
    * Copy constructor.
    * Needs to be defined properly in order for GenericConnector to work.
    */
-  ClopathConnectionTD( const ClopathConnectionTD& );
+  UrbanczikConnectionTD( const UrbanczikConnectionTD& );
 
   // Explicitly declare all methods inherited from the dependent base
   // ConnectionBase. This avoids explicit name prefixes in all places these
@@ -175,27 +167,17 @@ public:
   }
 
 private:
-  double
-  depress_( double w, double dw )
-  {
-    w -= weight_factor * dw;
-    return w > Wmin_ ? w : Wmin_;
-  }
-
-  double
-  facilitate_( double w, double dw, double x_bar )
-  {
-    w += dw * x_bar;
-    return w < Wmax_ ? w : Wmax_;
-  }
-
   // data members of each connection
   double weight_;
-  double x_bar_;
-  double tau_x_;
+  double tau_Delta_;
+  double eta_;
   double Wmin_;
   double Wmax_;
-  double weight_factor;
+  double init_weight_;
+  double tau_L_trace_;
+  double tau_s_trace_;
+  double PI_integral_;
+  double PI_exp_integral_;
 
   double t_lastspike_;
   double t_lastupdate_;
@@ -210,96 +192,116 @@ private:
  */
 template < typename targetidentifierT >
 inline void
-ClopathConnectionTD< targetidentifierT >::send( Event& e, thread t,
-    const CommonSynapseProperties& cp)
+UrbanczikConnectionTD< targetidentifierT >::send( Event& e, thread t,
+    const CommonSynapseProperties& cp )
 {
   double t_spike = e.get_stamp().get_ms();
-  /*
-     We need to update the synapse if a spike arrives so that we compute the correct weight before
-     the spike is transmitted.
-     */
   time_driven_update( e.get_stamp(), t, cp );
-
-  double dendritic_delay = get_delay();
+  // use accessor functions (inherited from Connection< >) to obtain delay and target
   Node* target = get_target( t );
-
-  weight_ = depress_( weight_, target->get_LTD_value( t_spike - dendritic_delay ) );
+  double const tau_L = target->get_tau_L( 1 );
+  double const tau_s = weight_ > 0.0 ? target->get_tau_syn_ex( 1 ) : target->get_tau_syn_in( 1 );
 
   e.set_receiver( *target );
   e.set_weight( weight_ );
-  // use accessor functions (inherited from Connection< >) to obtain delay in
-  // steps and rport
+  // use accessor functions (inherited from Connection< >) to obtain delay in steps and rport
   e.set_delay_steps( get_delay_steps() );
   e.set_rport( get_rport() );
   e();
 
   // compute the trace of the presynaptic spike train
-  x_bar_ = x_bar_ * std::exp( ( t_lastspike_ - t_spike ) / tau_x_ ) + 1.0 / tau_x_;
+  tau_L_trace_ = tau_L_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_L ) + 1.0;
+  tau_s_trace_ = tau_s_trace_ * std::exp( ( t_lastspike_ - t_spike ) / tau_s ) + 1.0;
 
   t_lastspike_ = t_spike;
 }
 
 template < typename targetidentifierT >
 inline void
-ClopathConnectionTD< targetidentifierT >::time_driven_update( Time syn_update_stamp,
+UrbanczikConnectionTD< targetidentifierT >::time_driven_update( Time syn_update_stamp,
     const thread tid, const CommonSynapseProperties& cp)
 {
   double t_update = syn_update_stamp.get_ms();
   // use accessor functions (inherited from Connection< >) to obtain delay and
   // target
   double dendritic_delay = get_delay();
+  Node* target = get_target( tid );
 
   // get spike history in relevant range (t1, t2] from post-synaptic neuron
   std::deque< histentry_extended >::iterator start;
   std::deque< histentry_extended >::iterator finish;
 
-  // For a new synapse, t_lastspike_ contains the point in time of the last
-  // spike. So we initially read the
-  // history(t_last_spike - dendritic_delay, ..., T_spike-dendritic_delay]
-  // which increases the access counter for these entries.
-  // At registration, all entries' access counters of
-  // history[0, ..., t_last_spike - dendritic_delay] have been
-  // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
-  // details.
-  Node* target = get_target( tid );
-  target->get_LTP_history( t_lastupdate_ - dendritic_delay, t_update - dendritic_delay, &start, &finish );
-  // facilitation due to post-synaptic activity since last pre-synaptic spike
-  double dw_sum = 0.0;
+  // for now we only support two-compartment neurons
+  // in this case the dendritic compartment has index 1
+  const int comp = 1;
+
+  target->get_urbanczik_history( t_lastupdate_ - dendritic_delay, t_update - dendritic_delay, &start, &finish, comp );
+
+  double dPI_exp_integral = 0.0;
+  double const g_L = target->get_g_L( comp );
+  double const tau_L = target->get_tau_L( comp );
+  double const C_m = target->get_C_m( comp );
+  double const tau_s = weight_ > 0.0 ? target->get_tau_syn_ex( comp ) : target->get_tau_syn_in( comp );
+
   while ( start != finish )
   {
-    const double minus_dt = t_lastspike_ - ( start->t_ + dendritic_delay );
-    dw_sum += start->dw_ * x_bar_ * exp( minus_dt / tau_x_ );
-    ++start;
+    double const time_pp = start->t_ + dendritic_delay;
+    double const time_down = time_pp - t_update;
+    double const time_up = t_lastspike_ - time_pp;
+    double const PSP_mem_tr =
+      ( tau_L_trace_ * exp( time_up / tau_L ) - tau_s_trace_ * exp( time_up / tau_s ) ) * start->dw_;
+    PI_integral_ += PSP_mem_tr;
+    dPI_exp_integral += PSP_mem_tr * exp( time_down / tau_Delta_ );
+    start++;
   }
-  
-  weight_ = facilitate_( weight_, dw_sum, 1.0 );
-  // depression due to new pre-synaptic spike
+  PI_exp_integral_ = ( exp( ( t_lastupdate_ - t_update ) / tau_Delta_ ) * PI_exp_integral_ +
+    dPI_exp_integral );
+  weight_ = PI_integral_ - PI_exp_integral_;
+  weight_ = init_weight_ + weight_ * 15.0 * C_m * tau_s * eta_ / ( g_L * ( tau_L - tau_s ) );
+
+  if ( weight_ > Wmax_ )
+  {
+    weight_ = Wmax_;
+  }
+  else if ( weight_ < Wmin_ )
+  {
+    weight_ = Wmin_;
+  }
+
   t_lastupdate_ = t_update;
 }
 
 template < typename targetidentifierT >
-ClopathConnectionTD< targetidentifierT >::ClopathConnectionTD()
+UrbanczikConnectionTD< targetidentifierT >::UrbanczikConnectionTD()
   : ConnectionBase()
   , weight_( 1.0 )
-  , x_bar_( 0.0 )
-  , tau_x_( 15.0 )
+  , tau_Delta_( 100.0 )
+  , eta_( 0.07 )
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
-  , weight_factor( 1.0 )
-  , t_lastspike_( 0.0 )
-  , t_lastupdate_( 0.0 )
+  , tau_L_trace_( 0.0 )
+  , tau_s_trace_( 0.0 )
+  , PI_integral_( 0.0 )
+  , PI_exp_integral_( 0.0 )
+  , t_lastspike_( -1000.0 )
+  , t_lastupdate_( -1000.0 )
 {
+  init_weight_ = weight_;
 }
 
 template < typename targetidentifierT >
-ClopathConnectionTD< targetidentifierT >::ClopathConnectionTD( const ClopathConnectionTD< targetidentifierT >& rhs )
+UrbanczikConnectionTD< targetidentifierT >::UrbanczikConnectionTD( const UrbanczikConnectionTD< targetidentifierT >& rhs )
   : ConnectionBase( rhs )
   , weight_( rhs.weight_ )
-  , x_bar_( rhs.x_bar_ )
-  , tau_x_( rhs.tau_x_ )
+  , tau_Delta_( rhs.tau_Delta_ )
+  , eta_( rhs.eta_ )
   , Wmin_( rhs.Wmin_ )
   , Wmax_( rhs.Wmax_ )
-  , weight_factor( rhs.weight_factor )
+  , tau_L_trace_( rhs.tau_L_trace_ )
+  , tau_s_trace_( rhs.tau_s_trace_ )
+  , init_weight_( rhs.init_weight_ )
+  , PI_integral_( rhs.PI_integral_ )
+  , PI_exp_integral_( rhs.PI_exp_integral_ )
   , t_lastspike_( rhs.t_lastspike_ )
   , t_lastupdate_( rhs.t_lastupdate_ )
 {
@@ -307,30 +309,29 @@ ClopathConnectionTD< targetidentifierT >::ClopathConnectionTD( const ClopathConn
 
 template < typename targetidentifierT >
 void
-ClopathConnectionTD< targetidentifierT >::get_status( DictionaryDatum& d ) const
+UrbanczikConnectionTD< targetidentifierT >::get_status( DictionaryDatum& d ) const
 {
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
-  def< double >( d, names::x_bar, x_bar_ );
-  def< double >( d, names::tau_x, tau_x_ );
+  def< double >( d, names::tau_Delta, tau_Delta_ );
+  def< double >( d, names::eta, eta_ );
   def< double >( d, names::Wmin, Wmin_ );
   def< double >( d, names::Wmax, Wmax_ );
-  def< double >( d, names::weight_factor, weight_factor );
   def< long >( d, names::size_of, sizeof( *this ) );
 }
 
 template < typename targetidentifierT >
 void
-ClopathConnectionTD< targetidentifierT >::set_status( const DictionaryDatum& d, ConnectorModel& cm )
+UrbanczikConnectionTD< targetidentifierT >::set_status( const DictionaryDatum& d, ConnectorModel& cm )
 {
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );
-  updateValue< double >( d, names::x_bar, x_bar_ );
-  updateValue< double >( d, names::tau_x, tau_x_ );
+  updateValue< double >( d, names::tau_Delta, tau_Delta_ );
+  updateValue< double >( d, names::eta, eta_ );
   updateValue< double >( d, names::Wmin, Wmin_ );
   updateValue< double >( d, names::Wmax, Wmax_ );
-  updateValue< double >( d, names::weight_factor, weight_factor );
 
+  init_weight_ = weight_;
   // check if weight_ and Wmin_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
   {
@@ -346,4 +347,4 @@ ClopathConnectionTD< targetidentifierT >::set_status( const DictionaryDatum& d, 
 
 } // of namespace nest
 
-#endif // of #ifndef CLOPATH_CONNECTION_H
+#endif // of #ifndef URBANCZIK_CONNECTION_TD_H

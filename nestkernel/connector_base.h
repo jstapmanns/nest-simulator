@@ -160,7 +160,7 @@ public:
   virtual void
   send_weight_event( const thread tid, const unsigned int lcid, Event& e, const CommonSynapseProperties& cp ) = 0;
 
-  virtual void trigger_time_driven_update( const long t_up_steps, const thread tid,
+  virtual void trigger_time_driven_update( Time syn_update_stamp, const thread tid,
       const std::vector< ConnectorModel* >& cm ) = 0;
 
   /**
@@ -416,7 +416,7 @@ public:
   // Implemented in connector_base_impl.h
   void send_weight_event( const thread tid, const unsigned int lcid, Event& e, const CommonSynapseProperties& cp );
 
-  void trigger_time_driven_update( const long t_up_steps, const thread tid, const std::vector< ConnectorModel* >& cm )
+  void trigger_time_driven_update( Time syn_update_stamp, const thread tid, const std::vector< ConnectorModel* >& cm )
   {
     if ( ConnectionT::requires_time_driven_update() )
     {
@@ -425,7 +425,7 @@ public:
         ->get_common_properties();
       for( typename BlockVector< ConnectionT >::iterator it = C_.begin(); it < C_.end(); ++it )
       {
-        it->time_driven_update( t_up_steps, tid, cp );
+        it->time_driven_update( syn_update_stamp, tid, cp );
       }
     }
   }

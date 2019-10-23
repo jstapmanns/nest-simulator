@@ -63,14 +63,14 @@ ConnectionManager::send_from_device( const thread tid, const index ldid, Event& 
 }
 
 inline void
-ConnectionManager::trigger_time_driven_update( const long t_up_steps, const thread tid )
+ConnectionManager::trigger_time_driven_update( Time syn_update_stamp, const thread tid )
 {
   for ( std::vector< ConnectorBase* >::iterator conn = connections_[ tid ].begin();
       conn != connections_[ tid ].end(); ++conn )
   {
     if ( (*conn) != NULL )
     {
-      (*conn)->trigger_time_driven_update( t_up_steps, tid,
+      (*conn)->trigger_time_driven_update( syn_update_stamp, tid,
           kernel().model_manager.get_synapse_prototypes( tid ) );
     }
   }

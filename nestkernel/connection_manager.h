@@ -248,7 +248,7 @@ public:
   void
   send( const thread tid, const synindex syn_id, const index lcid, const std::vector< ConnectorModel* >& cm, Event& e );
 
-  void trigger_time_driven_update( const long t_up_steps, const thread tid );
+  void trigger_time_driven_update( Time syn_update_stamp, const thread tid );
 
   /**
    * Send event e to all device targets of source source_gid

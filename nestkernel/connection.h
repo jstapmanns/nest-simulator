@@ -229,7 +229,7 @@ public:
     return UNLABELED_CONNECTION;
   }
 
-  void time_driven_update( const long, const thread, const CommonSynapseProperties& );
+  void time_driven_update( Time, const thread, const CommonSynapseProperties& );
 
   /**
    * triggers an update of a synaptic weight
@@ -411,7 +411,7 @@ Connection< targetidentifierT >::trigger_update_weight( const thread,
 template < typename targetidentifierT >
 inline void
 time_driven_update(
-  const long,
+  Time,
   const thread,
   const CommonSynapseProperties& )
 {
