@@ -237,9 +237,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
       &finish );
 
     double const dt = Time::get_resolution().get_ms();
-    double alpha = target->get_leak_propagator();
     double kappa = std::exp( -dt / tau_kappa_ );
-    std::cout << "alpha = " << alpha << ", kappa = " << kappa << ", tau_kappa = " << tau_kappa_ << std::endl;
     std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
     double dw = 0.0;
     if (target->is_eprop_readout() )  // if target is a readout neuron    
@@ -262,6 +260,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
       std::cout << "I'm a eprop lif neuron" << std::endl;
       std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
       std::vector< double > elegibility_trace;
+      double alpha = target->get_leak_propagator();
+      std::cout << "alpha = " << alpha << ", kappa = " << kappa << ", tau_kappa = " << tau_kappa_ << std::endl;
       for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
       {
         last_e_trace_ *= alpha;
