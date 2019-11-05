@@ -72,12 +72,6 @@ public:
     std::deque< histentry_eprop >::iterator* start,
     std::deque< histentry_eprop >::iterator* finish );
 
-  /**
-   * \fn double get_theta_plus()
-   * Returns threshold theta_plus_
-   */
-  double get_theta_plus() const;
-
 protected:
   void write_readout_history( Time const& t_sp,
     double learning_signal );
@@ -101,19 +95,16 @@ protected:
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
 
+  double get_update_interval();
+  //TODO: propagate information from readout neuron
+
 private:
   std::deque< histentry_eprop > eprop_history_;
 
-  double theta_plus_;
   double eta_; // called gamma in paper
+  double update_interval_;
 
 };
-
-inline double
-Eprop_Archiving_Node::get_theta_plus() const
-{
-  return theta_plus_;
-}
 
 } // of namespace
 #endif

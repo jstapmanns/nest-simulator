@@ -35,16 +35,16 @@ namespace nest
 
 nest::Eprop_Archiving_Node::Eprop_Archiving_Node()
   : Archiving_Node()
-  , theta_plus_( -45.3 )
   , eta_( 0.3 )
+  , update_interval_( 100.0 )
 {
 }
 
 nest::Eprop_Archiving_Node::Eprop_Archiving_Node(
   const Eprop_Archiving_Node& n )
   : Archiving_Node( n )
-  , theta_plus_( n.theta_plus_ )
   , eta_( n.eta_ )
+  , update_interval_( n.update_interval_ )
 {
 }
 
@@ -53,7 +53,6 @@ nest::Eprop_Archiving_Node::get_status( DictionaryDatum& d ) const
 {
   Archiving_Node::get_status( d );
 
-  def< double >( d, names::theta_plus, theta_plus_ );
   def< double >( d, names::eta, eta_ );
 }
 
@@ -63,13 +62,19 @@ nest::Eprop_Archiving_Node::set_status( const DictionaryDatum& d )
   Archiving_Node::set_status( d );
 
   // We need to preserve values in case invalid values are set
-  double new_theta_plus = theta_plus_;
   double new_eta = eta_;
-  updateValue< double >( d, names::theta_plus, new_theta_plus );
+  double new_update_interval = update_interval_;
   updateValue< double >( d, names::eta, new_eta );
+  updateValue< double >( d, names::update_interval, new_update_interval );
 
-  theta_plus_ = new_theta_plus;
   eta_ = new_eta;
+  update_interval_ = new_update_interval;
+}
+
+double
+nest::Eprop_Archiving_Node::get_update_interval()
+{
+  return update_interval_;
 }
 
 void
@@ -78,6 +83,7 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
   std::deque< histentry_eprop >::iterator* start,
   std::deque< histentry_eprop >::iterator* finish )
 {
+  std::cout << "read hist from " << t1 << " to " << t2 << std::endl;
   /*
   std::cout << "read hist from " << t1 << " to " << t2 << std::endl;
   std::cout << "whole history: ";

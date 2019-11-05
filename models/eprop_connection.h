@@ -216,6 +216,9 @@ EpropConnection< targetidentifierT >::send( Event& e,
   double dendritic_delay = get_delay();
 
   std::cout << "t_spike: " << t_spike << " next update: " << t_nextupdate_ << std::endl;
+  // store times of incoming spikes to enable computation of eligibility trace
+  pre_syn_spike_times_.push_back( t_spike );
+
   // do update only 
   if ( t_spike > t_nextupdate_ )
   {
@@ -232,7 +235,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
     // details.
     target->get_eprop_history( t_lastupdate_ - dendritic_delay,
-      t_spike - dendritic_delay,
+      t_nextupdate_ - dendritic_delay,
       &start,
       &finish );
 
@@ -252,16 +255,17 @@ EpropConnection< targetidentifierT >::send( Event& e,
           t_pre_spike++;
         }
         dw += start->learning_signal_ * last_e_trace_;
+        start++;
       }
       dw *= eta_;  // TODO: multiply by dt?
     }
     else  // if target is a neuron of the recurrent network
     {
-      std::cout << "I'm a eprop lif neuron" << std::endl;
-      std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
+      //std::cout << "I'm a eprop lif neuron" << std::endl;
+      //std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
       std::vector< double > elegibility_trace;
       double alpha = target->get_leak_propagator();
-      std::cout << "alpha = " << alpha << ", kappa = " << kappa << ", tau_kappa = " << tau_kappa_ << std::endl;
+      //std::cout << "alpha = " << alpha << ", kappa = " << kappa << ", tau_kappa = " << tau_kappa_ << std::endl;
       for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
       {
         last_e_trace_ *= alpha;
@@ -300,7 +304,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
       //std::cout << std::endl;
     dw *= dt*eta_;
     }
-    //std::cout << "dw: " << dw << std::endl;
+    std::cout << "dw: " << dw << std::endl;
 
     // TODO: remove factor 0.0
     weight_ += 0.0*dw;
@@ -313,14 +317,12 @@ EpropConnection< targetidentifierT >::send( Event& e,
     {
       weight_ = Wmin_;
     }
-    t_lastupdate_ = t_spike;
+    t_lastupdate_ = t_nextupdate_;
     t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) * update_interval_;
     // clear history of presynaptic spike because we don't need them any more
     pre_syn_spike_times_.clear();
+    pre_syn_spike_times_.push_back( t_spike );
   }
-
-  // store times of incoming spikes to enable computation of eligibility trace
-  pre_syn_spike_times_.push_back( t_spike );
 
   e.set_receiver( *target );
   e.set_weight( weight_ );
