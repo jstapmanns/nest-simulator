@@ -184,7 +184,6 @@ nest::error_transformer_node< TNonlinearities >::error_transformer_node()
   , B_( *this )
 {
   recordablesMap_.create();
-  Node::set_node_uses_wfr( kernel().simulation_manager.use_wfr() );
 }
 
 template < class TNonlinearities >
@@ -195,7 +194,6 @@ nest::error_transformer_node< TNonlinearities >::error_transformer_node(
   , S_( n.S_ )
   , B_( n.B_, *this )
 {
-  Node::set_node_uses_wfr( kernel().simulation_manager.use_wfr() );
 }
 
 /* ----------------------------------------------------------------
@@ -215,11 +213,6 @@ void
 nest::error_transformer_node< TNonlinearities >::init_buffers_()
 {
   B_.delayed_rates_.clear(); // includes resize
-
-  // resize buffers
-  const size_t buffer_size = kernel().connection_manager.get_min_delay();
-  B_.instant_rates_.resize( buffer_size, 0.0 );
-  B_.last_y_values.resize( buffer_size, 0.0 );
 
   B_.logger_.reset(); // includes resize
   B_.spikes_.clear();   // includes resize
@@ -244,19 +237,16 @@ nest::error_transformer_node< TNonlinearities >::calibrate()
  */
 
 template < class TNonlinearities >
-bool
+void
 nest::error_transformer_node< TNonlinearities >::update_( Time const& origin,
   const long from,
-  const long to,
-  const bool called_from_wfr_update )
+  const long to)
 {
   assert(
     to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
   const size_t buffer_size = kernel().connection_manager.get_min_delay();
-  const double wfr_tol = kernel().simulation_manager.get_wfr_tol();
-  bool wfr_tol_exceeded = false;
 
   // allocate memory to store rates to be sent by rate events
   std::vector< double > new_rates( buffer_size, 0.0 );
@@ -270,68 +260,37 @@ nest::error_transformer_node< TNonlinearities >::update_( Time const& origin,
 
       S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
 
-    // set new input current
-    S_.y0_ = B_.currents_.get_value( lag );
+    S_.y0_ = B_.currents_.get_value( lag ); // set new input current
 
-    // store rate
-    new_rates[ lag ] = S_.rate_;
+    new_rates[ lag ] = S_.rate_; // store rate
     double new_learning_signal = std::abs(S_.y3_ - S_.rate_);
     new_learning_signals [ lag ] = new_learning_signal;
-    // reinitialize output rate
-    S_.rate_ = 0.0;
+
+    S_.rate_ = 0.0; // reinitialize output rate
 
     double delayed_rates = 0;
-    if ( called_from_wfr_update )
-    {
-      // use get_value_wfr_update to keep values in buffer
-      delayed_rates = B_.delayed_rates_.get_value_wfr_update( lag );
-    }
-    else
-    {
-      // use get_value to clear values in buffer after reading
-      delayed_rates = B_.delayed_rates_.get_value( lag );
-    }
+
+    delayed_rates = B_.delayed_rates_.get_value( lag );
 
     if ( P_.linear_summation_ )
     {
-      S_.rate_ +=
-        nonlinearities_.input( delayed_rates + B_.instant_rates_[ lag ] );
-
+      S_.rate_ += nonlinearities_.input( delayed_rates );
     }
     else
     {
-      S_.rate_ += delayed_rates + B_.instant_rates_[ lag ];
+      S_.rate_ += delayed_rates;
     }
 
-    if ( called_from_wfr_update )
-    {
-      // check if deviation from last iteration exceeds wfr_tol
-      wfr_tol_exceeded = wfr_tol_exceeded
-        or fabs( S_.rate_ - B_.last_y_values[ lag ] ) > wfr_tol;
-      // update last_y_values for next wfr iteration
-      B_.last_y_values[ lag ] = S_.rate_;
-    }
-    else
-    {
-      // rate logging
-      B_.logger_.record_data( origin.get_steps() + lag );
-    }
+    B_.logger_.record_data( origin.get_steps() + lag );
     write_readout_history( Time::step( origin.get_steps() + lag + 1), new_learning_signal);
 
   }
 
-  if ( not called_from_wfr_update )
-  {
     // Send delay-rate-neuron-event. This only happens in the final iteration
     // to avoid accumulation in the buffers of the receiving neurons.
     DelayedRateConnectionEvent drve;
-    // drve.set_coeffarray( new_rates )
-
     drve.set_coeffarray( new_learning_signals );
     kernel().event_delivery_manager.send_secondary( *this, drve );
-
-    // clear last_y_values
-    std::vector< double >( buffer_size, 0.0 ).swap( B_.last_y_values );
 
     // modifiy new_rates for rate-neuron-event as proxy for next min_delay
     for ( long temp = from; temp < to; ++temp )
@@ -339,17 +298,8 @@ nest::error_transformer_node< TNonlinearities >::update_( Time const& origin,
       new_rates[ temp ] = S_.rate_;
       new_learning_signals[ temp ] = std::abs(S_.y3_ - S_.rate_);
     }
-  }
 
-  // Send rate-neuron-event
-  InstantaneousRateConnectionEvent rve;
-  rve.set_coeffarray( new_rates );
-  kernel().event_delivery_manager.send_secondary( *this, rve );
-
-  // Reset variables
-  std::vector< double >( buffer_size, 0.0 ).swap( B_.instant_rates_ );
-
-  return wfr_tol_exceeded;
+  return;
 }
 
 template < class TNonlinearities >
@@ -359,31 +309,6 @@ nest::error_transformer_node< TNonlinearities >::is_eprop_readout()
         return true;
     }
 
-
-template < class TNonlinearities >
-void
-nest::error_transformer_node< TNonlinearities >::handle(
-  InstantaneousRateConnectionEvent& e )
-{
-  const double weight = e.get_weight();
-
-  size_t i = 0;
-  std::vector< unsigned int >::iterator it = e.begin();
-  // The call to get_coeffvalue( it ) in this loop also advances the iterator it
-  while ( it != e.end() )
-  {
-    if ( P_.linear_summation_ )
-    {
-      B_.instant_rates_[ i ] += weight * e.get_coeffvalue( it );
-    }
-    else
-    {
-      B_.instant_rates_[ i ] +=
-        weight * nonlinearities_.input( e.get_coeffvalue( it ) );
-    }
-    ++i;
-  }
-}
 
 template < class TNonlinearities >
 void

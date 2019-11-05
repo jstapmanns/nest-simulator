@@ -63,8 +63,6 @@ apply different nonlinearities to different incoming connections of the
 same rate neuron by connecting the sending rate neurons to the
 rate transformer node and connecting the rate transformer node to the
 receiving rate neuron instead of using a direct connection.
-Please note that for instantaneous rate connections the rate arrives
-one time step later at the receiving rate neurons as with a direct connection.
 
 Remarks:
 
@@ -72,9 +70,9 @@ Remarks:
   are handled as usual.
 - Delays are honored on incoming and outgoing connections.
 
-Receives: InstantaneousRateConnectionEvent, DelayedRateConnectionEvent
+Receives: DelayedRateConnectionEvent
 
-Sends: InstantaneousRateConnectionEvent, DelayedRateConnectionEvent
+Sends: DelayedRateConnectionEvent
 
 Parameters:
 
@@ -111,22 +109,16 @@ public:
 
   using Node::handles_test_event;
 
-  void handle( InstantaneousRateConnectionEvent& );
   void handle( DelayedRateConnectionEvent& );
   void handle( SpikeEvent& );
   void handle( CurrentEvent& );
   void handle( DataLoggingRequest& );
 
-  port handles_test_event( InstantaneousRateConnectionEvent&, rport );
   port handles_test_event( DelayedRateConnectionEvent&, rport );
   port handles_test_event( SpikeEvent&, rport );
   port handles_test_event( CurrentEvent&, rport );
   port handles_test_event( DataLoggingRequest&, rport );
 
-  void
-  sends_secondary_event( InstantaneousRateConnectionEvent& )
-  {
-  }
   void
   sends_secondary_event( DelayedRateConnectionEvent& )
   {
@@ -144,10 +136,9 @@ private:
 
   TNonlinearities nonlinearities_;
 
-  bool update_( Time const&, const long, const long, const bool );
+  void update_( Time const&, const long, const long );
 
   void update( Time const&, const long, const long );
-  bool wfr_update( Time const&, const long, const long );
 
   // The next two classes need to be friends to access the State_ class/member
   friend class RecordablesMap< error_transformer_node< TNonlinearities > >;
@@ -218,12 +209,6 @@ private:
     RingBuffer spikes_;
     RingBuffer currents_;
 
-    // buffer for rate vector received by RateConnection
-    std::vector< double > instant_rates_;
-
-    // remembers y_values from last wfr_update
-    std::vector< double > last_y_values;
-
     //! Logger for all analog data
     UniversalDataLogger< error_transformer_node > logger_;
   };
@@ -274,33 +259,7 @@ error_transformer_node< TNonlinearities >::update( Time const& origin,
   const long from,
   const long to )
 {
-  update_( origin, from, to, false );
-}
-
-template < class TNonlinearities >
-inline bool
-error_transformer_node< TNonlinearities >::wfr_update( Time const& origin,
-  const long from,
-  const long to )
-{
-  State_ old_state = S_; // save state before wfr update
-  const bool wfr_tol_exceeded = update_( origin, from, to, true );
-  S_ = old_state; // restore old state
-
-  return not wfr_tol_exceeded;
-}
-
-template < class TNonlinearities >
-inline port
-error_transformer_node< TNonlinearities >::handles_test_event(
-  InstantaneousRateConnectionEvent&,
-  rport receptor_type )
-{
-  if ( receptor_type != 0 )
-  {
-    throw UnknownReceptorType( receptor_type, get_name() );
-  }
-  return 0;
+  update_( origin, from, to);
 }
 
 template < class TNonlinearities >
