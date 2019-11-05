@@ -55,6 +55,7 @@
 #include "aeif_psc_delta_eprop.h"
 #include "amat2_psc_exp.h"
 #include "erfc_neuron.h"
+#include "error_transformer_node.h"
 #include "gauss_rate.h"
 #include "ginzburg_neuron.h"
 #include "hh_cond_exp_traub.h"
@@ -78,6 +79,7 @@
 #include "iaf_psc_exp_multisynapse.h"
 #include "iaf_tum_2000.h"
 #include "izhikevich.h"
+#include "lin_error.h"
 #include "lin_rate.h"
 #include "tanh_rate.h"
 #include "threshold_lin_rate.h"
@@ -234,6 +236,8 @@ ModelsModule::init( SLIInterpreter* )
     "rate_transformer_tanh" );
   kernel().model_manager.register_node_model< rate_transformer_threshold_lin >(
     "rate_transformer_threshold_lin" );
+  kernel().model_manager.register_node_model< rate_transformer_error >(
+    "rate_transformer_error" );
 
   kernel().model_manager.register_node_model< iaf_chs_2007 >( "iaf_chs_2007" );
   kernel().model_manager.register_node_model< iaf_psc_alpha >(
