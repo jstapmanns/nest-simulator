@@ -79,6 +79,9 @@ public:
   double get_theta_plus() const;
 
 protected:
+  void write_readout_history( Time const& t_sp,
+    double learning_signal );
+
   /**
    * \fn void write_eprop_history( Time const& t_sp,
    * double u, double u_bar_plus, double u_bar_minus, double u_bar_bar )
@@ -89,6 +92,7 @@ protected:
   void write_eprop_history( Time const& t_sp,
     double V_m,
     double V_th );
+
   void add_learning_to_hist( DelayedRateConnectionEvent& e );
 
   double pseudo_deriv( double V_m, double V_th ) const;

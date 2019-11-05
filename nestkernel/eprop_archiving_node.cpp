@@ -115,6 +115,32 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
 }
 
 void
+nest::Eprop_Archiving_Node::write_readout_history( Time const& t_sp,
+  double learning_signal )
+{
+  const double t_ms = t_sp.get_ms();
+
+  if ( n_incoming_ )
+  {
+    // prune all entries from history which are no longer needed
+    // except the penultimate one. we might still need it.
+    while ( eprop_history_.size() > 1 )
+    {
+      if ( eprop_history_.front().access_counter_ >= n_incoming_ )
+      {
+        eprop_history_.pop_front();
+      }
+      else
+      {
+        break;
+      }
+    }
+    // create new entry in history
+    eprop_history_.push_back( histentry_eprop( t_ms, 0.0, learning_signal, 0 ) );
+  }
+}
+
+void
 nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
   double V_m,
   double V_th )
