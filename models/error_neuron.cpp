@@ -1,5 +1,5 @@
 /*
- *  error_transformer_node_impl.h
+ *  error_neuron.cpp
  *
  *  This file is part of NEST.
  *
@@ -20,10 +20,7 @@
  *
  */
 
-#ifndef ERROR_TRANSFORMER_NODE_IMPL_H
-#define ERROR_TRANSFORMER_NODE_IMPL_H
-
-#include "error_transformer_node.h"
+#include "error_neuron.h"
 
 // C++ includes:
 #include <cmath> // in case we need isnan() // fabs
@@ -55,29 +52,30 @@ namespace nest
  * Recordables map
  * ---------------------------------------------------------------- */
 
-template < class TNonlinearities >
-RecordablesMap< error_transformer_node< TNonlinearities > >
-  error_transformer_node< TNonlinearities >::recordablesMap_;
+RecordablesMap< error_neuron >error_neuron::recordablesMap_;
 
-
+template <>
+void
+RecordablesMap< error_neuron >::create()
+{
+  insert_( names::rate, &error_neuron::get_rate_ );
+  insert_( names::V_m, &error_neuron::get_V_m_ );
+}
 /* ----------------------------------------------------------------
  * Default constructors defining default parameters and state
  * ---------------------------------------------------------------- */
 
-template < class TNonlinearities >
-nest::error_transformer_node< TNonlinearities >::Parameters_::Parameters_()
+nest::error_neuron::Parameters_::Parameters_()
   : linear_summation_( true )
   , tau_m_( 10.0 )                                  // ms
   , c_m_( 250.0 )                                   // pF
   , E_L_( -70.0 )                                   // mV
   , I_e_( 0.0 )                                     // pA
   , V_min_( -std::numeric_limits< double >::max() ) // relative E_L_-55.0-E_L_
-
 {
 }
 
-template < class TNonlinearities >
-nest::error_transformer_node< TNonlinearities >::State_::State_()
+nest::error_neuron::State_::State_()
   : rate_( 0.0 )
   , y0_( 0.0 )
   , y3_( 0.0 )
@@ -88,9 +86,8 @@ nest::error_transformer_node< TNonlinearities >::State_::State_()
  * Parameter and state extractions and manipulation functions
  * ---------------------------------------------------------------- */
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::Parameters_::get(
+nest::error_neuron::Parameters_::get(
   DictionaryDatum& d ) const
 {
   def< bool >( d, names::linear_summation, linear_summation_ );
@@ -101,9 +98,8 @@ nest::error_transformer_node< TNonlinearities >::Parameters_::get(
   def< double >( d, names::tau_m, tau_m_ );
 }
 
-template < class TNonlinearities >
 double
-nest::error_transformer_node< TNonlinearities >::Parameters_::set(
+nest::error_neuron::Parameters_::set(
   const DictionaryDatum& d )
 {
   updateValue< bool >( d, names::linear_summation, linear_summation_ );
@@ -132,18 +128,16 @@ nest::error_transformer_node< TNonlinearities >::Parameters_::set(
   return delta_EL;
 }
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::State_::get(
+nest::error_neuron::State_::get(
   DictionaryDatum& d, const Parameters_& p ) const
 {
   def< double >( d, names::rate, rate_ ); // Rate
   def< double >( d, names::V_m, y3_ + p.E_L_ ); // Membrane potential
 }
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::State_::set(
+nest::error_neuron::State_::set(
   const DictionaryDatum& d, const Parameters_& p, double delta_EL)
 {
   updateValue< double >( d, names::rate, rate_ ); // Rate
@@ -158,17 +152,16 @@ nest::error_transformer_node< TNonlinearities >::State_::set(
   }
 }
 
-template < class TNonlinearities >
-nest::error_transformer_node< TNonlinearities >::Buffers_::Buffers_(
-  error_transformer_node< TNonlinearities >& n )
+
+nest::error_neuron::Buffers_::Buffers_(
+  error_neuron& n )
   : logger_( n )
 {
 }
 
-template < class TNonlinearities >
-nest::error_transformer_node< TNonlinearities >::Buffers_::Buffers_(
+nest::error_neuron::Buffers_::Buffers_(
   const Buffers_&,
-  error_transformer_node< TNonlinearities >& n )
+  error_neuron& n )
   : logger_( n )
 {
 }
@@ -177,8 +170,7 @@ nest::error_transformer_node< TNonlinearities >::Buffers_::Buffers_(
  * Default and copy constructor for node
  * ---------------------------------------------------------------- */
 
-template < class TNonlinearities >
-nest::error_transformer_node< TNonlinearities >::error_transformer_node()
+nest::error_neuron::error_neuron()
   : Eprop_Archiving_Node()
   , S_()
   , B_( *this )
@@ -186,11 +178,9 @@ nest::error_transformer_node< TNonlinearities >::error_transformer_node()
   recordablesMap_.create();
 }
 
-template < class TNonlinearities >
-nest::error_transformer_node< TNonlinearities >::error_transformer_node(
-  const error_transformer_node& n )
+nest::error_neuron::error_neuron(
+  const error_neuron& n )
   : Eprop_Archiving_Node( n )
-  , nonlinearities_( n.nonlinearities_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
 {
@@ -200,17 +190,15 @@ nest::error_transformer_node< TNonlinearities >::error_transformer_node(
  * Node initialization functions
  * ---------------------------------------------------------------- */
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::init_state_( const Node& proto )
+nest::error_neuron::init_state_( const Node& proto )
 {
-  const error_transformer_node& pr = downcast< error_transformer_node >( proto );
+  const error_neuron& pr = downcast< error_neuron >( proto );
   S_ = pr.S_;
 }
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::init_buffers_()
+nest::error_neuron::init_buffers_()
 {
   B_.delayed_rates_.clear(); // includes resize
 
@@ -220,9 +208,8 @@ nest::error_transformer_node< TNonlinearities >::init_buffers_()
   Archiving_Node::clear_history();
 }
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::calibrate()
+nest::error_neuron::calibrate()
 {
   B_.logger_
     .init(); // ensures initialization in case mm connected after Simulate
@@ -236,9 +223,8 @@ nest::error_transformer_node< TNonlinearities >::calibrate()
  * Update and event handling functions
  */
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::update_( Time const& origin,
+nest::error_neuron::update_( Time const& origin,
   const long from,
   const long to)
 {
@@ -274,7 +260,7 @@ nest::error_transformer_node< TNonlinearities >::update_( Time const& origin,
 
     if ( P_.linear_summation_ )
     {
-      S_.rate_ += nonlinearities_.input( delayed_rates );
+      S_.rate_ +=  1. * delayed_rates ;
     }
     else
     {
@@ -302,17 +288,15 @@ nest::error_transformer_node< TNonlinearities >::update_( Time const& origin,
   return;
 }
 
-template < class TNonlinearities >
 bool
-nest::error_transformer_node< TNonlinearities >::is_eprop_readout()
+nest::error_neuron::is_eprop_readout()
     {
         return true;
     }
 
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::handle(
+nest::error_neuron::handle(
   DelayedRateConnectionEvent& e )
 {
   const double weight = e.get_weight();
@@ -330,16 +314,15 @@ nest::error_transformer_node< TNonlinearities >::handle(
     else
     {
       B_.delayed_rates_.add_value(
-        delay + i, weight * nonlinearities_.input( e.get_coeffvalue( it ) ) );
+        delay + i, weight * 1. * e.get_coeffvalue( it ) ) ;
     }
     ++i;
   }
 }
 
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::handle( SpikeEvent& e )
+nest::error_neuron::handle( SpikeEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
 
@@ -353,9 +336,8 @@ nest::error_transformer_node< TNonlinearities >::handle( SpikeEvent& e )
 }
 
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::handle( CurrentEvent& e )
+nest::error_neuron::handle( CurrentEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
 
@@ -369,13 +351,10 @@ nest::error_transformer_node< TNonlinearities >::handle( CurrentEvent& e )
 }
 
 
-template < class TNonlinearities >
 void
-nest::error_transformer_node< TNonlinearities >::handle( DataLoggingRequest& e )
+nest::error_neuron::handle( DataLoggingRequest& e )
 {
   B_.logger_.handle( e );
 }
 
 } // namespace
-
-#endif /* #ifndef ERROR_TRANSFORMER_NODE_IMPL_H */

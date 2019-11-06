@@ -41,7 +41,7 @@ set( models_sources
     diffusion_connection.h
     erfc_neuron.h erfc_neuron.cpp
     eprop_connection.h
-    error_transformer_node.h error_transformer_node_impl.h
+    error_neuron.h error_neuron.cpp
     gamma_sup_generator.h gamma_sup_generator.cpp
     gap_junction.h
     gauss_rate.h gauss_rate.cpp
@@ -74,7 +74,6 @@ set( models_sources
     iaf_tum_2000.h iaf_tum_2000.cpp
     izhikevich.h izhikevich.cpp
     lin_rate.h lin_rate.cpp
-    lin_error.h lin_error.cpp
     mat2_psc_exp.h mat2_psc_exp.cpp
     mcculloch_pitts_neuron.h mcculloch_pitts_neuron.cpp
     mip_generator.h mip_generator.cpp

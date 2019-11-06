@@ -1,5 +1,5 @@
 /*
- *  error_transformer_node.h
+ *  error_neuron.h
  *
  *  This file is part of NEST.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef ERROR_TRANSFORMER_NODE_H
-#define ERROR_TRANSFORMER_NODE_H
+#ifndef ERROR_NEURON_H
+#define ERROR_NEURON_H
 
 // Generated includes:
 #include "config.h"
@@ -38,7 +38,7 @@
 #include "normal_randomdev.h"
 #include "poisson_randomdev.h"
 #include "ring_buffer.h"
-#include "recordables_map.h"
+// #include "recordables_map.h"
 #include "universal_data_logger.h"
 
 namespace nest
@@ -48,7 +48,7 @@ namespace nest
 @ingroup Neurons
 @ingroup rate
 
-Name: error_transformer_node - Rate neuron that sums up incoming rates
+Name: error_neuron - Rate neuron that sums up incoming rates
                 and applies a nonlinearity specified via the template.
 
 Description:
@@ -66,7 +66,7 @@ receiving rate neuron instead of using a direct connection.
 
 Remarks:
 
-- Weights on connections from and to the error_transformer_node
+- Weights on connections from and to the error_neuron_
   are handled as usual.
 - Delays are honored on incoming and outgoing connections.
 
@@ -85,15 +85,14 @@ Author: Mario Senden, Jan Hahne, Jannis Schuecker
 
 FirstVersion: November 2017
 */
-template < class TNonlinearities >
-class error_transformer_node : public Eprop_Archiving_Node
+class error_neuron : public Eprop_Archiving_Node
 {
 
 public:
   typedef Node base;
 
-  error_transformer_node();
-  error_transformer_node( const error_transformer_node& );
+  error_neuron();
+  error_neuron( const error_neuron& );
 
   /**
    * Import sets of overloaded virtual functions.
@@ -134,15 +133,13 @@ private:
   void init_buffers_();
   void calibrate();
 
-  TNonlinearities nonlinearities_;
-
   void update_( Time const&, const long, const long );
 
   void update( Time const&, const long, const long );
 
   // The next two classes need to be friends to access the State_ class/member
-  friend class RecordablesMap< error_transformer_node< TNonlinearities > >;
-  friend class UniversalDataLogger< error_transformer_node< TNonlinearities > >;
+  friend class RecordablesMap< error_neuron >;
+  friend class UniversalDataLogger< error_neuron >;
 
   // ----------------------------------------------------------------
 
@@ -162,7 +159,6 @@ private:
     double E_L_;  // Resting potential in mV.
     double I_e_;  // External DC current.
     double V_min_;  // Lower bound relative to resting potential.
-
     Parameters_(); //!< Sets default parameter values
 
     void get( DictionaryDatum& ) const; //!< Store current values in dictionary
@@ -199,8 +195,8 @@ private:
    */
   struct Buffers_
   {
-    Buffers_( error_transformer_node& );
-    Buffers_( const Buffers_&, error_transformer_node& );
+    Buffers_( error_neuron& );
+    Buffers_( const Buffers_&, error_neuron& );
 
     // buffer for rate vector received by DelayRateConnection
     RingBuffer delayed_rates_;
@@ -210,7 +206,7 @@ private:
     RingBuffer currents_;
 
     //! Logger for all analog data
-    UniversalDataLogger< error_transformer_node > logger_;
+    UniversalDataLogger< error_neuron > logger_;
   };
 
   // ----------------------------------------------------------------
@@ -249,22 +245,19 @@ private:
   Buffers_ B_;
 
   //! Mapping of recordables names to access functions
-  static RecordablesMap< error_transformer_node< TNonlinearities > >
-    recordablesMap_;
+  static RecordablesMap< error_neuron > recordablesMap_;
 };
 
-template < class TNonlinearities >
 inline void
-error_transformer_node< TNonlinearities >::update( Time const& origin,
+error_neuron::update( Time const& origin,
   const long from,
   const long to )
 {
   update_( origin, from, to);
 }
 
-template < class TNonlinearities >
 inline port
-error_transformer_node< TNonlinearities >::handles_test_event(
+error_neuron::handles_test_event(
   DelayedRateConnectionEvent&,
   rport receptor_type )
 {
@@ -276,9 +269,8 @@ error_transformer_node< TNonlinearities >::handles_test_event(
 }
 
 
-template < class TNonlinearities >
 inline port
-error_transformer_node< TNonlinearities >::handles_test_event(
+error_neuron::handles_test_event(
         SpikeEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
@@ -288,9 +280,8 @@ error_transformer_node< TNonlinearities >::handles_test_event(
   return 0;
 }
 
-template < class TNonlinearities >
 inline port
-error_transformer_node< TNonlinearities >::handles_test_event(
+error_neuron::handles_test_event(
         CurrentEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
@@ -301,9 +292,8 @@ error_transformer_node< TNonlinearities >::handles_test_event(
 }
 
 
-template < class TNonlinearities >
 inline port
-error_transformer_node< TNonlinearities >::handles_test_event(
+error_neuron::handles_test_event(
   DataLoggingRequest& dlr,
   rport receptor_type )
 {
@@ -314,21 +304,18 @@ error_transformer_node< TNonlinearities >::handles_test_event(
   return B_.logger_.connect_logging_device( dlr, recordablesMap_ );
 }
 
-template < class TNonlinearities >
 inline void
-error_transformer_node< TNonlinearities >::get_status( DictionaryDatum& d ) const
+error_neuron::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d, P_ );
   Archiving_Node::get_status( d );
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
-  nonlinearities_.get( d );
 }
 
-template < class TNonlinearities >
 inline void
-error_transformer_node< TNonlinearities >::set_status( const DictionaryDatum& d )
+error_neuron::set_status( const DictionaryDatum& d )
 {
   Parameters_ ptmp = P_; // temporary copy in case of errors
   const double delta_EL = ptmp.set( d ); // throws if BadProperty
@@ -345,9 +332,8 @@ error_transformer_node< TNonlinearities >::set_status( const DictionaryDatum& d 
   P_ = ptmp;
   S_ = stmp;
 
-  nonlinearities_.set( d );
 }
 
 } // namespace
 
-#endif /* #ifndef ERROR_TRANSFORMER_NODE_H */
+#endif /* #ifndef ERROR_NEURON_H */
