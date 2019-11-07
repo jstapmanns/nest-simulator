@@ -215,7 +215,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
   Node* target = get_target( t );
   double dendritic_delay = get_delay();
 
-  std::cout << "t_spike: " << t_spike << " next update: " << t_nextupdate_ << std::endl;
+  // std::cout << "t_spike: " << t_spike << " next update: " << t_nextupdate_ << std::endl;
   // store times of incoming spikes to enable computation of eligibility trace
   pre_syn_spike_times_.push_back( t_spike );
 
@@ -245,7 +245,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     double dw = 0.0;
     if (target->is_eprop_readout() )  // if target is a readout neuron    
     {
-      std::cout << "I'm a readout neuron" << std::endl;
+      // std::cout << "I'm a readout neuron" << std::endl;
       while ( start != finish )
       {
         last_e_trace_ *= kappa;
@@ -304,7 +304,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
       //std::cout << std::endl;
     dw *= dt*eta_;
     }
-    std::cout << "dw: " << dw << std::endl;
+    // std::cout << "dw: " << dw << std::endl;
 
     // TODO: remove factor 0.0
     weight_ += 0.0*dw;

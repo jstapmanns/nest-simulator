@@ -83,7 +83,7 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
   std::deque< histentry_eprop >::iterator* start,
   std::deque< histentry_eprop >::iterator* finish )
 {
-  std::cout << "read hist from " << t1 << " to " << t2 << std::endl;
+  // std::cout << "read hist from " << t1 << " to " << t2 << std::endl;
   /*
   std::cout << "read hist from " << t1 << " to " << t2 << std::endl;
   std::cout << "whole history: ";
