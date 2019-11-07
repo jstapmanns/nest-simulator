@@ -246,9 +246,11 @@ EpropConnection< targetidentifierT >::send( Event& e,
     if (target->is_eprop_readout() )  // if target is a readout neuron    
     {
       // std::cout << "I'm a readout neuron" << std::endl;
+      //std::cout << "trace: ";
       while ( start != finish )
       {
         last_e_trace_ *= kappa;
+        //std::cout << last_e_trace_ << " ";
         if ( std::fabs( *t_pre_spike - start->t_ ) < 1.0e-6 )
         {
           last_e_trace_ += 1.0;
@@ -257,7 +259,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
         dw += start->learning_signal_ * last_e_trace_;
         start++;
       }
-      dw *= eta_;  // TODO: multiply by dt?
+      //std::cout << std::endl;
+      dw *= eta_ * dt;  // TODO: multiply by dt?
     }
     else  // if target is a neuron of the recurrent network
     {
@@ -306,8 +309,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
     }
     // std::cout << "dw: " << dw << std::endl;
 
-    // TODO: remove factor 0.0
-    weight_ += 0.0*dw;
+    weight_ += dw;
+    //std::cout << "dw: " << dw << std::endl;
 
     if ( weight_ > Wmax_ )
     {

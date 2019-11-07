@@ -125,6 +125,7 @@ nest::Eprop_Archiving_Node::write_readout_history( Time const& t_sp,
   double learning_signal )
 {
   const double t_ms = t_sp.get_ms();
+  //std::cout << "learning_signal: " << learning_signal << std::endl;
 
   if ( n_incoming_ )
   {
@@ -172,6 +173,15 @@ nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
     double h = pseudo_deriv( V_m, V_th );
     eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0 ) );
   }
+  /*
+  std::cout << "learning hisotry: " << std::endl;
+  for ( std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
+      runner != eprop_history_.end(); runner++ )
+  {
+    std::cout << runner->V_m_ << " ";
+  }
+  std::cout << std::endl;
+  */
 }
 
 void

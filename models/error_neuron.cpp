@@ -262,31 +262,34 @@ nest::error_neuron::update_( Time const& origin,
 
     delayed_rates = B_.delayed_rates_.get_value( lag );
 
-    if ( P_.linear_summation_ )
-    {
-      S_.rate_ +=  1. * delayed_rates ;
-    }
-    else
-    {
-      S_.rate_ += delayed_rates;
-    }
+    S_.rate_ +=  1. * delayed_rates ;
 
     B_.logger_.record_data( origin.get_steps() + lag );
     write_readout_history( Time::step( origin.get_steps() + lag + 1), new_learning_signal);
 
   }
 
-    // Send delay-rate-neuron-event. This only happens in the final iteration
-    // to avoid accumulation in the buffers of the receiving neurons.
-    DelayedRateConnectionEvent drve;
-    drve.set_coeffarray( new_learning_signals );
-    kernel().event_delivery_manager.send_secondary( *this, drve );
+  /*
+  std::cout << "new_learning_signal: ";
+  for ( std::vector< double >::iterator runner = new_learning_signals.begin();
+      runner != new_learning_signals.end(); runner++ )
+  {
+    std::cout << *runner << " ";
+  }
+  std::cout << std::endl;
+  */
 
-    // modifiy new_learning_signals for rate-neuron-event as proxy for next min_delay
-    for ( long temp = from; temp < to; ++temp )
-    {
-      new_learning_signals[ temp ] = S_.rate_ - (S_.y3_ + P_.E_L_);
-    }
+  // Send delay-rate-neuron-event. This only happens in the final iteration
+  // to avoid accumulation in the buffers of the receiving neurons.
+  DelayedRateConnectionEvent drve;
+  drve.set_coeffarray( new_learning_signals );
+  kernel().event_delivery_manager.send_secondary( *this, drve );
+
+  // modifiy new_learning_signals for rate-neuron-event as proxy for next min_delay
+  for ( long temp = from; temp < to; ++temp )
+  {
+    new_learning_signals[ temp ] = S_.rate_ - (S_.y3_ + P_.E_L_);
+  }
 
   return;
 }
