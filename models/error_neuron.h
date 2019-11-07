@@ -226,7 +226,7 @@ private:
   double
   get_rate_() const
   {
-    return S_.rate_;
+    return S_.rate_ - (S_.y3_ + P_.E_L_);
   }
 
 

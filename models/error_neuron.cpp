@@ -59,6 +59,7 @@ void
 RecordablesMap< error_neuron >::create()
 {
   insert_( names::rate, &error_neuron::get_rate_ );
+  // TODO: register learning_signal in recordables
   insert_( names::V_m, &error_neuron::get_V_m_ );
 }
 /* ----------------------------------------------------------------
@@ -172,6 +173,7 @@ nest::error_neuron::Buffers_::Buffers_(
 
 nest::error_neuron::error_neuron()
   : Eprop_Archiving_Node()
+  , P_()
   , S_()
   , B_( *this )
 {
@@ -181,6 +183,7 @@ nest::error_neuron::error_neuron()
 nest::error_neuron::error_neuron(
   const error_neuron& n )
   : Eprop_Archiving_Node( n )
+  , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
 {
@@ -235,7 +238,6 @@ nest::error_neuron::update_( Time const& origin,
   const size_t buffer_size = kernel().connection_manager.get_min_delay();
 
   // allocate memory to store rates to be sent by rate events
-  std::vector< double > new_rates( buffer_size, 0.0 );
   std::vector< double > new_learning_signals( buffer_size, 0.0 );
 
   for ( long lag = from; lag < to; ++lag )
@@ -248,8 +250,7 @@ nest::error_neuron::update_( Time const& origin,
 
     S_.y0_ = B_.currents_.get_value( lag ); // set new input current
 
-    new_rates[ lag ] = S_.rate_; // store rate
-    double new_learning_signal = std::abs(S_.y3_ - S_.rate_);
+    double new_learning_signal = S_.rate_ - (S_.y3_ + P_.E_L_);
     new_learning_signals [ lag ] = new_learning_signal;
 
     S_.rate_ = 0.0; // reinitialize output rate
@@ -278,11 +279,10 @@ nest::error_neuron::update_( Time const& origin,
     drve.set_coeffarray( new_learning_signals );
     kernel().event_delivery_manager.send_secondary( *this, drve );
 
-    // modifiy new_rates for rate-neuron-event as proxy for next min_delay
+    // modifiy new_learning_signals for rate-neuron-event as proxy for next min_delay
     for ( long temp = from; temp < to; ++temp )
     {
-      new_rates[ temp ] = S_.rate_;
-      new_learning_signals[ temp ] = std::abs(S_.y3_ - S_.rate_);
+      new_learning_signals[ temp ] = S_.rate_ - (S_.y3_ + P_.E_L_);
     }
 
   return;
