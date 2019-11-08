@@ -54,10 +54,7 @@ Name: error_neuron - Rate neuron that sums up incoming rates
 Description:
 
 The rate transformer node simply applies the nonlinearity specified in the
-input-function of the template class to all incoming inputs. The boolean
-parameter linear_summation determines whether the input function is applied to
-the summed up incoming connections (True, default value) or to each input
-individually (False).
+input-function of the template class to all incoming inputs.
 An important application is to provide the possibility to
 apply different nonlinearities to different incoming connections of the
 same rate neuron by connecting the sending rate neurons to the
@@ -76,9 +73,7 @@ Sends: DelayedRateConnectionEvent
 
 Parameters:
 
-Only the parameter
-- linear_summation
-and the parameters from the class Nonlinearities can be set in the
+Only the parameters from the class Nonlinearities can be set in the
 status dictionary.
 
 Author: Mario Senden, Jan Hahne, Jannis Schuecker
@@ -152,8 +147,6 @@ private:
         True (default): Gain function applied to linearly summed input.
         False: Gain function applied to each input before summation.
     **/
-    bool linear_summation_;
-
     double tau_m_;  // Membrane time constant in ms.
     double c_m_;  // Membrane capacitance in pF.
     double E_L_;  // Resting potential in mV.

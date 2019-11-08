@@ -67,8 +67,7 @@ RecordablesMap< error_neuron >::create()
  * ---------------------------------------------------------------- */
 
 nest::error_neuron::Parameters_::Parameters_()
-  : linear_summation_( true )
-  , tau_m_( 10.0 )                                  // ms
+  : tau_m_( 10.0 )                                  // ms
   , c_m_( 250.0 )                                   // pF
   , E_L_( -70.0 )                                   // mV
   , I_e_( 0.0 )                                     // pA
@@ -91,7 +90,6 @@ void
 nest::error_neuron::Parameters_::get(
   DictionaryDatum& d ) const
 {
-  def< bool >( d, names::linear_summation, linear_summation_ );
   def< double >( d, names::E_L, E_L_ ); // Resting potential
   def< double >( d, names::I_e, I_e_ );
   def< double >( d, names::V_min, V_min_ + E_L_ );
@@ -103,8 +101,6 @@ double
 nest::error_neuron::Parameters_::set(
   const DictionaryDatum& d )
 {
-  updateValue< bool >( d, names::linear_summation, linear_summation_ );
-
   const double ELold = E_L_;
   updateValue< double >( d, names::E_L, E_L_ );
   std::cout << "EL" << E_L_ << std::endl;
@@ -313,15 +309,7 @@ nest::error_neuron::handle(
   // The call to get_coeffvalue( it ) in this loop also advances the iterator it
   while ( it != e.end() )
   {
-    if ( P_.linear_summation_ )
-    {
-      B_.delayed_rates_.add_value( delay + i, weight * e.get_coeffvalue( it ) );
-    }
-    else
-    {
-      B_.delayed_rates_.add_value(
-        delay + i, weight * 1. * e.get_coeffvalue( it ) ) ;
-    }
+    B_.delayed_rates_.add_value(delay + i, weight * 1. * e.get_coeffvalue( it ) ) ;
     ++i;
   }
 }
