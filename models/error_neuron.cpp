@@ -241,28 +241,17 @@ nest::error_neuron::update_( Time const& origin,
 
   for ( long lag = from; lag < to; ++lag )
   {
-
-      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
-        + B_.spikes_.get_value( lag );
-
+      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + B_.spikes_.get_value( lag );
       S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
 
-    S_.y0_ = B_.currents_.get_value( lag ); // set new input current
+      double new_learning_signal = S_.rate_ - (S_.y3_ + P_.E_L_);
+      new_learning_signals [ lag ] = new_learning_signal;
 
-    double new_learning_signal = S_.rate_ - (S_.y3_ + P_.E_L_);
-    new_learning_signals [ lag ] = new_learning_signal;
+      S_.y0_ = B_.currents_.get_value( lag ); // set new input current
+      S_.rate_ =  1. * B_.delayed_rates_.get_value( lag );
 
-    S_.rate_ = 0.0; // reinitialize output rate
-
-    double delayed_rates = 0;
-
-    delayed_rates = B_.delayed_rates_.get_value( lag );
-
-    S_.rate_ +=  1. * delayed_rates ;
-
-    B_.logger_.record_data( origin.get_steps() + lag );
-    write_readout_history( Time::step( origin.get_steps() + lag + 1), new_learning_signal);
-
+      B_.logger_.record_data( origin.get_steps() + lag );
+      write_readout_history( Time::step( origin.get_steps() + lag + 1), new_learning_signal);
   }
 
   /*
@@ -280,12 +269,6 @@ nest::error_neuron::update_( Time const& origin,
   DelayedRateConnectionEvent drve;
   drve.set_coeffarray( new_learning_signals );
   kernel().event_delivery_manager.send_secondary( *this, drve );
-
-  // modifiy new_learning_signals for rate-neuron-event as proxy for next min_delay
-  for ( long temp = from; temp < to; ++temp )
-  {
-    new_learning_signals[ temp ] = S_.rate_ - (S_.y3_ + P_.E_L_);
-  }
 
   return;
 }
