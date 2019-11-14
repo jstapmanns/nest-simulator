@@ -58,6 +58,8 @@ RecordablesMap< iaf_psc_delta_eprop >::create()
 {
   // use standard names whereever you can for consistency!
   insert_( names::V_m, &iaf_psc_delta_eprop::get_V_m_ );
+  insert_( names::V_th, &iaf_psc_delta_eprop::get_last_h_ );
+  insert_( names::E_L, &iaf_psc_delta_eprop::get_last_ls_ );
 }
 
 /* ----------------------------------------------------------------

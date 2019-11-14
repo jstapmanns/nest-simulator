@@ -293,6 +293,26 @@ private:
     return S_.y3_ + P_.E_L_;
   }
 
+  double
+  get_last_h_() const
+  {
+    if ( eprop_history_.size() != 0 )
+    {
+      return (eprop_history_.rbegin())->V_m_;
+    }
+    return 0.0;
+  }
+
+  double
+  get_last_ls_() const
+  {
+    if ( eprop_history_.size() > 1 )
+    {
+      return (++(eprop_history_.rbegin()))->learning_signal_;
+    }
+    return 0.0;
+  }
+
   // ----------------------------------------------------------------
 
   /**

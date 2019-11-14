@@ -85,6 +85,7 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
 {
   // std::cout << "read hist from " << t1 << " to " << t2 << std::endl;
 
+  /*
   std::cout << "read hist from " << t1 << " to " << t2 << std::endl;
   std::cout << "whole history h: ";
   for ( std::deque< histentry_eprop >::iterator itr = eprop_history_.begin();
@@ -100,6 +101,7 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
     std::cout << itr->learning_signal_ << ", ";
   }
   std::cout << std::endl;
+  */
 
   *finish = eprop_history_.end();
   if ( eprop_history_.empty() )

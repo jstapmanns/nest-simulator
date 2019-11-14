@@ -71,6 +71,8 @@ public:
     double t2,
     std::deque< histentry_eprop >::iterator* start,
     std::deque< histentry_eprop >::iterator* finish );
+  //TODO: make history private again!
+  std::deque< histentry_eprop > eprop_history_;
 
 protected:
   void write_readout_history( Time const& t_sp,
@@ -99,7 +101,6 @@ protected:
   //TODO: propagate information from readout neuron
 
 private:
-  std::deque< histentry_eprop > eprop_history_;
 
   double eta_; // called gamma in paper
   double update_interval_;

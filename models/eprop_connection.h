@@ -192,6 +192,7 @@ private:
   double t_lastupdate_;
   double t_nextupdate_;
   double last_e_trace_;
+  double t_prime_int_trace_;
 
   std::vector< double > pre_syn_spike_times_;
 };
@@ -234,10 +235,12 @@ EpropConnection< targetidentifierT >::send( Event& e,
     // history[0, ..., t_last_spike - dendritic_delay] have been
     // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
     // details.
+    double t_update_ = ( floor( ( t_spike ) / update_interval_ ) ) * update_interval_;
     target->get_eprop_history( t_lastupdate_ - dendritic_delay,
-      t_nextupdate_ - dendritic_delay,
-      &start,
-      &finish );
+        //TODO: update t_next_update
+        t_update_ - dendritic_delay,
+        &start,
+        &finish );
 
     double const dt = Time::get_resolution().get_ms();
     double kappa = std::exp( -dt / tau_kappa_ );
@@ -265,10 +268,11 @@ EpropConnection< targetidentifierT >::send( Event& e,
     else  // if target is a neuron of the recurrent network
     {
       //std::cout << "I'm a eprop lif neuron" << std::endl;
-      //std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
+      std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
       std::vector< double > elegibility_trace;
       double alpha = target->get_leak_propagator();
       //std::cout << "alpha = " << alpha << ", kappa = " << kappa << ", tau_kappa = " << tau_kappa_ << std::endl;
+      //std::cout << "trace: " << std::endl;
       for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
       {
         last_e_trace_ *= alpha;
@@ -278,36 +282,49 @@ EpropConnection< targetidentifierT >::send( Event& e,
           t_pre_spike++;
         }
         elegibility_trace.push_back( runner->V_m_ * last_e_trace_ );
-      }
-
-      /*
-      std::cout << "elegibility trace: " << std::endl;
-      for ( std::vector< double >::iterator it = elegibility_trace.begin(); it !=
-          elegibility_trace.end(); it++)
-      {
-        std::cout << *it << ", ";
-      }
-      std::cout << std::endl;
-      */
-      int t_prime_counter = 0;
-      //std::cout << "history: " << std::endl;
-      while ( start != finish )
-      {
-        double sum_t_prime = 0.0;
-        for ( int t_prime = 0; t_prime <= t_prime_counter; t_prime++)
-        {
-          sum_t_prime += std::pow( kappa, t_prime_counter - t_prime ) * elegibility_trace[ t_prime ];
-        }
-        sum_t_prime *= dt;
-        dw += sum_t_prime * start->learning_signal_;
-        //std::cout << start->V_m_ << ", ";
-        t_prime_counter++;
-        start++;
+        //std::cout << last_e_trace_ << " ";
       }
       //std::cout << std::endl;
-    dw *= dt*eta_;
+
+      /*
+         std::cout << "elegibility trace (" << elegibility_trace.size() << "): " << std::endl;
+         for ( std::vector< double >::iterator it = elegibility_trace.begin(); it !=
+         elegibility_trace.end(); it++)
+         {
+         std::cout << *it << ", ";
+         }
+         std::cout << std::endl;
+         std::cout  << "learning_signal: " << std::endl;;
+         for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
+         {
+         std::cout << runner->learning_signal_ << " ";
+         }
+         std::cout << std::endl;
+       */
+
+      int t_prime = 0;
+      double sum_t_prime = 0.0;
+      std::cout << "dw(t): " << std::endl;
+      while ( start != finish )
+      {
+        sum_t_prime = 0.0;
+        for ( int t_pprime = 0; t_pprime <= t_prime; t_pprime++)
+        {
+          sum_t_prime += std::pow( kappa, t_prime - t_pprime ) * elegibility_trace[ t_pprime ];
+          //sum_t_prime += 0.1 * elegibility_trace[ t_pprime ];
+        }
+        sum_t_prime *= dt;
+        dw += ( sum_t_prime + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * start->learning_signal_;
+        std::cout << dw*dt + weight_ << " ";
+        //std::cout << start->V_m_ << ", ";
+        t_prime++;
+        start++;
+      }
+      std::cout << std::endl;
+      dw *= dt*eta_;
+      t_prime_int_trace_ += sum_t_prime;
     }
-    // std::cout << "dw: " << dw << std::endl;
+    //std::cout << "dw: " << dw << std::endl;
 
     weight_ += dw;
     //std::cout << "dw: " << dw << std::endl;
@@ -353,6 +370,7 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , t_lastupdate_( 0.0 )
   , t_nextupdate_( 100.0 )
   , last_e_trace_( 0.0 )
+  , t_prime_int_trace_( 0.0 )
 {
 }
 
@@ -371,6 +389,7 @@ EpropConnection< targetidentifierT >::EpropConnection(
   , t_lastupdate_( rhs.t_lastupdate_ )
   , t_nextupdate_( rhs.t_nextupdate_ )
   , last_e_trace_( rhs.last_e_trace_ )
+  , t_prime_int_trace_( rhs.t_prime_int_trace_ )
 {
 }
 

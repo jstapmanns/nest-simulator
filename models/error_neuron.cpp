@@ -103,7 +103,7 @@ nest::error_neuron::Parameters_::set(
 {
   const double ELold = E_L_;
   updateValue< double >( d, names::E_L, E_L_ );
-  std::cout << "EL" << E_L_ << std::endl;
+  //std::cout << "EL" << E_L_ << std::endl;
   const double delta_EL = E_L_ - ELold;
   if ( updateValue< double >( d, names::V_min, V_min_ ) )
   {
@@ -142,12 +142,12 @@ nest::error_neuron::State_::set(
 
   if ( updateValue< double >( d, names::V_m, y3_ ) )
   {
-    std::cout << "p.EL" << -p.E_L_ << std::endl;
+    //std::cout << "p.EL" << -p.E_L_ << std::endl;
     y3_ -= p.E_L_;
   }
   else
   {
-    std::cout << "delta_EL" << -delta_EL << std::endl;
+    //std::cout << "delta_EL" << -delta_EL << std::endl;
     y3_ -= delta_EL;
   }
 }
