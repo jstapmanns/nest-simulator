@@ -255,6 +255,7 @@ extern const Name interval;
 extern const Name is_refractory;
 
 extern const Name keep_source_table;
+extern const Name keep_traces;
 extern const Name Kplus;
 extern const Name Kplus_triplet;
 

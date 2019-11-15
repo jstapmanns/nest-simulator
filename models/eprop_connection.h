@@ -193,6 +193,7 @@ private:
   double t_nextupdate_;
   double last_e_trace_;
   double t_prime_int_trace_;
+  double keep_traces_;
 
   std::vector< double > pre_syn_spike_times_;
 };
@@ -223,6 +224,11 @@ EpropConnection< targetidentifierT >::send( Event& e,
   // do update only 
   if ( t_spike > t_nextupdate_ )
   {
+    if ( keep_traces_ < 1.0 )
+    {
+      last_e_trace_ = 0.0;
+      t_prime_int_trace_ = 0.0;
+    }
     // get spike history in relevant range (t1, t2] from post-synaptic neuron
     std::deque< histentry_eprop >::iterator start;
     std::deque< histentry_eprop >::iterator finish;
@@ -329,6 +335,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
     weight_ += dw;
     //std::cout << "dw: " << dw << std::endl;
 
+    // TODO: keep this in final implementation
+    /*
     if ( weight_ > Wmax_ )
     {
       weight_ = Wmax_;
@@ -337,6 +345,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     {
       weight_ = Wmin_;
     }
+    */
     t_lastupdate_ = t_nextupdate_;
     t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) * update_interval_;
     // clear history of presynaptic spike because we don't need them any more
@@ -371,6 +380,7 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , t_nextupdate_( 100.0 )
   , last_e_trace_( 0.0 )
   , t_prime_int_trace_( 0.0 )
+  , keep_traces_( true )
 {
 }
 
@@ -390,6 +400,7 @@ EpropConnection< targetidentifierT >::EpropConnection(
   , t_nextupdate_( rhs.t_nextupdate_ )
   , last_e_trace_( rhs.last_e_trace_ )
   , t_prime_int_trace_( rhs.t_prime_int_trace_ )
+  , keep_traces_( rhs.keep_traces_ )
 {
 }
 
@@ -405,6 +416,7 @@ EpropConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::update_interval, update_interval_ );
   def< double >( d, names::Wmin, Wmin_ );
   def< double >( d, names::Wmax, Wmax_ );
+  def< double >( d, names::keep_traces, keep_traces_ );
   def< long >( d, names::size_of, sizeof( *this ) );
 }
 
@@ -421,6 +433,7 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   updateValue< double >( d, names::update_interval, update_interval_ );
   updateValue< double >( d, names::Wmin, Wmin_ );
   updateValue< double >( d, names::Wmax, Wmax_ );
+  updateValue< double >( d, names::keep_traces, keep_traces_ );
 
   t_nextupdate_ = update_interval_; // TODO: is this waht we want?
 
