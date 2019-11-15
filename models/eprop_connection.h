@@ -268,7 +268,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     else  // if target is a neuron of the recurrent network
     {
       //std::cout << "I'm a eprop lif neuron" << std::endl;
-      std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
+      // std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
       std::vector< double > elegibility_trace;
       double alpha = target->get_leak_propagator();
       //std::cout << "alpha = " << alpha << ", kappa = " << kappa << ", tau_kappa = " << tau_kappa_ << std::endl;
@@ -304,7 +304,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
 
       int t_prime = 0;
       double sum_t_prime = 0.0;
-      std::cout << "dw(t): " << std::endl;
+      // std::cout << "dw(t): " << std::endl;
       while ( start != finish )
       {
         sum_t_prime = 0.0;
@@ -315,12 +315,12 @@ EpropConnection< targetidentifierT >::send( Event& e,
         }
         sum_t_prime *= dt;
         dw += ( sum_t_prime + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * start->learning_signal_;
-        std::cout << dw*dt + weight_ << " ";
+        // std::cout << dw*dt + weight_ << " ";
         //std::cout << start->V_m_ << ", ";
         t_prime++;
         start++;
       }
-      std::cout << std::endl;
+      // std::cout << std::endl;
       dw *= dt*eta_;
       t_prime_int_trace_ += sum_t_prime;
     }
@@ -362,7 +362,7 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , weight_( 1.0 )
   , tau_alpha_( 10.0 )
   , tau_kappa_( 10.0 )
-  , eta_( 1.0 )
+  , eta_( 0.0001 )
   , update_interval_( 100.0 )
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
@@ -428,14 +428,14 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
          == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
   {
-    throw BadProperty( "Weight and Wmin must have same sign." );
+    // throw BadProperty( "Weight and Wmin must have same sign." );
   }
 
   // check if weight_ and Wmax_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
          == ( ( Wmax_ > 0 ) - ( Wmax_ <= 0 ) ) ) )
   {
-    throw BadProperty( "Weight and Wmax must have same sign." );
+    // throw BadProperty( "Weight and Wmax must have same sign." );
   }
 
   if ( tau_alpha_ <= 0.0 )
