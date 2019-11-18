@@ -58,8 +58,8 @@ template <>
 void
 RecordablesMap< error_neuron >::create()
 {
-  insert_( names::rate, &error_neuron::get_rate_ );
-  // TODO: register learning_signal in recordables
+  insert_( names::target_rate, &error_neuron::get_target_rate_ );
+  insert_( names::learning_signal, &error_neuron::get_learning_signal_ );
   insert_( names::V_m, &error_neuron::get_V_m_ );
 }
 /* ----------------------------------------------------------------
@@ -76,7 +76,8 @@ nest::error_neuron::Parameters_::Parameters_()
 }
 
 nest::error_neuron::State_::State_()
-  : rate_( 0.0 )
+  : target_rate_( 0.0 )
+  , learning_signal_( 0.0 )
   , y0_( 0.0 )
   , y3_( 0.0 )
 {
@@ -130,7 +131,8 @@ void
 nest::error_neuron::State_::get(
   DictionaryDatum& d, const Parameters_& p ) const
 {
-  def< double >( d, names::rate, rate_ ); // Rate
+  def< double >( d, names::target_rate, target_rate_); // target_rate
+  def< double >( d, names::learning_signal, learning_signal_ );
   def< double >( d, names::V_m, y3_ + p.E_L_ ); // Membrane potential
 }
 
@@ -138,7 +140,8 @@ void
 nest::error_neuron::State_::set(
   const DictionaryDatum& d, const Parameters_& p, double delta_EL)
 {
-  updateValue< double >( d, names::rate, rate_ ); // Rate
+  updateValue< double >( d, names::target_rate, target_rate_ ); // target_rate
+  updateValue< double >( d, names::learning_signal, learning_signal_ );
 
   if ( updateValue< double >( d, names::V_m, y3_ ) )
   {
@@ -244,20 +247,20 @@ nest::error_neuron::update_( Time const& origin,
       S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + B_.spikes_.get_value( lag );
       S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
 
-      double new_learning_signal = S_.rate_ - (S_.y3_ + P_.E_L_);
-      new_learning_signals [ lag ] = new_learning_signal;
+      S_.learning_signal_ = S_.target_rate_ - (S_.y3_ + P_.E_L_);
+      new_learning_signals [ lag ] = S_.learning_signal_;
 
       S_.y0_ = B_.currents_.get_value( lag ); // set new input current
-      S_.rate_ =  1. * B_.delayed_rates_.get_value( lag );
+      S_.target_rate_ =  1. * B_.delayed_rates_.get_value( lag );
 
       B_.logger_.record_data( origin.get_steps() + lag );
-      write_readout_history( Time::step( origin.get_steps() + lag + 1), new_learning_signal);
+      write_readout_history( Time::step( origin.get_steps() + lag + 1), S_.learning_signal_);
   }
 
   /*
-  std::cout << "new_learning_signal: ";
+  std::cout << "learning_signal: ";
   for ( std::vector< double >::iterator runner = new_learning_signals.begin();
-      runner != new_learning_signals.end(); runner++ )
+      runner != learning_signals.end(); runner++ )
   {
     std::cout << *runner << " ";
   }

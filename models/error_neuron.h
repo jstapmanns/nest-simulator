@@ -166,7 +166,8 @@ private:
    */
   struct State_
   {
-    double rate_; //!< Rate
+    double target_rate_; //!< Rate
+    double learning_signal_; //!< Rate
     double y0_;
     double y3_; // Membrane potential relative to resting potential.
     State_(); //!< Default initialization
@@ -217,11 +218,16 @@ private:
 
   //! Read out the rate
   double
-  get_rate_() const
+  get_learning_signal_() const
   {
-    return S_.rate_ - (S_.y3_ + P_.E_L_);
+    return S_.target_rate_ - (S_.y3_ + P_.E_L_);
   }
 
+  double
+  get_target_rate_() const
+  {
+    return S_.target_rate_;
+  }
 
   //! Read out the real membrane potential
   double
