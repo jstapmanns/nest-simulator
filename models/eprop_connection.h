@@ -164,20 +164,6 @@ public:
   }
 
 private:
-  double
-  depress_( double w, double dw )
-  {
-    w -= dw;
-    return w > Wmin_ ? w : Wmin_;
-  }
-
-  double
-  facilitate_( double w, double dw, double x_bar )
-  {
-    w += dw * x_bar;
-    return w < Wmax_ ? w : Wmax_;
-  }
-
   // data members of each connection
   double weight_;
   // TODO: tau_alpha_ can be determined from neuron params
@@ -241,12 +227,20 @@ EpropConnection< targetidentifierT >::send( Event& e,
     // history[0, ..., t_last_spike - dendritic_delay] have been
     // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
     // details.
-    double t_update_ = ( floor( ( t_spike ) / update_interval_ ) ) * update_interval_;
+    double t_update_ = ( floor( t_spike / update_interval_ ) ) * update_interval_;
+    double t1 = ( floor( t_lastspike_ / update_interval_ ) ) * update_interval_;;
+    double t2 = t1 + update_interval_;
+    
     target->get_eprop_history( t_lastupdate_ - dendritic_delay,
-        //TODO: update t_next_update
         t_update_ - dendritic_delay,
         &start,
         &finish );
+
+    // target->get_eprop_history( t1 - dendritic_delay,
+    //     t2 - dendritic_delay,
+    //     &start,
+    //     &finish );
+
 
     double const dt = Time::get_resolution().get_ms();
     double kappa = std::exp( -dt / tau_kappa_ );
