@@ -84,6 +84,8 @@ public:
     std::deque< histentry_extended >::iterator* start,
     std::deque< histentry_extended >::iterator* finish );
 
+  void tidy_LTP_history( double t1 );
+
   void compress_LTP_history( double tau_x, double dendritic_delay );
 
   /**
@@ -154,6 +156,8 @@ private:
   size_t ltd_hist_len_;
 
   size_t ltd_hist_current_;
+
+  std::vector< histentry_extended > last_spike_per_synapse; 
 };
 
 inline double

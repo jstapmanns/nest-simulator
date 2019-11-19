@@ -434,6 +434,12 @@ Node::get_LTP_value( double )
 }
 
 void
+Node::tidy_LTP_history( double )
+{
+  throw UnexpectedEvent();
+}
+
+void
 Node::compress_LTP_history( double, double )
 {
   throw UnexpectedEvent();
