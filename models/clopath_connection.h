@@ -174,14 +174,14 @@ private:
   double
   depress_( double w, double dw )
   {
-    w -= weight_factor * dw;
+    w -= eta_ * dw;
     return w > Wmin_ ? w : Wmin_;
   }
 
   double
   facilitate_( double w, double dw, double x_bar )
   {
-    w += weight_factor * dw * x_bar;
+    w += eta_ * dw * x_bar;
     return w < Wmax_ ? w : Wmax_;
   }
 
@@ -191,7 +191,7 @@ private:
   double tau_x_;
   double Wmin_;
   double Wmax_;
-  double weight_factor;
+  double eta_;
 
   double t_lastspike_;
 };
@@ -264,7 +264,7 @@ ClopathConnection< targetidentifierT >::ClopathConnection()
   , tau_x_( 15.0 )
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
-  , weight_factor( 1.0 )
+  , eta_( 1.0 )
   , t_lastspike_( 0.0 )
 {
 }
@@ -277,7 +277,7 @@ ClopathConnection< targetidentifierT >::ClopathConnection( const ClopathConnecti
   , tau_x_( rhs.tau_x_ )
   , Wmin_( rhs.Wmin_ )
   , Wmax_( rhs.Wmax_ )
-  , weight_factor( rhs.weight_factor )
+  , eta_( rhs.eta_ )
   , t_lastspike_( rhs.t_lastspike_ )
 {
 }
@@ -292,7 +292,7 @@ ClopathConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::tau_x, tau_x_ );
   def< double >( d, names::Wmin, Wmin_ );
   def< double >( d, names::Wmax, Wmax_ );
-  def< double >( d, names::weight_factor, weight_factor );
+  def< double >( d, names::eta, eta_ );
   def< long >( d, names::size_of, sizeof( *this ) );
 }
 
@@ -306,7 +306,7 @@ ClopathConnection< targetidentifierT >::set_status( const DictionaryDatum& d, Co
   updateValue< double >( d, names::tau_x, tau_x_ );
   updateValue< double >( d, names::Wmin, Wmin_ );
   updateValue< double >( d, names::Wmax, Wmax_ );
-  updateValue< double >( d, names::weight_factor, weight_factor );
+  updateValue< double >( d, names::eta, eta_ );
 
   // check if weight_ and Wmin_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )

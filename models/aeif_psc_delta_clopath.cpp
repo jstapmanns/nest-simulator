@@ -72,8 +72,10 @@ RecordablesMap< aeif_psc_delta_clopath >::create()
   insert_( names::u_bar_plus, &aeif_psc_delta_clopath::get_y_elem_< aeif_psc_delta_clopath::State_::U_BAR_PLUS > );
   insert_( names::u_bar_minus, &aeif_psc_delta_clopath::get_y_elem_< aeif_psc_delta_clopath::State_::U_BAR_MINUS > );
   insert_( names::u_bar_bar, &aeif_psc_delta_clopath::get_y_elem_< aeif_psc_delta_clopath::State_::U_BAR_BAR > );
-  insert_( names::h, &aeif_psc_delta_clopath::get_y_elem_< aeif_psc_delta_clopath::State_::HIST_LEN > );
-  insert_( names::tau_fac, &aeif_psc_delta_clopath::get_y_elem_< aeif_psc_delta_clopath::State_::HIST_LEN_C > );
+  insert_( names::len_LTD_hist, &aeif_psc_delta_clopath::get_LTD_history_len );
+  insert_( names::len_LTP_hist, &aeif_psc_delta_clopath::get_LTP_history_len );
+  insert_( names::len_LTP_hist_comp, &aeif_psc_delta_clopath::get_LTP_history_compressed_len );
+  insert_( names::len_ls_per_syn, &aeif_psc_delta_clopath::get_ls_per_syn_len );
 }
 }
 
@@ -128,9 +130,6 @@ nest::aeif_psc_delta_clopath_dynamics( double, const double y[], double f[], voi
   f[ S::U_BAR_MINUS ] = ( -u_bar_minus + V ) / node.P_.tau_minus;
 
   f[ S::U_BAR_BAR ] = ( -u_bar_bar + u_bar_minus ) / node.P_.tau_bar_bar;
-
-  f[ S::HIST_LEN ] = 0.0;
-  f[ S::HIST_LEN_C ] = 0.0;
 
   return GSL_SUCCESS;
 }
@@ -333,8 +332,6 @@ nest::aeif_psc_delta_clopath::State_::get( DictionaryDatum& d ) const
   def< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
   def< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
   def< double >( d, names::u_bar_bar, y_[ U_BAR_BAR ] );
-  def< double >( d, names::h, y_[ HIST_LEN ] );
-  def< double >( d, names::tau_fac, y_[ HIST_LEN_C ] );
 }
 
 void
@@ -345,8 +342,6 @@ nest::aeif_psc_delta_clopath::State_::set( const DictionaryDatum& d, const Param
   updateValue< double >( d, names::u_bar_plus, y_[ U_BAR_PLUS ] );
   updateValue< double >( d, names::u_bar_minus, y_[ U_BAR_MINUS ] );
   updateValue< double >( d, names::u_bar_bar, y_[ U_BAR_BAR ] );
-  updateValue< double >( d, names::h, y_[ HIST_LEN ] );
-  updateValue< double >( d, names::tau_fac, y_[ HIST_LEN_C ] );
 }
 
 nest::aeif_psc_delta_clopath::Buffers_::Buffers_( aeif_psc_delta_clopath& n )
@@ -595,9 +590,6 @@ nest::aeif_psc_delta_clopath::update( const Time& origin, const long from, const
       S_.y_[ State_::U_BAR_PLUS ],
       S_.y_[ State_::U_BAR_MINUS ],
       S_.y_[ State_::U_BAR_BAR ] );
-
-    S_.y_[ State_::HIST_LEN_C ] = ltp_history_compressed_.size();
-    S_.y_[ State_::HIST_LEN ] = ltp_history_.size();
 
     // decrement clamp count
     if ( S_.clamp_r_ > 0 )
