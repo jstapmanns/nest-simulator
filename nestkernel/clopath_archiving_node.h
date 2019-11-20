@@ -194,7 +194,7 @@ Clopath_Archiving_Node::get_LTP_history_compressed_len() const
 inline double
 Clopath_Archiving_Node::get_ls_per_syn_len() const
 {
-  return last_spike_per_synapse_.size();
+  return 0.0;
 }
 
 } // of namespace
