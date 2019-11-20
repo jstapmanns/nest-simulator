@@ -98,6 +98,11 @@ public:
    */
   double get_theta_minus() const;
 
+  double get_LTD_history_len() const;
+  double get_LTP_history_len() const;
+  double get_LTP_history_compressed_len() const;
+  double get_ls_per_syn_len() const;
+
 protected:
   /**
    * \fn void write_LTD_history( Time const& t_sp,
@@ -166,6 +171,30 @@ inline double
 Clopath_Archiving_Node::get_theta_minus() const
 {
   return theta_minus_;
+}
+
+inline double
+Clopath_Archiving_Node::get_LTD_history_len() const
+{
+  return ltd_history_.size();
+}
+
+inline double
+Clopath_Archiving_Node::get_LTP_history_len() const
+{
+  return ltp_history_.size();
+}
+
+inline double
+Clopath_Archiving_Node::get_LTP_history_compressed_len() const
+{
+  return ltp_history_compressed_.size();
+}
+
+inline double
+Clopath_Archiving_Node::get_ls_per_syn_len() const
+{
+  return last_spike_per_synapse_.size();
 }
 
 } // of namespace
