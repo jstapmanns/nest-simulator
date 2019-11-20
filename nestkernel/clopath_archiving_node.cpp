@@ -80,7 +80,7 @@ nest::Clopath_Archiving_Node::init_clopath_buffers()
   ltd_hist_len_ = kernel().connection_manager.get_max_delay() + 1;
   ltd_history_.resize( ltd_hist_len_, histentry_extended( 0.0, 0.0, 0 ) );
   // initialize history of last spikes
-  last_spike_per_synapse.push_back( histentry_extended( -1000.0, 0.0, n_incoming_ ) );
+  last_spike_per_synapse_.push_back( histentry_extended( -1000.0, 0.0, n_incoming_ ) );
 }
 
 void
@@ -168,14 +168,14 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
   t1 = std::max( -1000.0, t1 );
   // register spike time if it is not in the list, otherwise increase access counter.
   std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
-      last_spike_per_synapse.begin(),
-      last_spike_per_synapse.end(),
+      last_spike_per_synapse_.begin(),
+      last_spike_per_synapse_.end(),
       t2 - kernel().connection_manager.get_stdp_eps() );
-  if ( it_reg == last_spike_per_synapse.end() ||
+  if ( it_reg == last_spike_per_synapse_.end() ||
       fabs( t2 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
   {
     //std::cout << "inserted new entry" << std::endl;
-    last_spike_per_synapse.insert( it_reg, histentry_extended( t2, 0.0, 1 ) );
+    last_spike_per_synapse_.insert( it_reg, histentry_extended( t2, 0.0, 1 ) );
   }
   else
   {
@@ -185,8 +185,8 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
 
   /*
   std::cout << "spike hist:" << std::endl;
-  for ( std::vector< histentry_extended >::iterator it = last_spike_per_synapse.begin();
-      it != last_spike_per_synapse.end(); it++ )
+  for ( std::vector< histentry_extended >::iterator it = last_spike_per_synapse_.begin();
+      it != last_spike_per_synapse_.end(); it++ )
   {
     std::cout << it->t_ << "  " << it->access_counter_ << ",  ";
   }
@@ -196,10 +196,10 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
   // search for old entry and decrease access counter and delete entry if the access counter
   // equals zero
   it_reg = std::lower_bound(
-      last_spike_per_synapse.begin(),
-      last_spike_per_synapse.end(),
+      last_spike_per_synapse_.begin(),
+      last_spike_per_synapse_.end(),
       t1 - kernel().connection_manager.get_stdp_eps() );
-  if ( it_reg == last_spike_per_synapse.end() ||
+  if ( it_reg == last_spike_per_synapse_.end() ||
       fabs( t1 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
   {
     std::cout << "found nothing, searched for:" << t1 << std::endl;
@@ -211,7 +211,7 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
   // delete old entry
   if ( it_reg->access_counter_ == 0 )
   {
-    it_reg = last_spike_per_synapse.erase( it_reg );
+    it_reg = last_spike_per_synapse_.erase( it_reg );
   }
 
   // set pointer to entries of LTP hist that correspond to the times t1 and t2.
@@ -272,7 +272,7 @@ nest::Clopath_Archiving_Node::tidy_LTP_history( double t1 )
     std::deque< histentry_extended >::iterator it_del_upper = std::lower_bound(
         ltp_history_.begin(),
         ltp_history_.end(),
-        ( last_spike_per_synapse.begin() )->t_ + kernel().connection_manager.get_stdp_eps() );
+        ( last_spike_per_synapse_.begin() )->t_ + kernel().connection_manager.get_stdp_eps() );
     /*
     if ( it_del_upper != ltp_history_.begin() )
     {
