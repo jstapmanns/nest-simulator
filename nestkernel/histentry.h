@@ -66,6 +66,8 @@ public:
   //! how often this entry was accessed (to enable removal, once read by all
   //! neurons which need it)
   size_t access_counter_;
+
+  friend bool operator<( const histentry_cl he, double  t );
 };
 
 // entry for eprop with two entries: one for the learning signal and one for the membrane potential
@@ -80,7 +82,19 @@ public:
   //! how often this entry was accessed (to enable removal, once read by all
   //! neurons which need it)
   size_t access_counter_;
+
+  friend bool operator<( const histentry_eprop he, double  t );
 };
+
+inline bool operator<( const histentry_cl he, double t )
+{
+    return ( he.t_ ) < t;
+}
+
+inline bool operator<( const histentry_eprop he, double t )
+{
+    return ( he.t_ ) < t;
+}
 }
 
 #endif

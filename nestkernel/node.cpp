@@ -477,9 +477,16 @@ void
 nest::Node::get_eprop_history( double,
   double,
   std::deque< histentry_eprop >::iterator*,
-  std::deque< histentry_eprop >::iterator* )
+  std::deque< histentry_eprop >::iterator*,
+  bool )
 {
   throw UnexpectedEvent();
+}
+
+void
+Node::tidy_eprop_history( double )
+{
+    throw UnexpectedEvent();
 }
 
 void

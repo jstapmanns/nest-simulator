@@ -228,9 +228,11 @@ EpropConnection< targetidentifierT >::send( Event& e,
     // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
     // details.
     double t_update_ = ( floor( t_spike / update_interval_ ) ) * update_interval_;
-    double t1 = ( floor( t_lastspike_ / update_interval_ ) ) * update_interval_;;
+    double t1 = std::max( 0.0, ( floor( t_lastspike_ / update_interval_ ) ) * update_interval_ );
     double t2 = t1 + update_interval_;
     
+    //std::cout << "in synapse at time: " << t_spike << ", t_lu: " << t_lastupdate_
+     //<< ", t_u: " << t_update_ << std::endl;
     target->get_eprop_history( t_lastupdate_ - dendritic_delay,
         t_update_ - dendritic_delay,
         &start,
@@ -340,11 +342,12 @@ EpropConnection< targetidentifierT >::send( Event& e,
       weight_ = Wmin_;
     }
     */
-    t_lastupdate_ = t_nextupdate_;
+    t_lastupdate_ = t_update_;//t_nextupdate_;
     t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) * update_interval_;
     // clear history of presynaptic spike because we don't need them any more
     pre_syn_spike_times_.clear();
     pre_syn_spike_times_.push_back( t_spike );
+    target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
   }
 
   e.set_receiver( *target );
@@ -369,8 +372,8 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , update_interval_( 100.0 )
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
-  , t_lastspike_( 0.0 )
-  , t_lastupdate_( 0.0 )
+  , t_lastspike_( -1000.0 )
+  , t_lastupdate_( -1000.0 )
   , t_nextupdate_( 100.0 )
   , last_e_trace_( 0.0 )
   , t_prime_int_trace_( 0.0 )

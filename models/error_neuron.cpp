@@ -61,6 +61,8 @@ RecordablesMap< error_neuron >::create()
   insert_( names::target_rate, &error_neuron::get_target_rate_ );
   insert_( names::learning_signal, &error_neuron::get_learning_signal_ );
   insert_( names::V_m, &error_neuron::get_V_m_ );
+  insert_( names::len_eprop_hist, &error_neuron::get_eprop_history_len );
+  insert_( names::len_ls_per_syn, &error_neuron::get_ls_per_syn_len );
 }
 /* ----------------------------------------------------------------
  * Default constructors defining default parameters and state
@@ -210,6 +212,7 @@ nest::error_neuron::init_buffers_()
   B_.logger_.reset(); // includes resize
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
+  init_eprop_buffers();
   Archiving_Node::clear_history();
 }
 

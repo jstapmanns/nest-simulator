@@ -244,6 +244,8 @@ const Name lambda( "lambda" );
 const Name lambda_0( "lambda_0" );
 const Name learning_signal( "learning_signal" );
 const Name len_kernel( "len_kernel" );
+const Name len_eprop_hist( "len_eprop_hist" );
+const Name len_ls_per_syn( "len_ls_per_syn" );
 const Name linear( "linear" );
 const Name linear_summation( "linear_summation" );
 const Name local( "local" );

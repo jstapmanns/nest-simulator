@@ -70,7 +70,14 @@ public:
   void get_eprop_history( double t1,
     double t2,
     std::deque< histentry_eprop >::iterator* start,
-    std::deque< histentry_eprop >::iterator* finish );
+    std::deque< histentry_eprop >::iterator* finish,
+    bool decrease_access_counter );
+
+  void tidy_eprop_history( double t1 );
+
+  double get_eprop_history_len() const;
+  double get_ls_per_syn_len() const;
+
   //TODO: make history private again!
   std::deque< histentry_eprop > eprop_history_;
 
@@ -97,6 +104,8 @@ protected:
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
 
+  void init_eprop_buffers();
+
   double get_update_interval();
   //TODO: propagate information from readout neuron
 
@@ -104,8 +113,21 @@ private:
 
   double eta_; // called gamma in paper
   double update_interval_;
+  std::vector< histentry_cl > last_spike_per_synapse_;
 
 };
+
+inline double
+Eprop_Archiving_Node::get_eprop_history_len() const
+{
+  return eprop_history_.size();
+}
+
+inline double
+Eprop_Archiving_Node::get_ls_per_syn_len() const
+{
+  return last_spike_per_synapse_.size();
+}
 
 } // of namespace
 #endif

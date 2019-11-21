@@ -710,7 +710,10 @@ public:
   virtual void get_eprop_history( double t1,
     double t2,
     std::deque< histentry_eprop >::iterator* start,
-    std::deque< histentry_eprop >::iterator* finish );
+    std::deque< histentry_eprop >::iterator* finish,
+    bool decrease_access_counter = true );
+
+  virtual void tidy_eprop_history( double t1 );
 
   /**
    * Modify Event object parameters during event delivery.

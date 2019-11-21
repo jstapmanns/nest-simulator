@@ -60,6 +60,8 @@ RecordablesMap< iaf_psc_delta_eprop >::create()
   insert_( names::V_m, &iaf_psc_delta_eprop::get_V_m_ );
   insert_( names::V_th, &iaf_psc_delta_eprop::get_last_h_ );
   insert_( names::E_L, &iaf_psc_delta_eprop::get_last_ls_ );
+  insert_( names::len_eprop_hist, &iaf_psc_delta_eprop::get_eprop_history_len );
+  insert_( names::len_ls_per_syn, &iaf_psc_delta_eprop::get_ls_per_syn_len );
 }
 
 /* ----------------------------------------------------------------
@@ -237,6 +239,7 @@ nest::iaf_psc_delta_eprop::init_buffers_()
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
   B_.logger_.reset();   // includes resize
+  init_eprop_buffers();
   Eprop_Archiving_Node::clear_history();
 }
 
