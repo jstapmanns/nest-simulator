@@ -124,7 +124,6 @@ protected:
 
 private:
   std::deque< histentry_extended > urbanczik_history_[ urbanczik_parameters::NCOMP - 1 ];
-
 };
 
 template < class urbanczik_parameters >
