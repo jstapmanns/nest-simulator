@@ -235,6 +235,7 @@ UrbanczikConnection< targetidentifierT >::send( Event& e, thread t, const Common
     weight_ = Wmin_;
   }
 
+  target->tidy_urbanczik_history( t_lastspike_ - dendritic_delay, comp );
   e.set_receiver( *target );
   e.set_weight( weight_ );
   // use accessor functions (inherited from Connection< >) to obtain delay in steps and rport
@@ -263,7 +264,7 @@ UrbanczikConnection< targetidentifierT >::UrbanczikConnection()
   , PI_exp_integral_( 0.0 )
   , tau_L_trace_( 0.0 )
   , tau_s_trace_( 0.0 )
-  , t_lastspike_( -1.0 )
+  , t_lastspike_( -1000.0 )
 {
 }
 

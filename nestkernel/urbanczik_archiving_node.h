@@ -80,6 +80,8 @@ public:
     std::deque< histentry_extended >::iterator* finish,
     int comp );
 
+  void tidy_urbanczik_history( double t1, int comp );
+
   /**
    * \fn double get_C_m( int comp )
    * Returns membrane capacitance
@@ -110,6 +112,9 @@ public:
    */
   double get_tau_syn_in( int comp );
 
+  double get_urbanczik_history_len() const;
+  double get_ls_per_syn_len() const;
+
 protected:
   /**
    * \fn void write_urbanczik_history( Time const& t_sp, double V_W, int n_spikes, int comp ))
@@ -121,9 +126,11 @@ protected:
 
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
+  void init_urbanczik_buffers( size_t comp );
 
 private:
   std::deque< histentry_extended > urbanczik_history_[ urbanczik_parameters::NCOMP - 1 ];
+  std::vector< histentry_extended > last_spike_per_synapse_[ urbanczik_parameters::NCOMP - 1 ];
 };
 
 template < class urbanczik_parameters >
@@ -159,6 +166,20 @@ inline double
 Urbanczik_Archiving_Node< urbanczik_parameters >::get_tau_syn_in( int comp )
 {
   return urbanczik_params->tau_syn_in[ comp ];
+}
+
+template < class urbanczik_parameters >
+inline double
+Urbanczik_Archiving_Node< urbanczik_parameters >::get_urbanczik_history_len() const
+{
+  return urbanczik_history_[ 0 ].size();
+}
+
+template < class urbanczik_parameters >
+inline double
+Urbanczik_Archiving_Node< urbanczik_parameters >::get_ls_per_syn_len() const
+{
+  return last_spike_per_synapse_[ 0 ].size();
 }
 
 } // of namespace

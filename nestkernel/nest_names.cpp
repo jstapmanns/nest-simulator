@@ -242,6 +242,8 @@ const Name label( "label" );
 const Name lambda( "lambda" );
 const Name lambda_0( "lambda_0" );
 const Name len_kernel( "len_kernel" );
+const Name len_urbanczik_hist( "len_urbanczik_hist" );
+const Name len_ls_per_syn( "len_ls_per_syn" );
 const Name linear( "linear" );
 const Name linear_summation( "linear_summation" );
 const Name local( "local" );

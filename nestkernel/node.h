@@ -707,7 +707,9 @@ public:
     double t2,
     std::deque< histentry_extended >::iterator* start,
     std::deque< histentry_extended >::iterator* finish,
-    int );
+    int comp );
+
+  virtual void tidy_urbanczik_history( double t1, int comp );
   // make neuron parameters accessible in Urbanczik synapse
   virtual double get_C_m( int comp );
   virtual double get_g_L( int comp );

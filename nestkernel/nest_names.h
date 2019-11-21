@@ -263,6 +263,8 @@ extern const Name label;
 extern const Name lambda;
 extern const Name lambda_0;
 extern const Name len_kernel;
+extern const Name len_urbanczik_hist;
+extern const Name len_ls_per_syn;
 extern const Name linear;
 extern const Name linear_summation;
 extern const Name local;
