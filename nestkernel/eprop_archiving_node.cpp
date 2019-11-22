@@ -239,6 +239,10 @@ nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
     }
     */
     // erase entries that are no longer used
+    if ( eprop_history_.begin() != finish )
+    {
+      std::cout << "at t = " << t1 << " remove until: " << finish->t_ << std::endl;
+    }
     eprop_history_.erase( eprop_history_.begin(), finish );
   }
 }
