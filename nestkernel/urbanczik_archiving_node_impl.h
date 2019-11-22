@@ -131,8 +131,8 @@ nest::Urbanczik_Archiving_Node< urbanczik_parameters >::get_urbanczik_history( d
         ( (int) std::round( ( t2 - t_first ) / Time::get_resolution().get_ms() ) ) + 1 );
 
     std::deque< histentry_extended >::iterator it_first = urbanczik_history_[ comp - 1 ].begin();
-    *start = it_first + pos_t1;
-    *finish = it_first + pos_t2;
+    *start = it_first + std::max( 0, pos_t1 );
+    *finish = it_first + std::max( 0, pos_t2 );
   }
 }
 
@@ -140,17 +140,32 @@ template < class urbanczik_parameters >
 void
 nest::Urbanczik_Archiving_Node< urbanczik_parameters >::tidy_urbanczik_history( double t1, int comp )
 {
+  if ( last_spike_per_synapse_[ comp - 1 ].empty() )
+  {
+    throw std::exception();
+  }
   if ( !urbanczik_history_[ comp - 1 ].empty() )
   {
     // erase history for times smaller than the smallest last spike time.
     // search for coresponding hist entry
+
+    /* old code, we can compute the corresponding entry directly
     t1 = std::max( -1000.0, t1 );
     std::deque< histentry_extended >::iterator it_del_upper = std::lower_bound(
         urbanczik_history_[ comp - 1 ].begin(),
         urbanczik_history_[ comp - 1 ].end(),
         ( last_spike_per_synapse_[ comp - 1 ].begin() )->t_ + kernel().connection_manager.get_stdp_eps() );
+    */
+
+    std::deque< histentry_extended >::iterator finish = urbanczik_history_[ comp - 1 ].end();
+    double t_first = urbanczik_history_[ comp - 1 ].begin()->t_;
+    double t_oldest_spike = ( last_spike_per_synapse_[ comp - 1 ].begin() )->t_;
+    int pos_t2 = std::min( (int)( urbanczik_history_[ comp - 1 ].size() ),
+        ( (int) std::round( ( t_oldest_spike - t_first ) / Time::get_resolution().get_ms() ) ) + 1 );
+
+    finish = urbanczik_history_[ comp - 1 ].begin() + std::max( 0, pos_t2 );
     // erase entries that are no longer used
-    urbanczik_history_[ comp - 1 ].erase( urbanczik_history_[ comp - 1 ].begin(), it_del_upper );
+    urbanczik_history_[ comp - 1 ].erase( urbanczik_history_[ comp - 1 ].begin(), finish );
   }
 }
 
