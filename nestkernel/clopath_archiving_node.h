@@ -100,11 +100,6 @@ public:
    */
   double get_theta_minus() const;
 
-  double get_LTD_history_len() const;
-  double get_LTP_history_len() const;
-  double get_LTP_history_compressed_len() const;
-  double get_ls_per_syn_len() const;
-
 protected:
   /**
    * \fn void write_LTD_history( Time const& t_sp,
