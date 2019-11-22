@@ -74,7 +74,7 @@ nest::Eprop_Archiving_Node::set_status( const DictionaryDatum& d )
 void
 nest::Eprop_Archiving_Node::init_eprop_buffers()
 {
-  last_spike_per_synapse_.push_back( histentry_cl( -1000.0, 0.0, n_incoming_ ) );
+  last_spike_per_synapse_.push_back( histentry_extended( -1000.0, 0.0, n_incoming_ ) );
 }
 
 double
@@ -96,14 +96,14 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
   if ( decrease_access_counter )
   {
     // register spike time if it is not in the list, otherwise increase access counter.
-    std::vector< histentry_cl >::iterator it_reg = std::lower_bound(
+    std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
         last_spike_per_synapse_.begin(),
         last_spike_per_synapse_.end(),
         t2 - kernel().connection_manager.get_stdp_eps() );
     if ( it_reg == last_spike_per_synapse_.end() ||
         fabs( t2 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
     {
-      last_spike_per_synapse_.insert( it_reg, histentry_cl( t2, 0.0, 1 ) );
+      last_spike_per_synapse_.insert( it_reg, histentry_extended( t2, 0.0, 1 ) );
     }
     else
     {
@@ -121,7 +121,7 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
       std::cout << "found nothing, searched for:" << t1 << std::endl;
       /*
       std::cout << "hist:" << std::endl;
-      for ( std::vector< histentry_cl >::iterator it = last_spike_per_synapse_.begin();
+      for ( std::vector< histentry_extended >::iterator it = last_spike_per_synapse_.begin();
           it != last_spike_per_synapse_.end(); it++)
       {
         std::cout << it->t_ << "  " << it->access_counter_ << ",  ";
@@ -239,10 +239,6 @@ nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
     }
     */
     // erase entries that are no longer used
-    if ( eprop_history_.begin() != finish )
-    {
-      std::cout << "at t = " << t1 << " remove until: " << finish->t_ << std::endl;
-    }
     eprop_history_.erase( eprop_history_.begin(), finish );
   }
 }

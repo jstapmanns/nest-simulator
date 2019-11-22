@@ -231,8 +231,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
     double t1 = std::max( 0.0, ( floor( t_lastspike_ / update_interval_ ) ) * update_interval_ );
     double t2 = t1 + update_interval_;
     
-    std::cout << "in synapse at time: " << t_spike << ", t_lu: " << t_lastupdate_
-     << ", t_u: " << t_update_ << std::endl;
+    //std::cout << "in synapse at time: " << t_spike << ", t_lu: " << t_lastupdate_
+     //<< ", t_u: " << t_update_ << std::endl;
     target->get_eprop_history( t_lastupdate_ - dendritic_delay,
         t_update_ - dendritic_delay,
         &start,

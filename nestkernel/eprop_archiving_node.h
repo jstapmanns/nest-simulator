@@ -113,7 +113,7 @@ private:
 
   double eta_; // called gamma in paper
   double update_interval_;
-  std::vector< histentry_cl > last_spike_per_synapse_;
+  std::vector< histentry_extended > last_spike_per_synapse_;
 
 };
 
