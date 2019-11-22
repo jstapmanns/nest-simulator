@@ -130,8 +130,7 @@ Node::get_status_dict_()
 void
 Node::set_local_device_id( const index lsdid )
 {
-  assert(
-    false && "set_local_device_id() called on a non-device node of type" );
+  assert( false && "set_local_device_id() called on a non-device node of type" );
 }
 
 index
@@ -196,10 +195,7 @@ Node::set_status_base( const DictionaryDatum& dict )
   catch ( BadProperty& e )
   {
     throw BadProperty(
-      String::compose( "Setting status of a '%1' with GID %2: %3",
-        get_name(),
-        get_gid(),
-        e.message() ) );
+      String::compose( "Setting status of a '%1' with GID %2: %3", get_name(), get_gid(), e.message() ) );
   }
 
   updateValue< bool >( dict, names::frozen, frozen_ );
@@ -450,16 +446,13 @@ Node::is_eprop_readout()
 }
 
 void
-Node::get_K_values( double, double&, double& )
+Node::get_K_values( double, double&, double&, double& )
 {
   throw UnexpectedEvent();
 }
 
 void
-nest::Node::get_history( double,
-  double,
-  std::deque< histentry >::iterator*,
-  std::deque< histentry >::iterator* )
+nest::Node::get_history( double, double, std::deque< histentry >::iterator*, std::deque< histentry >::iterator* )
 {
   throw UnexpectedEvent();
 }
@@ -467,8 +460,54 @@ nest::Node::get_history( double,
 void
 nest::Node::get_LTP_history( double,
   double,
-  std::deque< histentry_cl >::iterator*,
-  std::deque< histentry_cl >::iterator* )
+  std::deque< histentry_extended >::iterator*,
+  std::deque< histentry_extended >::iterator* )
+{
+  throw UnexpectedEvent();
+}
+
+void
+nest::Node::get_urbanczik_history( double,
+  double,
+  std::deque< histentry_extended >::iterator*,
+  std::deque< histentry_extended >::iterator*,
+  int )
+{
+  throw UnexpectedEvent();
+}
+
+double
+nest::Node::get_C_m( int )
+{
+  throw UnexpectedEvent();
+}
+
+double
+nest::Node::get_g_L( int )
+{
+  throw UnexpectedEvent();
+}
+
+double
+nest::Node::get_tau_L( int )
+{
+  throw UnexpectedEvent();
+}
+
+double
+nest::Node::get_tau_s( int )
+{
+  throw UnexpectedEvent();
+}
+
+double
+nest::Node::get_tau_syn_ex( int )
+{
+  throw UnexpectedEvent();
+}
+
+double
+nest::Node::get_tau_syn_in( int )
 {
   throw UnexpectedEvent();
 }

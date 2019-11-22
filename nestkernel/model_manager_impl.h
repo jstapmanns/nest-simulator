@@ -39,9 +39,7 @@ namespace nest
 
 template < class ModelT >
 index
-ModelManager::register_node_model( const Name& name,
-  bool private_model,
-  std::string deprecation_info )
+ModelManager::register_node_model( const Name& name, bool private_model, std::string deprecation_info )
 {
   if ( not private_model and modeldict_->known( name ) )
   {
@@ -52,8 +50,7 @@ ModelManager::register_node_model( const Name& name,
     throw NamingConflict( msg );
   }
 
-  Model* model =
-    new GenericModel< ModelT >( name.toString(), deprecation_info );
+  Model* model = new GenericModel< ModelT >( name.toString(), deprecation_info );
   return register_node_model_( model, private_model );
 }
 
@@ -73,8 +70,7 @@ ModelManager::register_preconf_node_model( const Name& name,
     throw NamingConflict( msg );
   }
 
-  Model* model =
-    new GenericModel< ModelT >( name.toString(), deprecation_info );
+  Model* model = new GenericModel< ModelT >( name.toString(), deprecation_info );
   conf->clear_access_flags();
   model->set_status( conf );
   std::string missed;
@@ -87,14 +83,16 @@ template < typename ConnectionT, template < typename > class ConnectorModelT >
 void
 ModelManager::register_connection_model( const std::string& name,
   const bool requires_symmetric,
-  const bool requires_clopath_archiving )
+  const bool requires_clopath_archiving,
+  const bool requires_urbanczik_archiving )
 {
   ConnectorModel* cf = new ConnectorModelT< ConnectionT >( name,
     /*is_primary=*/true,
     /*has_delay=*/true,
     requires_symmetric,
     /*supports_wfr*/ false,
-    requires_clopath_archiving );
+    requires_clopath_archiving,
+    requires_urbanczik_archiving );
   register_connection_model_( cf );
 
   if ( not ends_with( name, "_hpc" ) )
@@ -104,7 +102,8 @@ ModelManager::register_connection_model( const std::string& name,
       /*has_delay=*/true,
       requires_symmetric,
       /*supports_wfr=*/false,
-      requires_clopath_archiving );
+      requires_clopath_archiving,
+      requires_urbanczik_archiving );
     register_connection_model_( cf );
   }
 }
@@ -113,10 +112,11 @@ template < typename ConnectionT >
 void
 ModelManager::register_connection_model( const std::string& name,
   const bool requires_symmetric,
-  const bool requires_clopath_archiving )
+  const bool requires_clopath_archiving,
+  const bool requires_urbanczik_archiving )
 {
   register_connection_model< ConnectionT, GenericConnectorModel >(
-    name, requires_symmetric, requires_clopath_archiving );
+    name, requires_symmetric, requires_clopath_archiving, requires_urbanczik_archiving );
 }
 
 /**
@@ -129,8 +129,8 @@ ModelManager::register_secondary_connection_model( const std::string& name,
   const bool requires_symmetric,
   const bool supports_wfr )
 {
-  ConnectorModel* cm = new GenericSecondaryConnectorModel< ConnectionT >(
-    name, has_delay, requires_symmetric, supports_wfr );
+  ConnectorModel* cm =
+    new GenericSecondaryConnectorModel< ConnectionT >( name, has_delay, requires_symmetric, supports_wfr );
 
   synindex syn_id = register_connection_model_( cm );
 
@@ -168,8 +168,7 @@ ModelManager::register_secondary_connection_model( const std::string& name,
 inline Node*
 ModelManager::get_proxy_node( thread tid, index gid )
 {
-  return proxy_nodes_[ tid ].at(
-    kernel().modelrange_manager.get_model_id( gid ) );
+  return proxy_nodes_[ tid ].at( kernel().modelrange_manager.get_model_id( gid ) );
 }
 
 

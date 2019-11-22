@@ -47,8 +47,7 @@ nest::Clopath_Archiving_Node::Clopath_Archiving_Node()
 {
 }
 
-nest::Clopath_Archiving_Node::Clopath_Archiving_Node(
-  const Clopath_Archiving_Node& n )
+nest::Clopath_Archiving_Node::Clopath_Archiving_Node( const Clopath_Archiving_Node& n )
   : Archiving_Node( n )
   , A_LTD_( n.A_LTD_ )
   , A_LTP_( n.A_LTP_ )
@@ -79,7 +78,7 @@ nest::Clopath_Archiving_Node::init_clopath_buffers()
   // initialize the ltp-history
   ltd_hist_current_ = 0;
   ltd_hist_len_ = kernel().connection_manager.get_max_delay() + 1;
-  ltd_history_.resize( ltd_hist_len_, histentry_cl( 0.0, 0.0, 0 ) );
+  ltd_history_.resize( ltd_hist_len_, histentry_extended( 0.0, 0.0, 0 ) );
 }
 
 void
@@ -134,7 +133,7 @@ nest::Clopath_Archiving_Node::set_status( const DictionaryDatum& d )
 double
 nest::Clopath_Archiving_Node::get_LTD_value( double t )
 {
-  std::vector< histentry_cl >::iterator runner;
+  std::vector< histentry_extended >::iterator runner;
   if ( ltd_history_.empty() || t < 0.0 )
   {
     return 0.0;
@@ -159,8 +158,8 @@ nest::Clopath_Archiving_Node::get_LTD_value( double t )
 void
 nest::Clopath_Archiving_Node::get_LTP_history( double t1,
   double t2,
-  std::deque< histentry_cl >::iterator* start,
-  std::deque< histentry_cl >::iterator* finish )
+  std::deque< histentry_extended >::iterator* start,
+  std::deque< histentry_extended >::iterator* finish )
 {
   *finish = ltp_history_.end();
   if ( ltp_history_.empty() )
@@ -170,7 +169,7 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
   }
   else
   {
-    std::deque< histentry_cl >::iterator runner = ltp_history_.begin();
+    std::deque< histentry_extended >::iterator runner = ltp_history_.begin();
     // To have a well defined discretization of the integral, we make sure
     // that we exclude the entry at t1 but include the one at t2 by subtracting
     // a small number so that runner->t_ is never equal to t1 or t2.
@@ -222,24 +221,19 @@ nest::Clopath_Archiving_Node::write_clopath_history( Time const& t_sp,
 }
 
 void
-nest::Clopath_Archiving_Node::write_LTD_history( const double t_ltd_ms,
-  double u_bar_minus,
-  double u_bar_bar )
+nest::Clopath_Archiving_Node::write_LTD_history( const double t_ltd_ms, double u_bar_minus, double u_bar_bar )
 {
   if ( n_incoming_ )
   {
-    const double dw = A_LTD_const_ ? A_LTD_ * ( u_bar_minus - theta_minus_ )
-                                   : A_LTD_ * u_bar_bar * u_bar_bar
+    const double dw = A_LTD_const_ ? A_LTD_ * ( u_bar_minus - theta_minus_ ) : A_LTD_ * u_bar_bar * u_bar_bar
         * ( u_bar_minus - theta_minus_ ) / u_ref_squared_;
-    ltd_history_[ ltd_hist_current_ ] = histentry_cl( t_ltd_ms, dw, 0 );
+    ltd_history_[ ltd_hist_current_ ] = histentry_extended( t_ltd_ms, dw, 0 );
     ltd_hist_current_ = ( ltd_hist_current_ + 1 ) % ltd_hist_len_;
   }
 }
 
 void
-nest::Clopath_Archiving_Node::write_LTP_history( const double t_ltp_ms,
-  double u,
-  double u_bar_plus )
+nest::Clopath_Archiving_Node::write_LTP_history( const double t_ltp_ms, double u, double u_bar_plus )
 {
   if ( n_incoming_ )
   {
@@ -258,9 +252,8 @@ nest::Clopath_Archiving_Node::write_LTP_history( const double t_ltp_ms,
     }
     // dw is not the change of the synaptic weight since the factor
     // x_bar is not included (but later in the synapse)
-    const double dw = A_LTP_ * ( u - theta_plus_ )
-      * ( u_bar_plus - theta_minus_ ) * Time::get_resolution().get_ms();
-    ltp_history_.push_back( histentry_cl( t_ltp_ms, dw, 0 ) );
+    const double dw = A_LTP_ * ( u - theta_plus_ ) * ( u_bar_plus - theta_minus_ ) * Time::get_resolution().get_ms();
+    ltp_history_.push_back( histentry_extended( t_ltp_ms, dw, 0 ) );
   }
 }
 
