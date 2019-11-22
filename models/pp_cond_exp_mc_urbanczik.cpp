@@ -89,6 +89,8 @@ RecordablesMap< pp_cond_exp_mc_urbanczik >::create()
     &pp_cond_exp_mc_urbanczik::get_y_elem_< pp_cond_exp_mc_urbanczik::State_::I_EXC, pp_cond_exp_mc_urbanczik::PROX > );
   insert_( Name( "I_in.p" ),
     &pp_cond_exp_mc_urbanczik::get_y_elem_< pp_cond_exp_mc_urbanczik::State_::I_INH, pp_cond_exp_mc_urbanczik::PROX > );
+  insert_( names::len_urbanczik_hist, &pp_cond_exp_mc_urbanczik::get_urbanczik_history_len );
+  insert_( names::len_ls_per_syn, &pp_cond_exp_mc_urbanczik::get_ls_per_syn_len );
 }
 }
 
@@ -556,6 +558,12 @@ nest::pp_cond_exp_mc_urbanczik::init_buffers_()
   for ( size_t n = 0; n < NCOMP; ++n )
   {
     B_.I_stim_[ n ] = 0.0;
+  }
+
+  // init buffers for all dendritic compartments
+  for ( size_t n = 1; n < NCOMP; ++n )
+  {
+    init_urbanczik_buffers( n );
   }
 }
 

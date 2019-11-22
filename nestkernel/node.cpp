@@ -468,6 +468,12 @@ nest::Node::get_LTP_history( double,
 }
 
 void
+Node::tidy_urbanczik_history( double, int )
+{
+    throw UnexpectedEvent();
+}
+
+void
 nest::Node::get_urbanczik_history( double,
   double,
   std::deque< histentry_extended >::iterator*,

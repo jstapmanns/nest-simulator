@@ -59,6 +59,8 @@ public:
   double t_;              //!< point in time when spike occurred (in ms)
   double dw_;             //!< value dependend on the additional factor
   size_t access_counter_; //!< access counter to enable removal of the entry, once all neurons read it
+
+  friend bool operator<( const histentry_extended he, double  t );
 };
 
 // entry in the history of plasticity rules which consider additional factors
@@ -72,6 +74,12 @@ public:
   double dw_;             //!< value dependend on the additional factor
   size_t access_counter_; //!< access counter to enable removal of the entry, once all neurons read it
 };
+
+inline bool operator<( const histentry_extended he, double t )
+{
+    return ( he.t_ ) < t;
+}
+
 }
 
 #endif
