@@ -136,6 +136,11 @@ public:
   virtual bool has_proxies() const;
 
   /**
+   * Returns true if the node supports the Urbanczik-Senn plasticity rule
+   */
+  virtual bool supports_urbanczik_archiving() const;
+
+  /**
    * Returns true if the node only receives events from nodes/devices
    * on the same thread.
    */
@@ -396,10 +401,7 @@ public:
    * DS*Events when called with the dummy target, and *Events when called with
    * the real target, see #478.
    */
-  virtual port send_test_event( Node& receiving_node,
-    rport receptor_type,
-    synindex syn_id,
-    bool dummy_target );
+  virtual port send_test_event( Node& receiving_node, rport receptor_type, synindex syn_id, bool dummy_target );
 
   /**
    * Check if the node can handle a particular event and receptor type.
@@ -429,12 +431,9 @@ public:
   virtual port handles_test_event( DSSpikeEvent&, rport receptor_type );
   virtual port handles_test_event( DSCurrentEvent&, rport receptor_type );
   virtual port handles_test_event( GapJunctionEvent&, rport receptor_type );
-  virtual port handles_test_event( InstantaneousRateConnectionEvent&,
-    rport receptor_type );
-  virtual port handles_test_event( DiffusionConnectionEvent&,
-    rport receptor_type );
-  virtual port handles_test_event( DelayedRateConnectionEvent&,
-    rport receptor_type );
+  virtual port handles_test_event( InstantaneousRateConnectionEvent&, rport receptor_type );
+  virtual port handles_test_event( DiffusionConnectionEvent&, rport receptor_type );
+  virtual port handles_test_event( DelayedRateConnectionEvent&, rport receptor_type );
 
   /**
    * Required to check, if source neuron may send a SecondaryEvent.
@@ -687,11 +686,11 @@ public:
   virtual bool is_eprop_readout();
 
   /**
-   * write the Kminus and triplet_Kminus values at t (in ms) to
-   * the provided locations.
+   * write the Kminus, nearest_neighbor_Kminus, and triplet_Kminus
+   * values at t (in ms) to the provided locations.
    * @throws UnexpectedEvent
    */
-  virtual void get_K_values( double t, double& Kminus, double& triplet_Kminus );
+  virtual void get_K_values( double t, double& Kminus, double& nearest_neighbor_Kminus, double& triplet_Kminus );
 
   /**
   * return the spike history for (t1,t2].
@@ -702,10 +701,24 @@ public:
     std::deque< histentry >::iterator* start,
     std::deque< histentry >::iterator* finish );
 
+  // for Clopath synapse
   virtual void get_LTP_history( double t1,
     double t2,
-    std::deque< histentry_cl >::iterator* start,
-    std::deque< histentry_cl >::iterator* finish );
+    std::deque< histentry_extended >::iterator* start,
+    std::deque< histentry_extended >::iterator* finish );
+  // for Urbanczik synapse
+  virtual void get_urbanczik_history( double t1,
+    double t2,
+    std::deque< histentry_extended >::iterator* start,
+    std::deque< histentry_extended >::iterator* finish,
+    int );
+  // make neuron parameters accessible in Urbanczik synapse
+  virtual double get_C_m( int comp );
+  virtual double get_g_L( int comp );
+  virtual double get_tau_L( int comp );
+  virtual double get_tau_s( int comp );
+  virtual double get_tau_syn_ex( int comp );
+  virtual double get_tau_syn_in( int comp );
 
   virtual void get_eprop_history( double t1,
     double t2,
@@ -880,9 +893,9 @@ public:
   }
 
 private:
-  void set_lid_( index );      //!< Set local id, relative to the parent subnet
-  void set_parent_( Subnet* ); //!< Set pointer to parent subnet.
-  void set_gid_( index );      //!< Set global node id
+  void set_lid_( index );          //!< Set local id, relative to the parent subnet
+  void set_parent_( Subnet* );     //!< Set pointer to parent subnet.
+  void set_gid_( index );          //!< Set global node id
   void set_subnet_index_( index ); //!< Index into node array in subnet
 
   /** Return a new dictionary datum .
@@ -969,6 +982,12 @@ inline bool
 Node::node_uses_wfr() const
 {
   return node_uses_wfr_;
+}
+
+inline bool
+Node::supports_urbanczik_archiving() const
+{
+  return false;
 }
 
 inline void

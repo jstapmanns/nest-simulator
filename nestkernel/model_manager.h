@@ -130,9 +130,8 @@ public:
    * register_prototype_connection
    */
   template < class ModelT >
-  index register_node_model( const Name& name,
-    bool private_model = false,
-    std::string deprecation_info = std::string() );
+  index
+  register_node_model( const Name& name, bool private_model = false, std::string deprecation_info = std::string() );
 
   /**
    * Register a pre-configured model prototype with the network.
@@ -188,7 +187,8 @@ public:
   template < typename ConnectionT >
   void register_connection_model( const std::string& name,
     const bool requires_symmetric = false,
-    const bool requires_clopath_archiving = false );
+    const bool requires_clopath_archiving = false,
+    const bool requires_urbanczik_archiving = false );
 
   /**
    * Register a synape model with a custom Connector model and without any
@@ -198,7 +198,8 @@ public:
   template < typename ConnectionT, template < typename > class ConnectorModelT >
   void register_connection_model( const std::string& name,
     const bool requires_symmetric = false,
-    const bool requires_clopath_archiving = false );
+    const bool requires_clopath_archiving = false,
+    const bool requires_urbanczik_archiving = false );
 
   template < typename ConnectionT >
   void register_secondary_connection_model( const std::string& name,
@@ -227,6 +228,11 @@ public:
    * Checks, whether synapse type requires Clopath archiving
    */
   bool connector_requires_clopath_archiving( const synindex syn_id ) const;
+
+  /**
+   * Checks, whether synapse type requires Urbanczik archiving
+   */
+  bool connector_requires_urbanczik_archiving( const synindex syn_id ) const;
 
   void set_connector_defaults( synindex syn_id, const DictionaryDatum& d );
 
@@ -283,8 +289,7 @@ public:
 
   void delete_secondary_events_prototypes();
 
-  SecondaryEvent& get_secondary_event_prototype( const synindex syn_id,
-    const thread tid ) const;
+  SecondaryEvent& get_secondary_event_prototype( const synindex syn_id, const thread tid ) const;
 
 private:
   /**  */
@@ -366,8 +371,7 @@ private:
   std::vector< Event* > event_prototypes_;
 
   std::vector< ConnectorModel* > secondary_connector_models_;
-  std::vector< std::map< synindex, SecondaryEvent* > >
-    secondary_events_prototypes_;
+  std::vector< std::map< synindex, SecondaryEvent* > > secondary_events_prototypes_;
 
   /** @BeginDocumentation
    Name: modeldict - dictionary containing all devices and models of NEST
@@ -508,14 +512,11 @@ ModelManager::has_user_prototypes() const
 inline void
 ModelManager::delete_secondary_events_prototypes()
 {
-  for ( std::vector< std::map< synindex, SecondaryEvent* > >::iterator it =
-          secondary_events_prototypes_.begin();
+  for ( std::vector< std::map< synindex, SecondaryEvent* > >::iterator it = secondary_events_prototypes_.begin();
         it != secondary_events_prototypes_.end();
         ++it )
   {
-    for ( std::map< synindex, SecondaryEvent* >::iterator iit = it->begin();
-          iit != it->end();
-          ++iit )
+    for ( std::map< synindex, SecondaryEvent* >::iterator iit = it->begin(); iit != it->end(); ++iit )
     {
       ( *iit->second ).reset_supported_syn_ids();
       delete iit->second;
@@ -525,8 +526,7 @@ ModelManager::delete_secondary_events_prototypes()
 }
 
 inline SecondaryEvent&
-ModelManager::get_secondary_event_prototype( const synindex syn_id,
-  const thread tid ) const
+ModelManager::get_secondary_event_prototype( const synindex syn_id, const thread tid ) const
 {
   assert_valid_syn_id( syn_id );
   // Using .at() because operator[] does not guarantee constness.

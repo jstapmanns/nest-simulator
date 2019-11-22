@@ -38,19 +38,9 @@ a ``voltmeter`` is then used to make sure the voltage is clamped to ``V_reset``
 during exactly ``t_ref``.
 
 For neurons that do not clamp the potential, use a very large current to
-trigger immediate spiking
+trigger immediate spiking.
 
-Untested models
----------------
-* ``aeif_cond_alpha_RK5``
-* ``gif_pop_psc_exp``
-* ``hh_cond_exp_traub``
-* ``hh_cond_beta_gap_traub``
-* ``hh_psc_alpha``
-* ``hh_psc_alpha_gap``
-* ``iaf_psc_exp_ps_lossless``
-* ``sli_neuron``
-* ``siegert_neuron``
+For untested models please see the ignore_model list.
 """
 
 
@@ -69,7 +59,9 @@ neurons_interspike = [
 neurons_interspike_ps = [
     "iaf_psc_alpha_canon",
     "iaf_psc_alpha_presc",
+    "iaf_psc_alpha_ps",
     "iaf_psc_delta_canon",
+    "iaf_psc_delta_ps",
     "iaf_psc_exp_ps",
 ]
 
@@ -78,19 +70,25 @@ neurons_with_clamping = [
     "aeif_psc_delta_clopath",
 ]
 
+# Multi-compartment models
+mc_models = [
+    "iaf_cond_alpha_mc",
+]
+
 # Models that cannot be tested
 ignore_model = [
-     "aeif_cond_alpha_RK5",      # This one is faulty and will be removed
-     "gif_pop_psc_exp",          # This one commits spikes at same time
-     "hh_cond_exp_traub",        # This one does not support V_reset
-     "hh_cond_beta_gap_traub",   # This one does not support V_reset
-     "hh_psc_alpha",             # This one does not support V_reset
-     "hh_psc_alpha_clopath",     # This one does not support V_reset
-     "hh_psc_alpha_gap",         # This one does not support V_reset
-     "iaf_psc_exp_ps_lossless",  # This one use presice times
-     "sli_neuron",               # This one is not optimal for PyNEST
-     "siegert_neuron",           # This one does not connect to voltmeter
-     "step_rate_generator"       # No regular neuron model
+    "aeif_cond_alpha_RK5",      # This one is faulty and will be removed
+    "gif_pop_psc_exp",          # This one commits spikes at same time
+    "hh_cond_exp_traub",        # This one does not support V_reset
+    "hh_cond_beta_gap_traub",   # This one does not support V_reset
+    "hh_psc_alpha",             # This one does not support V_reset
+    "hh_psc_alpha_clopath",     # This one does not support V_reset
+    "hh_psc_alpha_gap",         # This one does not support V_reset
+    "pp_cond_exp_mc_urbanczik",  # This one does not support V_reset
+    "iaf_psc_exp_ps_lossless",  # This one use presice times
+    "sli_neuron",               # This one is not optimal for PyNEST
+    "siegert_neuron",           # This one does not connect to voltmeter
+    "step_rate_generator"       # No regular neuron model
 ]
 
 tested_models = [m for m in nest.Models("nodes") if (nest.GetDefaults(
@@ -164,7 +162,7 @@ class TestRefractoryCase(unittest.TestCase):
 
             # Index of the 2nd spike
             idx_max = np.argwhere(times == spike_times[1])[0][0]
-            name_Vm = "V_m.s" if model == "iaf_cond_alpha_mc" else "V_m"
+            name_Vm = "V_m.s" if model in mc_models else "V_m"
             Vs = nest.GetStatus(vm, "events")[0][name_Vm]
 
             # Get the index at which the spike occured
@@ -193,7 +191,7 @@ class TestRefractoryCase(unittest.TestCase):
             nparams = {"t_ref": t_ref}
             neuron = nest.Create(model, params=nparams)
 
-            name_Vm = "V_m.s" if model == "iaf_cond_alpha_mc" else "V_m"
+            name_Vm = "V_m.s" if model in mc_models else "V_m"
             vm_params = {"interval": resolution, "record_from": [name_Vm]}
             vm = nest.Create("voltmeter", params=vm_params)
             sd = nest.Create("spike_detector", params={'precise_times': True})
