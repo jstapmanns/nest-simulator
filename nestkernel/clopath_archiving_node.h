@@ -84,6 +84,8 @@ public:
     std::deque< histentry_extended >::iterator* start,
     std::deque< histentry_extended >::iterator* finish );
 
+  void tidy_LTP_history( double t1 );
+
   void compress_LTP_history( double tau_x, double dendritic_delay );
 
   /**
@@ -132,10 +134,15 @@ protected:
   void init_clopath_buffers();
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
-  std::deque< histentry_extended > ltp_history_compressed_; // TODO: make hist private again!
-  std::deque< histentry_extended > ltp_history_;
+
+  double get_LTD_history_len() const;
+  double get_LTP_history_len() const;
+  double get_LTP_history_compressed_len() const;
+  double get_ls_per_syn_len() const;
 
 private:
+  std::deque< histentry_extended > ltp_history_compressed_;
+  std::deque< histentry_extended > ltp_history_;
   std::vector< histentry_extended > ltd_history_;
 
   double A_LTD_;
@@ -159,6 +166,8 @@ private:
   size_t ltd_hist_len_;
 
   size_t ltd_hist_current_;
+
+  std::vector< histentry_extended > last_spike_per_synapse_; 
 };
 
 inline double
@@ -194,7 +203,7 @@ Clopath_Archiving_Node::get_LTP_history_compressed_len() const
 inline double
 Clopath_Archiving_Node::get_ls_per_syn_len() const
 {
-  return 0.0;
+  return last_spike_per_synapse_.size();
 }
 
 } // of namespace

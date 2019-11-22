@@ -705,6 +705,8 @@ public:
     std::deque< histentry_extended >::iterator* start,
     std::deque< histentry_extended >::iterator* finish );
 
+  virtual void tidy_LTP_history( double t1 );
+
   virtual void compress_LTP_history( double tau_x, double dendritic_delay );
 
   // for Urbanczik synapse

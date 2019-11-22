@@ -79,6 +79,8 @@ nest::Clopath_Archiving_Node::init_clopath_buffers()
   ltd_hist_current_ = 0;
   ltd_hist_len_ = kernel().connection_manager.get_max_delay() + 1;
   ltd_history_.resize( ltd_hist_len_, histentry_extended( 0.0, 0.0, 0 ) );
+  // initialize history of last spikes
+  last_spike_per_synapse_.push_back( histentry_extended( -1000.0, 0.0, n_incoming_ ) );
 }
 
 void
@@ -161,6 +163,45 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
   std::deque< histentry_extended >::iterator* start,
   std::deque< histentry_extended >::iterator* finish )
 {
+  // t1 = t_last_spike_ equals -1000.0 - dendritic delay at the beginning of the simulation. To find
+  // the correct entry in last_spikes_per_synapse we use the the max function.
+  t1 = std::max( -1000.0, t1 );
+  // register spike time if it is not in the list, otherwise increase access counter.
+  std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
+      last_spike_per_synapse_.begin(),
+      last_spike_per_synapse_.end(),
+      t2 - kernel().connection_manager.get_stdp_eps() );
+  if ( it_reg == last_spike_per_synapse_.end() ||
+      fabs( t2 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
+  {
+    last_spike_per_synapse_.insert( it_reg, histentry_extended( t2, 0.0, 1 ) );
+  }
+  else
+  {
+    it_reg->access_counter_++;
+  }
+  // search for old entry and decrease access counter and delete entry if the access counter
+  // equals zero
+  it_reg = std::lower_bound(
+      last_spike_per_synapse_.begin(),
+      last_spike_per_synapse_.end(),
+      t1 - kernel().connection_manager.get_stdp_eps() );
+  if ( it_reg == last_spike_per_synapse_.end() ||
+      fabs( t1 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
+  {
+    std::cout << "found nothing, searched for:" << t1 << std::endl;
+  }
+  else
+  {
+    it_reg->access_counter_--;
+  }
+  // delete old entry
+  if ( it_reg->access_counter_ == 0 )
+  {
+    it_reg = last_spike_per_synapse_.erase( it_reg );
+  }
+
+  // set pointer to entries of LTP hist that correspond to the times t1 and t2.
   *finish = ltp_history_.end();
   if ( ltp_history_.empty() )
   {
@@ -169,21 +210,35 @@ nest::Clopath_Archiving_Node::get_LTP_history( double t1,
   }
   else
   {
-    std::deque< histentry_extended >::iterator runner = ltp_history_.begin();
-    // To have a well defined discretization of the integral, we make sure
-    // that we exclude the entry at t1 but include the one at t2 by subtracting
-    // a small number so that runner->t_ is never equal to t1 or t2.
-    while ( ( runner != ltp_history_.end() ) && ( runner->t_ - 1.0e-6 < t1 ) )
-    {
-      ++runner;
-    }
-    *start = runner;
-    while ( ( runner != ltp_history_.end() ) && ( runner->t_ - 1.0e-6 < t2 ) )
-    {
-      ( runner->access_counter_ )++;
-      ++runner;
-    }
-    *finish = runner;
+    std::deque< histentry_extended >::iterator runner1 = std::lower_bound(
+        ltp_history_.begin(),
+        ltp_history_.end(),
+        t1 + kernel().connection_manager.get_stdp_eps() );
+    *start = runner1;
+
+
+    std::deque< histentry_extended >::iterator runner2 = std::lower_bound(
+        runner1,
+        ltp_history_.end(),
+        t2 + kernel().connection_manager.get_stdp_eps() );
+    *finish = runner2;
+  } //else
+}
+
+void
+nest::Clopath_Archiving_Node::tidy_LTP_history( double t1 )
+{
+  if ( !ltp_history_.empty() )
+  {
+    // erase history for times smaller than the smallest last spike time.
+    // search for coresponding hist entry
+    t1 = std::max( -1000.0, t1 );
+    std::deque< histentry_extended >::iterator it_del_upper = std::lower_bound(
+        ltp_history_.begin(),
+        ltp_history_.end(),
+        ( last_spike_per_synapse_.begin() )->t_ + kernel().connection_manager.get_stdp_eps() );
+    // erase entries that are no longer used
+    ltp_history_.erase( ltp_history_.begin(), it_del_upper );
   }
 }
 
@@ -241,30 +296,25 @@ nest::Clopath_Archiving_Node::get_LTP_value( double t_lastspike )
   }
   else
   {
-    /*
-    std::cout << "compressed history: " << std::endl;
-    for ( std::deque< histentry_extended >::iterator runner = ltp_history_compressed_.begin();
-        runner != ltp_history_compressed_.end(); runner++)
-    {
-      std::cout << runner->t_ << "  " << runner->dw_ << "  " << runner->access_counter_ << "; ";
-    }
-    std::cout << std::endl;
-    */
-    std::deque< histentry_extended >::iterator runner = ltp_history_compressed_.begin();
-    while ( std::abs( t_lastspike - runner->t_ ) > 1.0e-6 && runner != ltp_history_compressed_.end())
-    {
-      runner++;
-    }
-    if ( runner == ltp_history_compressed_.end() )
+    std::deque< histentry_extended >::iterator runner = std::lower_bound(
+        ltp_history_compressed_.begin(),
+        ltp_history_compressed_.end(),
+        t_lastspike - kernel().connection_manager.get_stdp_eps() );
+    if ( runner == ltp_history_compressed_.end() ||
+        std::abs( t_lastspike - runner->t_ ) > kernel().connection_manager.get_stdp_eps() )
     {
       return 0.0;
     }
     else
     {
       runner->access_counter_ -= 1;
-      //std::cout << "LTP time: " << runner->t_ << "  LTP value: " << runner->dw_ <<
-      //  "  access_counter = " << runner->access_counter_ << std::endl;
-      return runner->dw_;
+      double runner_value = runner->dw_;
+      // if the access counter equals zero after we accessed the element, we do not need it any more
+      if ( runner->access_counter_ == 0 )
+      {
+        runner = ltp_history_compressed_.erase( runner );
+      }
+      return runner_value;
     }
   }
 }
@@ -286,45 +336,25 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
     {
       // if hist is not empty, the time of the last entry is the time of the last update
       t_last_update = ltp_history_compressed_.rbegin()->t_;
-      std::deque< histentry_extended >::iterator runner = ltp_history_compressed_.begin();
-      while ( runner != ltp_history_compressed_.end() )
-      {
-        if ( runner->access_counter_ == 0 )
-        {
-          runner = ltp_history_compressed_.erase( runner );
-        }
-        else
-        {
-          runner++;
-        }
-      }
     }
 
     // if this is not the first spike in this time step, it must not process the history
-    if ( std::abs( t_last_update - t_compr_end ) < 1.0e-6 )
+    if ( std::abs( t_last_update - t_compr_end ) < kernel().connection_manager.get_stdp_eps() )
     {
       ltp_history_compressed_.rbegin()->access_counter_ += 1;
-      //std::cout << "I'm second" << std::endl;
     }
     else
     {
       // first update history
       double hist_sum = 0.0;
-      while ( ( !ltp_history_.empty() ) && ( ltp_history_.begin()->t_ - 1.0e-6 < t_compr_end ) )
+      while ( ( !ltp_history_.empty() ) &&
+          ( ltp_history_.begin()->t_ - kernel().connection_manager.get_stdp_eps() < t_compr_end ) )
       {
         std::deque< histentry_extended >::iterator he = ltp_history_.begin();
         hist_sum += std::exp( ( t_last_update - he->t_ ) / tau_x )*( he->dw_ );
         ltp_history_.pop_front();
       }
       std::deque< histentry_extended >::iterator runner = ltp_history_compressed_.begin();
-      /*
-      while ( ( runner != ltp_history_compressed_.end() ) && ( runner->t_ < t_compr_end - 5.0*tau_x
-            ) )
-      {
-        runner++;
-        std::cout << runner->t_ << "  " << t_compr_end << "  " << tau_x << "; ";
-      }
-      */
       while ( runner != ltp_history_compressed_.end() )
       {
         runner->dw_ += std::exp( ( runner->t_ - t_last_update ) / tau_x )*hist_sum;
@@ -333,39 +363,6 @@ nest::Clopath_Archiving_Node::compress_LTP_history( double tau_x, double t_compr
       // secondly, create new entry for current spike
       ltp_history_compressed_.push_back( histentry_extended( t_compr_end, 0.0, 1 ) );
     }
-    /*
-    while ( ( !ltp_history_.empty() ) && ( ltp_history_.begin()->t_ - 1.0e-6 < t_compr_end ) )
-    {
-      // Due to the Heaviside functions, the history might not be continuous in time. We therefore
-      // have to compress each segment separately. The following loop finds the end of the current
-      // segment.
-      double t_first = ltp_history_.begin()->t_;
-      double t_last = t_first;
-      std::deque< histentry_extended >::iterator end_section = ltp_history_.begin() + 1;
-      while ( ( end_section != ltp_history_.end() ) &&
-          ( std::abs( end_section->t_ - t_last - delta_t ) < 1.0e-6 ) &&
-          ( end_section->t_ - 1.0e-6 < t_compr_end ) )
-      {
-        t_last = end_section->t_;
-        end_section++;
-      } 
-      
-      // compress the current segment and save the weighted sum and the time stamp of the first
-      // and the last entry in the compressed history.
-      double hist_sum = 0.0;
-      double exp_factor = std::exp( -delta_t / tau_x );
-      double prefactor = 1.0;
-      while ( ( !ltp_history_.empty() ) && ( ltp_history_.begin() != end_section ) )
-      {
-        hist_sum += prefactor*(ltp_history_.begin()->dw_);
-        ltp_history_.pop_front();
-        prefactor *= exp_factor;
-      }
-      ltp_history_compressed_.push_back( histentry_eextended( t_first, t_last,
-          hist_sum*delta_t, 0 ) );
-    }
-    */
-
   }
 }
 
@@ -374,19 +371,6 @@ nest::Clopath_Archiving_Node::write_LTP_history( const double t_ltp_ms, double u
 {
   if ( n_incoming_ )
   {
-    // prune all entries from history which are no longer needed
-    // except the penultimate one. we might still need it.
-    while ( ltp_history_.size() > 1 )
-    {
-      if ( ltp_history_.front().access_counter_ >= n_incoming_ )
-      {
-        ltp_history_.pop_front();
-      }
-      else
-      {
-        break;
-      }
-    }
     // dw is not the change of the synaptic weight since the factor
     // x_bar is not included (but later in the synapse)
     const double dw = A_LTP_ * ( u - theta_plus_ ) * ( u_bar_plus - theta_minus_ ) * Time::get_resolution().get_ms();

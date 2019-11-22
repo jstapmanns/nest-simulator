@@ -215,9 +215,7 @@ ClopathConnectionBC< targetidentifierT >::send( Event& e, thread t, const Common
 
   target->compress_LTP_history( tau_x_, t_spike - dendritic_delay );
   // facilitation due to post-synaptic activity since last pre-synaptic spike
-  //double old_w = weight_;
   weight_ = facilitate_( weight_, target->get_LTP_value( t_lastspike_ - dendritic_delay ), x_bar_ );
-  //std::cout << "facilitation: " << weight_ - old_w << "  x_bar = " << x_bar_ << std::endl;
 
   // depression due to new pre-synaptic spike
   weight_ = depress_( weight_, target->get_LTD_value( t_spike - dendritic_delay ) );
@@ -246,7 +244,7 @@ ClopathConnectionBC< targetidentifierT >::ClopathConnectionBC()
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
   , eta_( 1.0 )
-  , t_lastspike_( 0.0 )
+  , t_lastspike_( -1000.0 )
 {
 }
 

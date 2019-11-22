@@ -226,6 +226,7 @@ ClopathConnection< targetidentifierT >::send( Event& e, thread t, const CommonSy
   // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
   // details.
   target->get_LTP_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish );
+
   // facilitation due to post-synaptic activity since last pre-synaptic spike
   double dw_sum = 0.0;
   while ( start != finish )
@@ -235,11 +236,13 @@ ClopathConnection< targetidentifierT >::send( Event& e, thread t, const CommonSy
     //weight_ = facilitate_( weight_, start->dw_, x_bar_ * exp( minus_dt / tau_x_ ) );
     ++start;
   }
-  //std::cout << "orig facilitation: " << weight_ - old_w << "  x_bar = " << x_bar_ << std::endl;
-
+  //std::cout << "dw = " << dw_sum << std::endl;
   weight_ = facilitate_( weight_, dw_sum, 1.0 );
   // depression due to new pre-synaptic spike
   weight_ = depress_( weight_, target->get_LTD_value( t_spike - dendritic_delay ) );
+
+  // remove parts of the history inside the neuron that are no longer used
+  target->tidy_LTP_history( t_lastspike_ - dendritic_delay );
 
   e.set_receiver( *target );
   e.set_weight( weight_ );
@@ -265,7 +268,7 @@ ClopathConnection< targetidentifierT >::ClopathConnection()
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
   , eta_( 1.0 )
-  , t_lastspike_( 0.0 )
+  , t_lastspike_( -1000.0 )
 {
 }
 
