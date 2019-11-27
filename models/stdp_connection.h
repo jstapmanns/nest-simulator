@@ -186,6 +186,10 @@ private:
   facilitate_( double w, double kplus )
   {
     double norm_w = ( w / Wmax_ ) + ( lambda_ * std::pow( 1.0 - ( w / Wmax_ ), mu_plus_ ) * kplus );
+    if( eta_ == 0.0 )
+    {
+        return w;
+    }
     return norm_w < 1.0 ? norm_w * Wmax_ : Wmax_;
   }
 
@@ -193,6 +197,10 @@ private:
   depress_( double w, double kminus )
   {
     double norm_w = ( w / Wmax_ ) - ( alpha_ * lambda_ * std::pow( w / Wmax_, mu_minus_ ) * kminus );
+    if( eta_ == 0.0 )
+    {
+        return w;
+    }
     return norm_w > 0.0 ? norm_w * Wmax_ : 0.0;
   }
 
@@ -205,6 +213,7 @@ private:
   double mu_minus_;
   double Wmax_;
   double Kplus_;
+  double eta_;
 
   double t_lastspike_;
 };
@@ -281,6 +290,7 @@ STDPConnection< targetidentifierT >::STDPConnection()
   , mu_minus_( 1.0 )
   , Wmax_( 100.0 )
   , Kplus_( 0.0 )
+  , eta_( 1.0 )
   , t_lastspike_( 0.0 )
 {
 }
@@ -296,6 +306,7 @@ STDPConnection< targetidentifierT >::STDPConnection( const STDPConnection< targe
   , mu_minus_( rhs.mu_minus_ )
   , Wmax_( rhs.Wmax_ )
   , Kplus_( rhs.Kplus_ )
+  , eta_( rhs.eta_ )
   , t_lastspike_( rhs.t_lastspike_ )
 {
 }
@@ -312,6 +323,7 @@ STDPConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::mu_plus, mu_plus_ );
   def< double >( d, names::mu_minus, mu_minus_ );
   def< double >( d, names::Wmax, Wmax_ );
+  def< double >( d, names::eta, eta_ );
   def< long >( d, names::size_of, sizeof( *this ) );
 }
 
@@ -327,6 +339,8 @@ STDPConnection< targetidentifierT >::set_status( const DictionaryDatum& d, Conne
   updateValue< double >( d, names::mu_plus, mu_plus_ );
   updateValue< double >( d, names::mu_minus, mu_minus_ );
   updateValue< double >( d, names::Wmax, Wmax_ );
+  updateValue< double >( d, names::eta, eta_ );
+
 
   // check if weight_ and Wmax_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmax_ >= 0 ) - ( Wmax_ < 0 ) ) ) )
