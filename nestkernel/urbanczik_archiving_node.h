@@ -131,6 +131,9 @@ protected:
 private:
   std::deque< histentry_extended > urbanczik_history_[ urbanczik_parameters::NCOMP - 1 ];
   std::vector< histentry_extended > last_spike_per_synapse_[ urbanczik_parameters::NCOMP - 1 ];
+  size_t hist_block_steps_;
+  double hist_block_ms_;
+  double block_margin_;
 };
 
 template < class urbanczik_parameters >

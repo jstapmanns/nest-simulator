@@ -62,7 +62,14 @@ template < class urbanczik_parameters >
 void
 nest::Urbanczik_Archiving_Node< urbanczik_parameters >::init_urbanczik_buffers( size_t comp )
 {
-  last_spike_per_synapse_[ comp - 1 ].push_back( histentry_extended( -1000.0, 0.0, n_incoming_ ) );
+  hist_block_steps_ = std::max( 2 * kernel().connection_manager.get_max_delay() + 1, 100 );
+  hist_block_ms_ = hist_block_steps_ * Time::get_resolution().get_ms();
+  block_margin_ = ( kernel().connection_manager.get_max_delay() + 1 ) *
+    Time::get_resolution().get_ms();
+  // the first entry in the histentry contains the time at which the block ends
+  // this last time is not included in the block
+  last_spike_per_synapse_[ comp - 1 ].push_back(
+      histentry_extended( -1000.0 - block_margin_ + hist_block_ms_, 0.0, n_incoming_ ) );
 }
 
 template < class urbanczik_parameters >
@@ -73,18 +80,15 @@ nest::Urbanczik_Archiving_Node< urbanczik_parameters >::get_urbanczik_history( d
   std::deque< histentry_extended >::iterator* finish,
   int comp )
 {
-  // t1 = t_last_spike_ equals -1000.0 - dendritic delay at the beginning of the simulation. To find
-  // the correct entry in last_spikes_per_synapse we use the the max function.
-  t1 = std::max( -1000.0, t1 );
   // register spike time if it is not in the list, otherwise increase access counter.
   std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
       last_spike_per_synapse_[ comp - 1 ].begin(),
       last_spike_per_synapse_[ comp - 1 ].end(),
-      t2 - kernel().connection_manager.get_stdp_eps() );
-  if ( it_reg == last_spike_per_synapse_[ comp - 1 ].end() ||
-      fabs( t2 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
+      t2 + kernel().connection_manager.get_stdp_eps() );
+  if ( it_reg == last_spike_per_synapse_[ comp - 1 ].end() )
   {
-    last_spike_per_synapse_[ comp - 1 ].insert( it_reg, histentry_extended( t2, 0.0, 1 ) );
+    last_spike_per_synapse_[ comp - 1 ].push_back( histentry_extended( t2 - block_margin_ +
+          hist_block_ms_, 0.0, 1 ) );
   }
   else
   {
@@ -95,7 +99,7 @@ nest::Urbanczik_Archiving_Node< urbanczik_parameters >::get_urbanczik_history( d
   it_reg = std::lower_bound(
       last_spike_per_synapse_[ comp - 1 ].begin(),
       last_spike_per_synapse_[ comp - 1 ].end(),
-      t1 - kernel().connection_manager.get_stdp_eps() );
+      t1 + kernel().connection_manager.get_stdp_eps() );
   if ( it_reg == last_spike_per_synapse_[ comp - 1 ].end() ||
       fabs( t1 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
   {
