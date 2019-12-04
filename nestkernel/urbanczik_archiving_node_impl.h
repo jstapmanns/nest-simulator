@@ -62,7 +62,7 @@ template < class urbanczik_parameters >
 void
 nest::Urbanczik_Archiving_Node< urbanczik_parameters >::init_urbanczik_buffers( size_t comp )
 {
-  hist_block_steps_ = std::max( 2 * kernel().connection_manager.get_max_delay() + 1, 100 );
+  hist_block_steps_ = std::max( (int) ( 2 * kernel().connection_manager.get_max_delay() + 1 ), 100 );
   hist_block_ms_ = hist_block_steps_ * Time::get_resolution().get_ms();
   block_margin_ = ( kernel().connection_manager.get_max_delay() + 1 ) *
     Time::get_resolution().get_ms();
@@ -81,29 +81,41 @@ nest::Urbanczik_Archiving_Node< urbanczik_parameters >::get_urbanczik_history( d
   int comp )
 {
   // register spike time if it is not in the list, otherwise increase access counter.
-  std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
-      last_spike_per_synapse_[ comp - 1 ].begin(),
-      last_spike_per_synapse_[ comp - 1 ].end(),
-      t2 + kernel().connection_manager.get_stdp_eps() );
-  if ( it_reg == last_spike_per_synapse_[ comp - 1 ].end() )
+  if ( t2 + kernel().connection_manager.get_stdp_eps() >
+      ( last_spike_per_synapse_[ comp - 1 ].rbegin() )->t_ )
   {
-    last_spike_per_synapse_[ comp - 1 ].push_back( histentry_extended( t2 - block_margin_ +
-          hist_block_ms_, 0.0, 1 ) );
+    // make sure that the new block does not overlap with the last one
+    double block_end_time = std::max(
+        ( last_spike_per_synapse_[ comp -1 ].rbegin() )->t_ + hist_block_ms_,
+        t2 - block_margin_ + hist_block_ms_ );
+    last_spike_per_synapse_[ comp - 1 ].push_back( histentry_extended( block_end_time, 0.0, 1 ) );
   }
   else
   {
-    it_reg->access_counter_++;
+    // since the block size is larger than min delay, the spike has to be registered either in the
+    // last or the second last block
+    if ( t2 + kernel().connection_manager.get_stdp_eps() >
+        ( ( last_spike_per_synapse_[ comp - 1 ].rbegin() )++ )->t_ )
+    {
+      // register spike in last block
+      ( last_spike_per_synapse_[ comp - 1 ].rbegin() )->access_counter_++;
+    }
+    else
+    {
+      // register spike in second last block
+      ( ( last_spike_per_synapse_[ comp - 1 ].rbegin() )++ )->access_counter_++;
+    }
   }
   // search for old entry and decrease access counter and delete entry if the access counter
   // equals zero
-  it_reg = std::lower_bound(
+  std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
       last_spike_per_synapse_[ comp - 1 ].begin(),
       last_spike_per_synapse_[ comp - 1 ].end(),
       t1 + kernel().connection_manager.get_stdp_eps() );
-  if ( it_reg == last_spike_per_synapse_[ comp - 1 ].end() ||
-      fabs( t1 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
+  if ( it_reg == last_spike_per_synapse_[ comp - 1 ].end() )
   {
     std::cout << "found nothing, searched for:" << t1 << std::endl;
+    throw std::exception();
   }
   else
   {
