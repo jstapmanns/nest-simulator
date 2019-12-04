@@ -305,18 +305,21 @@ EpropConnection< targetidentifierT >::send( Event& e,
        */
 
       int t_prime = 0;
-      double sum_t_prime = 0.0;
+      //double sum_t_prime = 0.0;
+      double sum_t_prime_new = 0.0;
       // std::cout << "dw(t): " << std::endl;
       while ( start != finish )
       {
+        /* old implementation
         sum_t_prime = 0.0;
         for ( int t_pprime = 0; t_pprime <= t_prime; t_pprime++)
         {
           sum_t_prime += std::pow( kappa, t_prime - t_pprime ) * elegibility_trace[ t_pprime ];
-          //sum_t_prime += 0.1 * elegibility_trace[ t_pprime ];
         }
         sum_t_prime *= dt;
-        dw += ( sum_t_prime + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * start->learning_signal_;
+        */
+        sum_t_prime_new = kappa * sum_t_prime_new + elegibility_trace[ t_prime ];
+        dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * start->learning_signal_;
         // std::cout << dw*dt + weight_ << " ";
         //std::cout << start->V_m_ << ", ";
         t_prime++;
@@ -324,7 +327,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
       }
       // std::cout << std::endl;
       dw *= dt*eta_;
-      t_prime_int_trace_ += sum_t_prime;
+      t_prime_int_trace_ += sum_t_prime_new * dt;
     }
     //std::cout << "dw: " << dw << std::endl;
 
