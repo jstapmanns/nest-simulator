@@ -188,6 +188,7 @@ nest::Urbanczik_Archiving_Node< urbanczik_parameters >::tidy_urbanczik_history( 
 template < class urbanczik_parameters >
 void
 nest::Urbanczik_Archiving_Node< urbanczik_parameters >::write_urbanczik_history( Time const& t_sp,
+  double V_m,
   double V_W,
   int n_spikes,
   int comp )
@@ -203,6 +204,12 @@ nest::Urbanczik_Archiving_Node< urbanczik_parameters >::write_urbanczik_history(
   {
     double dPI = ( n_spikes - urbanczik_params->phi( V_W_star ) * Time::get_resolution().get_ms() )
       * urbanczik_params->h( V_W_star );
+
+    // uncomment the folowing lines to change the learning signal to phi(V_m) - phi(V_W_star)
+    /*
+    double dPI = ( urbanczik_params->phi( V_m ) - urbanczik_params->phi( V_W_star ) ) * Time::get_resolution().get_ms()
+      * urbanczik_params->h( V_W_star );
+    */
     urbanczik_history_[ comp - 1 ].push_back( histentry_extended( t_ms, dPI, 0 ) );
   }
 }
