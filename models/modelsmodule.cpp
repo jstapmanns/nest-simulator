@@ -153,6 +153,7 @@
 #include "tsodyks_connection.h"
 #include "tsodyks_connection_hom.h"
 #include "urbanczik_connection.h"
+#include "urbanczik_connection_bc.h"
 #include "urbanczik_connection_td.h"
 #include "vogels_sprekeler_connection.h"
 
@@ -463,6 +464,12 @@ ModelsModule::init( SLIInterpreter* )
 
   kernel().model_manager.register_connection_model< UrbanczikConnection< TargetIdentifierPtrRport > >(
     "urbanczik_synapse",
+    /*requires_symmetric=*/false,
+    /*requires_clopath_archiving=*/false,
+    /*requires_urbanczik_archiving=*/true );
+
+  kernel().model_manager.register_connection_model< UrbanczikConnectionBC< TargetIdentifierPtrRport > >(
+    "urbanczik_synapse_bc",
     /*requires_symmetric=*/false,
     /*requires_clopath_archiving=*/false,
     /*requires_urbanczik_archiving=*/true );
