@@ -73,13 +73,22 @@ public:
     std::deque< histentry_eprop >::iterator* finish,
     bool decrease_access_counter );
 
+  void get_spike_history( double t1,
+    double t2,
+    std::deque< histentry_eprop >::iterator* start,
+    std::deque< histentry_eprop >::iterator* finish,
+    bool decrease_access_counter );
+
   void tidy_eprop_history( double t1 );
+  void tidy_spike_history( double t1 );
 
   double get_eprop_history_len() const;
+  double get_spike_history_len() const;
   double get_ls_per_syn_len() const;
 
   //TODO: make history private again!
   std::deque< histentry_eprop > eprop_history_;
+  std::deque< histentry_eprop > spike_history_;
 
 protected:
   void write_readout_history( Time const& t_sp,
@@ -96,6 +105,8 @@ protected:
     double V_m,
     double V_th );
 
+  void write_spike_history( Time const& t_sp );
+
   void add_learning_to_hist( DelayedRateConnectionEvent& e );
 
   double pseudo_deriv( double V_m, double V_th ) const;
@@ -111,7 +122,7 @@ protected:
 
 private:
 
-  double eta_; // called gamma in paper
+  double dampening_factor_; // called gamma in paper
   double update_interval_;
   std::vector< histentry_extended > last_spike_per_synapse_;
 

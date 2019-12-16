@@ -94,6 +94,7 @@ const Name currents( "currents" );
 const Name customdict( "customdict" );
 
 const Name d( "d" );
+const Name dampening_factor( "dampening_factor" );
 const Name data( "data" );
 const Name data_path( "data_path" );
 const Name data_prefix( "data_prefix" );
@@ -240,6 +241,7 @@ const Name Kplus( "Kplus" );
 const Name Kplus_triplet( "Kplus_triplet" );
 
 const Name label( "label" );
+const Name learning_rate( "learning_rate" );
 const Name lambda( "lambda" );
 const Name lambda_0( "lambda_0" );
 const Name learning_signal( "learning_signal" );
@@ -337,6 +339,7 @@ const Name q_sfa( "q_sfa" );
 const Name q_stc( "q_stc" );
 
 const Name rate( "rate" );
+const Name rate_reg( "rate_reg" );
 const Name rate_slope( "rate_slope" );
 const Name rate_times( "rate_times" );
 const Name rate_values( "rate_values" );
@@ -409,6 +412,7 @@ const Name t_ref_remaining( "t_ref_remaining" );
 const Name t_ref_tot( "t_ref_tot" );
 const Name t_spike( "t_spike" );
 const Name target( "target" );
+const Name target_firing_rate( "target_firing_rate" );
 const Name target_rate( "target_rate" );
 const Name target_thread( "target_thread" );
 const Name targets( "targets" );

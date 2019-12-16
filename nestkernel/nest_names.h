@@ -115,6 +115,7 @@ extern const Name currents;
 extern const Name customdict;
 
 extern const Name d;
+extern const Name dampening_factor;
 extern const Name data;
 extern const Name data_path;
 extern const Name data_prefix;
@@ -261,6 +262,7 @@ extern const Name Kplus;
 extern const Name Kplus_triplet;
 
 extern const Name label;
+extern const Name learning_rate;
 extern const Name lambda;
 extern const Name lambda_0;
 extern const Name learning_signal;
@@ -358,6 +360,7 @@ extern const Name q_sfa;
 extern const Name q_stc;
 
 extern const Name rate;
+extern const Name rate_reg;
 extern const Name rate_slope;
 extern const Name rate_times;
 extern const Name rate_values;
@@ -430,6 +433,7 @@ extern const Name t_ref_remaining;
 extern const Name t_ref_tot;
 extern const Name t_spike;
 extern const Name target;
+extern const Name target_firing_rate;
 extern const Name target_rate;
 extern const Name target_thread;
 extern const Name targets;

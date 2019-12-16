@@ -523,7 +523,31 @@ nest::Node::get_eprop_history( double,
 }
 
 void
+nest::Node::get_spike_history( double,
+  double,
+  std::deque< histentry_eprop >::iterator*,
+  std::deque< histentry_eprop >::iterator*,
+  bool )
+{
+  throw UnexpectedEvent();
+}
+
+
+double
+nest::Node::get_spike_history_len( ) const
+{
+  throw UnexpectedEvent();
+}
+
+
+void
 Node::tidy_eprop_history( double )
+{
+    throw UnexpectedEvent();
+}
+
+void
+Node::tidy_spike_history( double )
 {
     throw UnexpectedEvent();
 }

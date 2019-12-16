@@ -336,6 +336,7 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
       // EX: must compute spike time
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
 
+      write_spike_history( Time::step( origin.get_steps() + lag + 1 ) );
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );
     }

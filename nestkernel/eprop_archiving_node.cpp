@@ -35,7 +35,7 @@ namespace nest
 
 nest::Eprop_Archiving_Node::Eprop_Archiving_Node()
   : Archiving_Node()
-  , eta_( 0.3 )
+  , dampening_factor_( 0.3 )
   , update_interval_( 100.0 )
 {
 }
@@ -43,7 +43,7 @@ nest::Eprop_Archiving_Node::Eprop_Archiving_Node()
 nest::Eprop_Archiving_Node::Eprop_Archiving_Node(
   const Eprop_Archiving_Node& n )
   : Archiving_Node( n )
-  , eta_( n.eta_ )
+  , dampening_factor_( n.dampening_factor_ )
   , update_interval_( n.update_interval_ )
 {
 }
@@ -53,7 +53,7 @@ nest::Eprop_Archiving_Node::get_status( DictionaryDatum& d ) const
 {
   Archiving_Node::get_status( d );
 
-  def< double >( d, names::eta, eta_ );
+  def< double >( d, names::dampening_factor, dampening_factor_ );
 }
 
 void
@@ -62,12 +62,12 @@ nest::Eprop_Archiving_Node::set_status( const DictionaryDatum& d )
   Archiving_Node::set_status( d );
 
   // We need to preserve values in case invalid values are set
-  double new_eta = eta_;
+  double new_dampening_factor = dampening_factor_;
   double new_update_interval = update_interval_;
-  updateValue< double >( d, names::eta, new_eta );
+  updateValue< double >( d, names::dampening_factor, new_dampening_factor );
   updateValue< double >( d, names::update_interval, new_update_interval );
 
-  eta_ = new_eta;
+  dampening_factor_ = new_dampening_factor;
   update_interval_ = new_update_interval;
 }
 
@@ -82,6 +82,14 @@ nest::Eprop_Archiving_Node::get_update_interval()
 {
   return update_interval_;
 }
+
+
+double
+nest:: Eprop_Archiving_Node::get_spike_history_len() const
+{
+  return spike_history_.size();
+}
+
 
 void
 nest::Eprop_Archiving_Node::get_eprop_history( double t1,
@@ -199,6 +207,36 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
 }
 
 void
+nest::Eprop_Archiving_Node::get_spike_history( double t1,
+  double t2,
+  std::deque< histentry_eprop >::iterator* start,
+  std::deque< histentry_eprop >::iterator* finish,
+  bool decrease_access_counter = true )
+{
+
+  t1 = std::max( -1000.0, t1 );
+
+  *finish = spike_history_.end();
+  if ( spike_history_.empty() )
+  {
+    *start = *finish;
+    return;
+  }
+  else
+  {
+    double t_first = spike_history_.begin()->t_;
+    int pos_t1 = std::max( 0,
+        ( (int) std::round( ( t1 - t_first ) / Time::get_resolution().get_ms() ) ) + 1 );
+    int pos_t2 = std::min( (int)( spike_history_.size() ),
+        ( (int) std::round( ( t2 - t_first ) / Time::get_resolution().get_ms() ) ) + 1 );
+
+    std::deque< histentry_eprop >::iterator it_first = spike_history_.begin();
+    *start = it_first + std::max( 0, pos_t1);
+    *finish = it_first + std::max( 0, pos_t2);
+  }
+}
+
+void
 nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
 {
   if ( !eprop_history_.empty() )
@@ -240,6 +278,21 @@ nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
     */
     // erase entries that are no longer used
     eprop_history_.erase( eprop_history_.begin(), finish );
+  }
+}
+
+
+void
+nest::Eprop_Archiving_Node::tidy_spike_history( double t1_spk )
+{
+  if ( !spike_history_.empty() )
+  {
+    t1_spk = std::max( -1000.0, t1_spk );
+    std::deque< histentry_eprop >::iterator start_spk;
+    std::deque< histentry_eprop >::iterator finish_spk;
+    nest::Eprop_Archiving_Node::get_spike_history(
+       1000.0, ( last_spike_per_synapse_.begin() )->t_, &start_spk, &finish_spk, false );
+    spike_history_.erase( spike_history_.begin(), finish_spk );
   }
 }
 
@@ -311,6 +364,14 @@ nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
   */
 }
 
+
+void
+nest::Eprop_Archiving_Node::write_spike_history( Time const& t_sp )
+{
+  const double t_ms = t_sp.get_ms();
+  spike_history_.push_back( histentry_eprop( t_ms, 0.0, 0.0, 0 ) );
+}
+
 void
 nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e )
 {
@@ -350,7 +411,7 @@ double
 nest::Eprop_Archiving_Node::pseudo_deriv( double V_m, double V_th ) const
 {
   double norm_diff_threshold = 1.0 - std::fabs( ( V_m - V_th ) / V_th );
-  return eta_ * ( ( norm_diff_threshold > 0.0 ) ? norm_diff_threshold : 0.0 );
+  return dampening_factor_ * ( ( norm_diff_threshold > 0.0 ) ? norm_diff_threshold : 0.0 );
 }
 
 } // of namespace nest

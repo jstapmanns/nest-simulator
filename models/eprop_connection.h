@@ -169,7 +169,7 @@ private:
   // TODO: tau_alpha_ can be determined from neuron params
   double tau_alpha_; // time constant corresponding to leak term of rec neurons
   double tau_kappa_; // time constant corresponding to leak term of output neurons
-  double eta_;
+  double learning_rate_;
   double update_interval_;
   double Wmin_;
   double Wmax_;
@@ -180,6 +180,8 @@ private:
   double last_e_trace_;
   double t_prime_int_trace_;
   double keep_traces_;
+  double rate_reg_;
+  double target_firing_rate_;  // kHz
 
   std::vector< double > pre_syn_spike_times_;
 };
@@ -219,6 +221,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
     std::deque< histentry_eprop >::iterator start;
     std::deque< histentry_eprop >::iterator finish;
 
+    std::deque< histentry_eprop >::iterator start_spk;
+    std::deque< histentry_eprop >::iterator finish_spk;
     // For a new synapse, t_lastspike_ contains the point in time of the last
     // spike. So we initially read the
     // history(t_last_spike - dendritic_delay, ..., T_spike-dendritic_delay]
@@ -228,9 +232,9 @@ EpropConnection< targetidentifierT >::send( Event& e,
     // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
     // details.
     double t_update_ = ( floor( t_spike / update_interval_ ) ) * update_interval_;
-    double t1 = std::max( 0.0, ( floor( t_lastspike_ / update_interval_ ) ) * update_interval_ );
-    double t2 = t1 + update_interval_;
-    
+    // double t1 = std::max( 0.0, ( floor( t_lastspike_ / update_interval_ ) ) * update_interval_ );
+    // double t2 = t1 + update_interval_;
+
     //std::cout << "in synapse at time: " << t_spike << ", t_lu: " << t_lastupdate_
      //<< ", t_u: " << t_update_ << std::endl;
     target->get_eprop_history( t_lastupdate_ - dendritic_delay,
@@ -243,12 +247,17 @@ EpropConnection< targetidentifierT >::send( Event& e,
     //     &start,
     //     &finish );
 
-
+    target->get_spike_history( t_lastupdate_ - dendritic_delay,
+        t_update_ - dendritic_delay,
+        &start_spk,
+        &finish_spk );
+    double nspikes = target->get_spike_history_len();
+    // std::cout << "nspikes " << nspikes << std::endl;
     double const dt = Time::get_resolution().get_ms();
     double kappa = std::exp( -dt / tau_kappa_ );
     std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
     double dw = 0.0;
-    if (target->is_eprop_readout() )  // if target is a readout neuron    
+    if (target->is_eprop_readout() )  // if target is a readout neuron
     {
       // std::cout << "I'm a readout neuron" << std::endl;
       //std::cout << "trace: ";
@@ -264,8 +273,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         dw += start->learning_signal_ * last_e_trace_;
         start++;
       }
-      //std::cout << std::endl;
-      dw *= eta_ * dt;  // TODO: multiply by dt?
+     dw *= learning_rate_ * dt;  // TODO: multiply by dt?
     }
     else  // if target is a neuron of the recurrent network
     {
@@ -325,8 +333,13 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_prime++;
         start++;
       }
-      // std::cout << std::endl;
-      dw *= dt*eta_;
+      if (rate_reg_ > 0.0)
+      {
+        float firing_rate = ( (float) nspikes / (float) update_interval_);
+
+        dw += rate_reg_ * ( firing_rate - target_firing_rate_ ) * last_e_trace_;
+      }
+      dw *= dt*learning_rate_;
       t_prime_int_trace_ += sum_t_prime_new * dt;
     }
     //std::cout << "dw: " << dw << std::endl;
@@ -351,6 +364,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     pre_syn_spike_times_.clear();
     pre_syn_spike_times_.push_back( t_spike );
     target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
+    target->tidy_spike_history( t_lastupdate_ - dendritic_delay );
   }
 
   e.set_receiver( *target );
@@ -371,7 +385,7 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , weight_( 1.0 )
   , tau_alpha_( 10.0 )
   , tau_kappa_( 10.0 )
-  , eta_( 0.0001 )
+  , learning_rate_( 0.0001 )
   , update_interval_( 100.0 )
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
@@ -381,6 +395,8 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , last_e_trace_( 0.0 )
   , t_prime_int_trace_( 0.0 )
   , keep_traces_( true )
+  , rate_reg_( 0 )
+  , target_firing_rate_( 0.01 )
 {
 }
 
@@ -391,7 +407,7 @@ EpropConnection< targetidentifierT >::EpropConnection(
   , weight_( rhs.weight_ )
   , tau_alpha_( rhs.tau_alpha_ )
   , tau_kappa_( rhs.tau_kappa_ )
-  , eta_( rhs.eta_ )
+  , learning_rate_( rhs.learning_rate_ )
   , update_interval_( rhs.update_interval_ )
   , Wmin_( rhs.Wmin_ )
   , Wmax_( rhs.Wmax_ )
@@ -401,6 +417,8 @@ EpropConnection< targetidentifierT >::EpropConnection(
   , last_e_trace_( rhs.last_e_trace_ )
   , t_prime_int_trace_( rhs.t_prime_int_trace_ )
   , keep_traces_( rhs.keep_traces_ )
+  , rate_reg_( rhs.rate_reg_ )
+  , target_firing_rate_( rhs.target_firing_rate_ )
 {
 }
 
@@ -412,11 +430,13 @@ EpropConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::weight, weight_ );
   def< double >( d, names::tau_alpha, tau_alpha_ );
   def< double >( d, names::tau_kappa, tau_kappa_ );
-  def< double >( d, names::eta, eta_ );
+  def< double >( d, names::learning_rate, learning_rate_ );
   def< double >( d, names::update_interval, update_interval_ );
   def< double >( d, names::Wmin, Wmin_ );
   def< double >( d, names::Wmax, Wmax_ );
   def< double >( d, names::keep_traces, keep_traces_ );
+  def< double >( d, names::rate_reg, rate_reg_ );
+  def< double >( d, names::target_firing_rate, target_firing_rate_ );
   def< long >( d, names::size_of, sizeof( *this ) );
 }
 
@@ -429,11 +449,13 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   updateValue< double >( d, names::weight, weight_ );
   updateValue< double >( d, names::tau_alpha, tau_alpha_ );
   updateValue< double >( d, names::tau_kappa, tau_kappa_ );
-  updateValue< double >( d, names::eta, eta_ );
+  updateValue< double >( d, names::learning_rate, learning_rate_ );
   updateValue< double >( d, names::update_interval, update_interval_ );
   updateValue< double >( d, names::Wmin, Wmin_ );
   updateValue< double >( d, names::Wmax, Wmax_ );
   updateValue< double >( d, names::keep_traces, keep_traces_ );
+  updateValue< double >( d, names::rate_reg, rate_reg_ );
+  updateValue< double >( d, names::target_firing_rate, target_firing_rate_ );
 
   t_nextupdate_ = update_interval_; // TODO: is this waht we want?
 
