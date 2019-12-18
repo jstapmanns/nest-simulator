@@ -267,6 +267,7 @@ extern const Name len_LTD_hist;
 extern const Name len_LTP_hist;
 extern const Name len_LTP_hist_comp;
 extern const Name len_ls_per_syn;
+extern const Name len_urbanczik_hist;
 extern const Name linear;
 extern const Name linear_summation;
 extern const Name local;

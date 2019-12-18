@@ -246,6 +246,7 @@ const Name len_LTD_hist("len_LTD_hist");
 const Name len_LTP_hist("len_LTP_hist");
 const Name len_LTP_hist_comp("len_LTP_hist_comp");
 const Name len_ls_per_syn("len_ls_per_syn");
+const Name len_urbanczik_hist( "len_urbanczik_hist" );
 const Name linear( "linear" );
 const Name linear_summation( "linear_summation" );
 const Name local( "local" );
