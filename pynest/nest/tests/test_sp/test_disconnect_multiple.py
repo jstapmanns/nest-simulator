@@ -45,6 +45,7 @@ class TestDisconnect(unittest.TestCase):
             'rate_connection_delayed_lbl',
             'clopath_synapse',
             'clopath_synapse_lbl',
+            'clopath_synapse_hpc'
             'urbanczik_synapse',
             'urbanczik_synapse_lbl',
         ]

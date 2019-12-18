@@ -32,8 +32,6 @@ set( models_sources
     bernoulli_connection.h
     binary_neuron.h
     clopath_connection.h
-    clopath_connection_bc.h
-    clopath_connection_td.h
     cont_delay_connection.h cont_delay_connection_impl.h
     correlation_detector.h correlation_detector.cpp
     correlomatrix_detector.h correlomatrix_detector.cpp
@@ -88,7 +86,6 @@ set( models_sources
     poisson_generator.h poisson_generator.cpp
     pp_psc_delta.h pp_psc_delta.cpp
     pp_pop_psc_delta.h pp_pop_psc_delta.cpp
-    pp_cond_exp_mc_urbanczik.h pp_cond_exp_mc_urbanczik.cpp
     ppd_sup_generator.h ppd_sup_generator.cpp
     pulsepacket_generator.h pulsepacket_generator.cpp
     quantal_stp_connection.h quantal_stp_connection_impl.h

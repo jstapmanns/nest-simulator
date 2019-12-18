@@ -62,6 +62,7 @@ class TestDisconnectSingle(unittest.TestCase):
             'diffusion_connection_lbl',
             'clopath_synapse',
             'clopath_synapse_lbl',
+            'clopath_synapse_hpc'
             'urbanczik_synapse',
             'urbanczik_synapse_lbl',
         ]
