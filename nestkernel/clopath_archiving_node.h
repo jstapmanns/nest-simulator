@@ -132,8 +132,6 @@ protected:
   void init_clopath_buffers();
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
-  std::deque< histentry_extended > ltp_history_compressed_; // TODO: make hist private again!
-  std::deque< histentry_extended > ltp_history_;
 
 private:
   std::vector< histentry_extended > ltd_history_;
@@ -154,6 +152,8 @@ private:
   size_t delay_u_bars_steps_;
   std::vector< double > delayed_u_bar_plus_;
   std::vector< double > delayed_u_bar_minus_;
+  std::deque< histentry_extended > ltp_history_compressed_; // TODO: make hist private again!
+  std::deque< histentry_extended > ltp_history_;
   size_t delayed_u_bars_idx_;
 
   size_t ltd_hist_len_;

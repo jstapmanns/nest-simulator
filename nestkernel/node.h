@@ -713,6 +713,11 @@ public:
     std::deque< histentry_extended >::iterator* start,
     std::deque< histentry_extended >::iterator* finish,
     int );
+
+  virtual void get_urbanczik_value( double t_lastspike, double& I1_L, double& I1_s, double& I2_L, double& I2_s, int comp );
+
+  virtual void compress_urbanczik_history( double t_compr_end, double tau_Delta, int comp );
+
   // make neuron parameters accessible in Urbanczik synapse
   virtual double get_C_m( int comp );
   virtual double get_g_L( int comp );

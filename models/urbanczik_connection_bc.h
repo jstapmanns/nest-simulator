@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef URBANCZIK_CONNECTION_H
-#define URBANCZIK_CONNECTION_H
+#ifndef URBANCZIK_CONNECTION_BC_H
+#define URBANCZIK_CONNECTION_BC_H
 
 // C++ includes:
 #include <cmath>
@@ -86,7 +86,7 @@ SeeAlso: stdp_synapse, clopath_synapse, pp_cond_exp_mc_urbanczik
 // connections are templates of target identifier type (used for pointer /
 // target index addressing) derived from generic connection template
 template < typename targetidentifierT >
-class UrbanczikConnection : public Connection< targetidentifierT >
+class UrbanczikConnectionBC : public Connection< targetidentifierT >
 {
 
 public:
@@ -97,14 +97,14 @@ public:
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
    */
-  UrbanczikConnection();
+  UrbanczikConnectionBC();
 
 
   /**
    * Copy constructor.
    * Needs to be defined properly in order for GenericConnector to work.
    */
-  UrbanczikConnection( const UrbanczikConnection& );
+  UrbanczikConnectionBC( const UrbanczikConnectionBC& );
 
   // Explicitly declare all methods inherited from the dependent base
   // ConnectionBase. This avoids explicit name prefixes in all places these
@@ -170,8 +170,10 @@ private:
   double eta_;
   double Wmin_;
   double Wmax_;
-  double PI_integral_;
-  double PI_exp_integral_;
+  double PI_integral_L_;
+  double PI_integral_s_;
+  double PI_exp_integral_L_;
+  double PI_exp_integral_s_;
   double tau_L_trace_;
   double tau_s_trace_;
 
@@ -187,7 +189,7 @@ private:
  */
 template < typename targetidentifierT >
 inline void
-UrbanczikConnection< targetidentifierT >::send( Event& e, thread t, const CommonSynapseProperties& )
+UrbanczikConnectionBC< targetidentifierT >::send( Event& e, thread t, const CommonSynapseProperties& )
 {
   double t_spike = e.get_stamp().get_ms();
   // use accessor functions (inherited from Connection< >) to obtain delay and target
@@ -202,31 +204,28 @@ UrbanczikConnection< targetidentifierT >::send( Event& e, thread t, const Common
   // in this case the dendritic compartment has index 1
   const int comp = 1;
 
-  target->get_urbanczik_history( t_lastspike_ - dendritic_delay, t_spike - dendritic_delay, &start, &finish, comp );
-
+  // compress history
+  target->compress_urbanczik_history( t_spike - dendritic_delay, tau_Delta_, comp );
+  // get weight change
   double const g_L = target->get_g_L( comp );
   double const tau_L = target->get_tau_L( comp );
   double const C_m = target->get_C_m( comp );
   double const tau_s = weight_ > 0.0 ? target->get_tau_syn_ex( comp ) : target->get_tau_syn_in( comp );
-  double dPI_exp_integral = 0.0;
-
-  while ( start != finish )
-  {
-    double const t_up = start->t_ + dendritic_delay;     // from t_lastspike to t_spike
-    double const minus_delta_t_up = t_lastspike_ - t_up; // from 0 to -delta t
-    double const minus_t_down = t_up - t_spike;          // from -t_spike to 0
-    double const PI =
-      ( tau_L_trace_ * exp( minus_delta_t_up / tau_L ) - tau_s_trace_ * exp( minus_delta_t_up / tau_s ) ) * start->dw_;
-    PI_integral_ += PI;
-    dPI_exp_integral += exp( minus_t_down / tau_Delta_ ) * PI;
-    start++;
-  }
-
-  PI_exp_integral_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_ + dPI_exp_integral );
-  weight_ = PI_integral_ - PI_exp_integral_;
-  //std::cout << "summed integrals: " << weight_ << "  PI: " << PI_integral_ << "  PI_exp: " <<
-    //PI_exp_integral_ << std::endl;
-  weight_ = init_weight_ + weight_ * 15.0 * C_m * tau_s * eta_ / ( g_L * ( tau_L - tau_s ) );
+  double I1_L;
+  double I1_s;
+  double I2_L;
+  double I2_s;
+  target->get_urbanczik_value( t_lastspike_ - dendritic_delay, I1_L, I1_s, I2_L, I2_s, comp );
+  PI_integral_L_ += tau_L_trace_ * I1_L;
+  PI_integral_s_ += tau_s_trace_ * I1_s;
+  PI_exp_integral_L_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_L_
+      + tau_L_trace_ * I2_L );
+  PI_exp_integral_s_ = ( exp( ( t_lastspike_ - t_spike ) / tau_Delta_ ) * PI_exp_integral_s_
+      + tau_s_trace_ * I2_s );
+  //std::cout << "summed integrals: " << PI_integral_L_ - PI_integral_s_ - PI_exp_integral_L_ + PI_exp_integral_s_;
+  //std::cout << "  PI: " << PI_integral_L_ - PI_integral_s_ << "  PI_exp: " << PI_exp_integral_L_ - PI_exp_integral_s_ << std::endl;
+  weight_ = ( init_weight_ + ( PI_integral_L_ - PI_integral_s_ - PI_exp_integral_L_ + PI_exp_integral_s_ )
+      * 15.0 * C_m * tau_s * eta_ / ( g_L * ( tau_L - tau_s ) ) );
 
   if ( weight_ > Wmax_ )
   {
@@ -253,7 +252,7 @@ UrbanczikConnection< targetidentifierT >::send( Event& e, thread t, const Common
 
 
 template < typename targetidentifierT >
-UrbanczikConnection< targetidentifierT >::UrbanczikConnection()
+UrbanczikConnectionBC< targetidentifierT >::UrbanczikConnectionBC()
   : ConnectionBase()
   , weight_( 1.0 )
   , init_weight_( 1.0 )
@@ -261,8 +260,10 @@ UrbanczikConnection< targetidentifierT >::UrbanczikConnection()
   , eta_( 0.07 )
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
-  , PI_integral_( 0.0 )
-  , PI_exp_integral_( 0.0 )
+  , PI_integral_L_( 0.0 )
+  , PI_integral_s_( 0.0 )
+  , PI_exp_integral_L_( 0.0 )
+  , PI_exp_integral_s_( 0.0 )
   , tau_L_trace_( 0.0 )
   , tau_s_trace_( 0.0 )
   , t_lastspike_( -1.0 )
@@ -270,7 +271,7 @@ UrbanczikConnection< targetidentifierT >::UrbanczikConnection()
 }
 
 template < typename targetidentifierT >
-UrbanczikConnection< targetidentifierT >::UrbanczikConnection( const UrbanczikConnection< targetidentifierT >& rhs )
+UrbanczikConnectionBC< targetidentifierT >::UrbanczikConnectionBC( const UrbanczikConnectionBC< targetidentifierT >& rhs )
   : ConnectionBase( rhs )
   , weight_( rhs.weight_ )
   , init_weight_( rhs.init_weight_ )
@@ -278,8 +279,10 @@ UrbanczikConnection< targetidentifierT >::UrbanczikConnection( const UrbanczikCo
   , eta_( rhs.eta_ )
   , Wmin_( rhs.Wmin_ )
   , Wmax_( rhs.Wmax_ )
-  , PI_integral_( rhs.PI_integral_ )
-  , PI_exp_integral_( rhs.PI_exp_integral_ )
+  , PI_integral_L_( rhs.PI_integral_L_ )
+  , PI_integral_s_( rhs.PI_integral_s_ )
+  , PI_exp_integral_L_( rhs.PI_exp_integral_L_ )
+  , PI_exp_integral_s_( rhs.PI_exp_integral_s_ )
   , tau_L_trace_( rhs.tau_L_trace_ )
   , tau_s_trace_( rhs.tau_s_trace_ )
   , t_lastspike_( rhs.t_lastspike_ )
@@ -288,7 +291,7 @@ UrbanczikConnection< targetidentifierT >::UrbanczikConnection( const UrbanczikCo
 
 template < typename targetidentifierT >
 void
-UrbanczikConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
+UrbanczikConnectionBC< targetidentifierT >::get_status( DictionaryDatum& d ) const
 {
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
@@ -301,7 +304,7 @@ UrbanczikConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
 
 template < typename targetidentifierT >
 void
-UrbanczikConnection< targetidentifierT >::set_status( const DictionaryDatum& d, ConnectorModel& cm )
+UrbanczikConnectionBC< targetidentifierT >::set_status( const DictionaryDatum& d, ConnectorModel& cm )
 {
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );
@@ -326,4 +329,4 @@ UrbanczikConnection< targetidentifierT >::set_status( const DictionaryDatum& d, 
 
 } // of namespace nest
 
-#endif // of #ifndef URBANCZIK_CONNECTION_H
+#endif // of #ifndef URBANCZIK_CONNECTION_BC_H

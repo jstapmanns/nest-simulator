@@ -80,6 +80,10 @@ public:
     std::deque< histentry_extended >::iterator* finish,
     int comp );
 
+  void get_urbanczik_value( double t_lastspike, double& I1_L, double& I1_s, double& I2_L, double& I2_s, int comp );
+
+  void compress_urbanczik_history( double t_compr_end, double tau_Delta, int comp );
+
   /**
    * \fn double get_C_m( int comp )
    * Returns membrane capacitance
@@ -124,6 +128,7 @@ protected:
 
 private:
   std::deque< histentry_extended > urbanczik_history_[ urbanczik_parameters::NCOMP - 1 ];
+  std::deque< histentry_eextended > urbanczik_history_compr_[ urbanczik_parameters::NCOMP - 1 ];
 };
 
 template < class urbanczik_parameters >

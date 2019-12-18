@@ -477,6 +477,18 @@ nest::Node::get_urbanczik_history( double,
   throw UnexpectedEvent();
 }
 
+void
+nest::Node::get_urbanczik_value( double, double&, double&, double&, double&, int )
+{
+  throw UnexpectedEvent();
+}
+
+void
+nest::Node::compress_urbanczik_history( double, double, int )
+{
+  throw UnexpectedEvent();
+}
+
 double
 nest::Node::get_C_m( int )
 {

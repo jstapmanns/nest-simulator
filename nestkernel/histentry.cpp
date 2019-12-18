@@ -45,10 +45,13 @@ nest::histentry_extended::histentry_extended( double t, double dw, size_t access
 {
 }
 
-nest::histentry_eextended::histentry_eextended( double t_start, double t_stop, double dw, size_t access_counter )
-  : t_start_( t_start )
-  , t_stop_( t_stop )
-  , dw_( dw )
+nest::histentry_eextended::histentry_eextended( double t, double I1_L, double I1_s
+    , double I2_L , double I2_s, size_t access_counter )
+  : t_( t )
+  , I1_L_( I1_L )
+  , I1_s_( I1_s )
+  , I2_L_( I2_L )
+  , I2_s_( I2_s )
   , access_counter_( access_counter )
 {
 }

@@ -65,11 +65,13 @@ public:
 class histentry_eextended
 {
 public:
-  histentry_eextended( double t_start, double t_stop, double dw, size_t access_counter );
+  histentry_eextended( double t, double I1_L, double I1_s, double I2_L, double I2_s, size_t access_counter );
 
-  double t_start_;              //!< point in time when spike occurred (in ms)
-  double t_stop_;              //!< point in time when spike occurred (in ms)
-  double dw_;             //!< value dependend on the additional factor
+  double t_;              //!< point in time when spike occurred (in ms)
+  double I1_L_;              //!< point in time when spike occurred (in ms)
+  double I1_s_;              //!< point in time when spike occurred (in ms)
+  double I2_L_;             //!< value dependend on the additional factor
+  double I2_s_;             //!< value dependend on the additional factor
   size_t access_counter_; //!< access counter to enable removal of the entry, once all neurons read it
 };
 }
