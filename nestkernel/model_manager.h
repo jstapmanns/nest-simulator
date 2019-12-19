@@ -180,6 +180,18 @@ public:
   void set_model_defaults( Name name, DictionaryDatum params );
 
   /**
+   * Register a synape model with default Connector and without any common
+   * properties. Convenience function that used the default Connector model
+   * GenericConnectorModel.
+   * @param name The name under which the ConnectorModel will be registered.
+   */
+  template < typename ConnectionT >
+  void register_connection_model( const std::string& name,
+    const bool requires_symmetric = false,
+    const bool requires_clopath_archiving = false,
+    const bool requires_urbanczik_archiving = false );
+
+  /**
    * Register a synape model with a custom Connector model and without any
    * common properties.
    *

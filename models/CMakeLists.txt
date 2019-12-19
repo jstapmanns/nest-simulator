@@ -126,7 +126,6 @@ set( models_sources
     tsodyks_connection_hom.h tsodyks_connection_hom.cpp
     urbanczik_connection.h
     urbanczik_connection_td.h
-    voltmeter.h voltmeter.cpp
     volume_transmitter.h volume_transmitter.cpp
     vogels_sprekeler_connection.h
     weight_recorder.h weight_recorder.cpp
