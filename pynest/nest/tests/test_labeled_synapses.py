@@ -56,8 +56,7 @@ class LabeledSynapsesTestCase(unittest.TestCase):
 
         self.clopath_connections = [
             'clopath_synapse',
-            'clopath_synapse_lbl',
-            'clopath_synapse_hpc'
+            'clopath_synapse_lbl'
         ]
 
         self.urbanczik_connections = [

@@ -22,7 +22,8 @@
 
 import nest
 
-if not nest.ll_api.sli_func("statusdict/have_music ::"):
+nest.sli_run("statusdict/have_music ::")
+if not nest.spp():
     import sys
 
     print("NEST was not compiled with support for MUSIC, not running.")

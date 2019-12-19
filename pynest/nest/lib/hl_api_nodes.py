@@ -40,9 +40,9 @@ __all__ = [
 def Create(model, n=1, params=None):
     """Create one or more nodes.
 
-    Generates `n` new network objects of the supplied model type. If `n` is not
-    given, a single node is created. Note that if setting parameters of the
-    nodes fail, the nodes will still have been created.
+   Generates `n` new network objects of the supplied model type. If `n` is not
+   given, a single node is created. Note that if setting parameters of the
+   nodes fail, the nodes will still have been created.
 
     Parameters
     ----------
@@ -65,6 +65,7 @@ def Create(model, n=1, params=None):
         If setting node parameters fail. However, the nodes will still have
         been created.
 
+    KEYWORDS:
     """
 
     model_deprecation_warning(model)
@@ -100,8 +101,8 @@ def GetLID(gid):
     """Return the local id of a node with the global ID gid.
 
     .. deprecated:: 2.14
-      `GetLID` is deprecated and will be removed in NEST 3.0. Use
-      index into `GIDCollection` instead.
+    `GetLID` is deprecated and will be removed in NEST 3.0. Use
+    index into `GIDCollection` instead.
 
     Parameters
     ----------
@@ -118,6 +119,7 @@ def GetLID(gid):
     NESTError
         If `gid` contains more than one GID
 
+    KEYWORDS:
     """
 
     if len(gid) > 1:

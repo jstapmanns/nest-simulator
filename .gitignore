@@ -34,7 +34,6 @@ install/
 /topology/doc/Topology_UserManual.out
 /doc/doxygen/
 /doc/_build/
-/doc/xml/
 
 *.kdev4
 

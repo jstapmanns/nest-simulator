@@ -73,6 +73,7 @@
 #include "mat2_psc_exp.h"
 #include "mcculloch_pitts_neuron.h"
 #include "parrot_neuron.h"
+#include "pp_cond_exp_mc_urbanczik.h"
 #include "pp_pop_psc_delta.h"
 #include "pp_psc_delta.h"
 #include "siegert_neuron.h"
@@ -285,6 +286,7 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< aeif_cond_beta_multisynapse >( "aeif_cond_beta_multisynapse" );
   kernel().model_manager.register_node_model< aeif_cond_alpha_multisynapse >( "aeif_cond_alpha_multisynapse" );
   kernel().model_manager.register_node_model< siegert_neuron >( "siegert_neuron" );
+  kernel().model_manager.register_node_model< pp_cond_exp_mc_urbanczik >( "pp_cond_exp_mc_urbanczik" );
 #endif
 
   // This version of the AdEx model does not depend on GSL.
