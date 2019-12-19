@@ -223,6 +223,8 @@ public:
    */
   bool connector_requires_clopath_archiving( const synindex syn_id ) const;
 
+  bool connector_requires_urbanczik_archiving( const synindex syn_id ) const;
+
   void set_connector_defaults( synindex syn_id, const DictionaryDatum& d );
 
   /**

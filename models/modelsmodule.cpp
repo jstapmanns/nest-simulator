@@ -80,6 +80,7 @@
 #include "sigmoid_rate_gg_1998.h"
 #include "tanh_rate.h"
 #include "threshold_lin_rate.h"
+#include "pp_cond_exp_mc_urbanczik.h"
 
 // Stimulation devices
 #include "ac_generator.h"
@@ -111,6 +112,8 @@
 // Prototypes for synapses
 #include "bernoulli_connection.h"
 #include "clopath_connection.h"
+#include "clopath_connection_bc.h"
+#include "clopath_connection_td.h"
 #include "common_synapse_properties.h"
 #include "cont_delay_connection.h"
 #include "cont_delay_connection_impl.h"
@@ -304,6 +307,10 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< BernoulliConnection >( "bernoulli_synapse" );
   register_connection_model< ClopathConnection >(
     "clopath_synapse", default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_CLOPATH_ARCHIVING );
+  register_connection_model< ClopathConnectionBC >(
+    "clopath_synapse_bc", default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_CLOPATH_ARCHIVING );
+  register_connection_model< ClopathConnectionTD >(
+    "clopath_synapse_td", default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_CLOPATH_ARCHIVING );
   register_connection_model< ContDelayConnection >( "cont_delay_synapse" );
   register_connection_model< HTConnection >( "ht_synapse" );
   register_connection_model< Quantal_StpConnection >( "quantal_stp_synapse" );
@@ -321,6 +328,10 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< TsodyksConnection >( "tsodyks_synapse" );
   register_connection_model< TsodyksConnectionHom >( "tsodyks_synapse_hom" );
   register_connection_model< Tsodyks2Connection >( "tsodyks2_synapse" );
+  register_connection_model< UrbanczikConnectionTD >( "urbanczik_synapse_td",
+    default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_URBANCZIK_ARCHIVING );
+  register_connection_model< UrbanczikConnection >( "urbanczik_synapse",
+    default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_URBANCZIK_ARCHIVING );
   register_connection_model< VogelsSprekelerConnection >( "vogels_sprekeler_synapse" );
 
   // register secondary connection models
