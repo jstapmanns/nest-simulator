@@ -141,6 +141,7 @@
 #include "tsodyks_connection.h"
 #include "tsodyks_connection_hom.h"
 #include "urbanczik_connection.h"
+#include "urbanczik_connection_bc.h"
 #include "urbanczik_connection_td.h"
 #include "vogels_sprekeler_connection.h"
 
@@ -328,9 +329,11 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< TsodyksConnection >( "tsodyks_synapse" );
   register_connection_model< TsodyksConnectionHom >( "tsodyks_synapse_hom" );
   register_connection_model< Tsodyks2Connection >( "tsodyks2_synapse" );
-  register_connection_model< UrbanczikConnectionTD >( "urbanczik_synapse_td",
-    default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_URBANCZIK_ARCHIVING );
   register_connection_model< UrbanczikConnection >( "urbanczik_synapse",
+    default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_URBANCZIK_ARCHIVING );
+  register_connection_model< UrbanczikConnectionBC >( "urbanczik_synapse_bc",
+    default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_URBANCZIK_ARCHIVING );
+  register_connection_model< UrbanczikConnectionTD >( "urbanczik_synapse_td",
     default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_URBANCZIK_ARCHIVING );
   register_connection_model< VogelsSprekelerConnection >( "vogels_sprekeler_synapse" );
 

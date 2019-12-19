@@ -127,6 +127,7 @@ set( models_sources
     tsodyks_connection.h
     tsodyks_connection_hom.h tsodyks_connection_hom.cpp
     urbanczik_connection.h
+    urbanczik_connection_bc.h
     urbanczik_connection_td.h
     voltmeter.h voltmeter.cpp
     volume_transmitter.h volume_transmitter.cpp
