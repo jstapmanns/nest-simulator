@@ -27,7 +27,6 @@ set( models_sources
     aeif_psc_alpha.h aeif_psc_alpha.cpp
     aeif_psc_exp.h aeif_psc_exp.cpp
     aeif_psc_delta.h aeif_psc_delta.cpp
-    aeif_psc_delta_eprop.h aeif_psc_delta_eprop.cpp
     aeif_psc_delta_clopath.h aeif_psc_delta_clopath.cpp
     amat2_psc_exp.h amat2_psc_exp.cpp
     bernoulli_connection.h
@@ -39,9 +38,9 @@ set( models_sources
     correlospinmatrix_detector.h correlospinmatrix_detector.cpp
     dc_generator.h dc_generator.cpp
     diffusion_connection.h
-    erfc_neuron.h erfc_neuron.cpp
     eprop_connection.h
     error_neuron.h error_neuron.cpp
+    erfc_neuron.h erfc_neuron.cpp
     gamma_sup_generator.h gamma_sup_generator.cpp
     gap_junction.h
     gauss_rate.h gauss_rate.cpp
@@ -51,6 +50,8 @@ set( models_sources
     gif_cond_exp_multisynapse.h gif_cond_exp_multisynapse.cpp
     gif_pop_psc_exp.h gif_pop_psc_exp.cpp
     ginzburg_neuron.h ginzburg_neuron.cpp
+    glif_cond.h glif_cond.cpp     
+    glif_psc.h glif_psc.cpp
     hh_cond_exp_traub.h hh_cond_exp_traub.cpp
     hh_cond_beta_gap_traub.h hh_cond_beta_gap_traub.cpp
     hh_psc_alpha.h hh_psc_alpha.cpp
@@ -67,9 +68,9 @@ set( models_sources
     iaf_cond_exp_sfa_rr.h iaf_cond_exp_sfa_rr.cpp
     iaf_psc_alpha.h iaf_psc_alpha.cpp
     iaf_psc_alpha_multisynapse.h iaf_psc_alpha_multisynapse.cpp
+    iaf_psc_delta_eprop.h iaf_psc_delta_eprop.cpp
     iaf_psc_exp_multisynapse.h iaf_psc_exp_multisynapse.cpp
     iaf_psc_delta.h iaf_psc_delta.cpp
-    iaf_psc_delta_eprop.h iaf_psc_delta_eprop.cpp
     iaf_psc_exp.h iaf_psc_exp.cpp
     iaf_tum_2000.h iaf_tum_2000.cpp
     izhikevich.h izhikevich.cpp
@@ -90,7 +91,6 @@ set( models_sources
     poisson_generator.h poisson_generator.cpp
     pp_psc_delta.h pp_psc_delta.cpp
     pp_pop_psc_delta.h pp_pop_psc_delta.cpp
-    pp_cond_exp_mc_urbanczik.h pp_cond_exp_mc_urbanczik.cpp
     ppd_sup_generator.h ppd_sup_generator.cpp
     pulsepacket_generator.h pulsepacket_generator.cpp
     quantal_stp_connection.h quantal_stp_connection_impl.h
@@ -126,7 +126,7 @@ set( models_sources
     tsodyks2_connection.h
     tsodyks_connection.h
     tsodyks_connection_hom.h tsodyks_connection_hom.cpp
-    urbanczik_connection.h
+    voltmeter.h voltmeter.cpp
     volume_transmitter.h volume_transmitter.cpp
     vogels_sprekeler_connection.h
     weight_recorder.h weight_recorder.cpp

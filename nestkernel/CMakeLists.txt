@@ -23,7 +23,6 @@ set( nestkernel_sources
     archiving_node.h archiving_node.cpp
     clopath_archiving_node.h clopath_archiving_node.cpp
     eprop_archiving_node.h eprop_archiving_node.cpp
-    urbanczik_archiving_node.h urbanczik_archiving_node_impl.h
     common_synapse_properties.h common_synapse_properties.cpp
     completed_checker.h completed_checker.cpp
     sibling_container.h sibling_container.cpp
@@ -69,7 +68,7 @@ set( nestkernel_sources
     conn_builder_factory.h
     music_event_handler.h music_event_handler.cpp
     music_manager.cpp music_manager.h
-    nest.h nest.cpp
+    nest.h nest_impl.h nest.cpp
     synaptic_element.h synaptic_element.cpp
     growth_curve.h growth_curve.cpp
     growth_curve_factory.h
