@@ -75,9 +75,8 @@ public:
 
   void get_spike_history( double t1,
     double t2,
-    std::deque< histentry_eprop >::iterator* start,
-    std::deque< histentry_eprop >::iterator* finish,
-    bool decrease_access_counter );
+    std::deque< double >::iterator* start,
+    std::deque< double >::iterator* finish);
 
   void tidy_eprop_history( double t1 );
   void tidy_spike_history( double t1 );
@@ -88,7 +87,7 @@ public:
 
   //TODO: make history private again!
   std::deque< histentry_eprop > eprop_history_;
-  std::deque< histentry_eprop > spike_history_;
+  std::deque< double > spike_history_;
 
 protected:
   void write_readout_history( Time const& t_sp,

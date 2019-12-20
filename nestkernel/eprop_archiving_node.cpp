@@ -171,51 +171,17 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
     *start = it_first + std::max( 0, pos_t1);
     *finish = it_first + std::max( 0, pos_t2);
   }
-
-  /*
-  //old code
-  std::deque< histentry_eprop >::iterator it_fin = eprop_history_.end();
-  std::deque< histentry_eprop >::iterator it_sta;
-  if ( eprop_history_.empty() )
-  {
-    it_sta = it_fin;
-    return;
-  }
-  else
-  {
-    std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
-    // To have a well defined discretization of the integral, we make sure
-    // that we exclude the entry at t1 but include the one at t2 by subtracting
-    // a small number so that runner->t_ is never equal to t1 or t2.
-    while ( ( runner != eprop_history_.end() ) && ( runner->t_ - 1.0e-6 < t1 ) )
-    {
-      ++runner;
-    }
-    it_sta = runner;
-    while ( ( runner != eprop_history_.end() ) && ( runner->t_ - 1.0e-6 < t2 ) )
-    {
-      ( runner->access_counter_ )++;
-      ++runner;
-    }
-    it_fin = runner;
-  }
-  if ( (*start) != it_sta || (*finish) != it_fin )
-  {
-    throw std::exception();
-  }
-  */
 }
 
 void
 nest::Eprop_Archiving_Node::get_spike_history( double t1,
   double t2,
-  std::deque< histentry_eprop >::iterator* start,
-  std::deque< histentry_eprop >::iterator* finish,
-  bool decrease_access_counter = true )
+  std::deque< double >::iterator* start,
+  std::deque< double >::iterator* finish)
 {
-
   t1 = std::max( -1000.0, t1 );
 
+  // set pointer to entries of LTP hist that correspond to the times t1 and t2.
   *finish = spike_history_.end();
   if ( spike_history_.empty() )
   {
@@ -224,16 +190,19 @@ nest::Eprop_Archiving_Node::get_spike_history( double t1,
   }
   else
   {
-    double t_first = spike_history_.begin()->t_;
-    int pos_t1 = std::max( 0,
-        ( (int) std::round( ( t1 - t_first ) / Time::get_resolution().get_ms() ) ) + 1 );
-    int pos_t2 = std::min( (int)( spike_history_.size() ),
-        ( (int) std::round( ( t2 - t_first ) / Time::get_resolution().get_ms() ) ) + 1 );
+    std::deque< double >::iterator runner1 = std::lower_bound(
+        spike_history_.begin(),
+        spike_history_.end(),
+        t1 + kernel().connection_manager.get_stdp_eps() );
+    *start = runner1;
 
-    std::deque< histentry_eprop >::iterator it_first = spike_history_.begin();
-    *start = it_first + std::max( 0, pos_t1);
-    *finish = it_first + std::max( 0, pos_t2);
-  }
+
+    std::deque< double >::iterator runner2 = std::lower_bound(
+        runner1,
+        spike_history_.end(),
+        t2 + kernel().connection_manager.get_stdp_eps() );
+    *finish = runner2;
+  } //else
 }
 
 void
@@ -288,10 +257,10 @@ nest::Eprop_Archiving_Node::tidy_spike_history( double t1_spk )
   if ( !spike_history_.empty() )
   {
     t1_spk = std::max( -1000.0, t1_spk );
-    std::deque< histentry_eprop >::iterator start_spk;
-    std::deque< histentry_eprop >::iterator finish_spk;
+    std::deque< double >::iterator start_spk;
+    std::deque< double >::iterator finish_spk;
     nest::Eprop_Archiving_Node::get_spike_history(
-       1000.0, ( last_spike_per_synapse_.begin() )->t_, &start_spk, &finish_spk, false );
+       1000.0, ( last_spike_per_synapse_.begin() )->t_, &start_spk, &finish_spk );
     spike_history_.erase( spike_history_.begin(), finish_spk );
   }
 }
@@ -334,21 +303,6 @@ nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
 
   if ( n_incoming_ )
   {
-    /*
-    // prune all entries from history which are no longer needed
-    // except the penultimate one. we might still need it.
-    while ( eprop_history_.size() > 1 )
-    {
-      if ( eprop_history_.front().access_counter_ >= n_incoming_ )
-      {
-        eprop_history_.pop_front();
-      }
-      else
-      {
-        break;
-      }
-    }
-    */
     // create new entry in history
     double h = pseudo_deriv( V_m, V_th );
     eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0 ) );
@@ -369,7 +323,7 @@ void
 nest::Eprop_Archiving_Node::write_spike_history( Time const& t_sp )
 {
   const double t_ms = t_sp.get_ms();
-  spike_history_.push_back( histentry_eprop( t_ms, 0.0, 0.0, 0 ) );
+  spike_history_.push_back( t_ms );
 }
 
 void

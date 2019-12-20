@@ -221,8 +221,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
     std::deque< histentry_eprop >::iterator start;
     std::deque< histentry_eprop >::iterator finish;
 
-    std::deque< histentry_eprop >::iterator start_spk;
-    std::deque< histentry_eprop >::iterator finish_spk;
+    std::deque< double >::iterator start_spk;
+    std::deque< double >::iterator finish_spk;
     // For a new synapse, t_lastspike_ contains the point in time of the last
     // spike. So we initially read the
     // history(t_last_spike - dendritic_delay, ..., T_spike-dendritic_delay]
@@ -251,7 +251,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_update_ - dendritic_delay,
         &start_spk,
         &finish_spk );
-    double nspikes = target->get_spike_history_len();
+    int nspikes = std::distance(start_spk, finish_spk);
     // std::cout << "nspikes " << nspikes << std::endl;
     double const dt = Time::get_resolution().get_ms();
     double kappa = std::exp( -dt / tau_kappa_ );
@@ -281,6 +281,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
       // std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
       std::vector< double > elegibility_trace;
       double alpha = target->get_leak_propagator();
+      double sum_h_zhat = 0.0;
       //std::cout << "alpha = " << alpha << ", kappa = " << kappa << ", tau_kappa = " << tau_kappa_ << std::endl;
       //std::cout << "trace: " << std::endl;
       for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
@@ -291,6 +292,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           last_e_trace_ += 1.0;
           t_pre_spike++;
         }
+        sum_h_zhat += runner->V_m_ * last_e_trace_;
         elegibility_trace.push_back( runner->V_m_ * last_e_trace_ );
         //std::cout << last_e_trace_ << " ";
       }
@@ -335,9 +337,9 @@ EpropConnection< targetidentifierT >::send( Event& e,
       }
       if (rate_reg_ > 0.0)
       {
-        float firing_rate = ( (float) nspikes / (float) update_interval_);
+        double firing_rate = ( nspikes / update_interval_);
 
-        dw += rate_reg_ * ( firing_rate - target_firing_rate_ ) * last_e_trace_;
+        dw += rate_reg_ * ( firing_rate - target_firing_rate_ ) * sum_h_zhat;
       }
       dw *= dt*learning_rate_;
       t_prime_int_trace_ += sum_t_prime_new * dt;
