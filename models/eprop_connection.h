@@ -335,12 +335,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_prime++;
         start++;
       }
-      if (rate_reg_ > 0.0)
-      {
-        double firing_rate = ( nspikes / update_interval_);
-
-        dw += rate_reg_ * ( firing_rate - target_firing_rate_ ) * sum_h_zhat;
-      }
+      double av_firing_rate = nspikes / (t_update_ - t_lastupdate_);
+      dw += rate_reg_ * ( av_firing_rate - target_firing_rate_ ) * sum_h_zhat;
       dw *= dt*learning_rate_;
       t_prime_int_trace_ += sum_t_prime_new * dt;
     }
