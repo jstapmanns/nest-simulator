@@ -335,8 +335,14 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_prime++;
         start++;
       }
-      double av_firing_rate = nspikes / (t_update_ - t_lastupdate_);
-      dw += rate_reg_ * ( av_firing_rate - target_firing_rate_ ) * sum_h_zhat;
+      // compute average firing rate since last update. factor 1000 to convert into Hz
+      double av_firing_rate = 1000.0 * nspikes / (t_update_ - t_lastupdate_);
+      dw += rate_reg_ * ( target_firing_rate_ - av_firing_rate ) * sum_h_zhat;
+      /*
+      std::cout << "target f_rate = " << target_firing_rate_ << "  actual f_rate = " <<
+        av_firing_rate << "  dw_f_rate = " << rate_reg_ * ( target_firing_rate_ - av_firing_rate ) *
+        sum_h_zhat << std::endl;
+        */
       dw *= dt*learning_rate_;
       t_prime_int_trace_ += sum_t_prime_new * dt;
     }
