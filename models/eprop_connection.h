@@ -181,7 +181,7 @@ private:
   double t_prime_int_trace_;
   double keep_traces_;
   double rate_reg_;
-  double target_firing_rate_;  // kHz
+  double target_firing_rate_;
 
   std::vector< double > pre_syn_spike_times_;
 };
