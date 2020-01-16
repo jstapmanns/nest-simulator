@@ -38,6 +38,7 @@
 #include "aeif_psc_delta.h"
 #include "aeif_psc_delta_clopath.h"
 #include "aeif_psc_exp.h"
+#include "aif_psc_delta_eprop.h"
 #include "amat2_psc_exp.h"
 #include "erfc_neuron.h"
 #include "error_neuron.h"
@@ -211,6 +212,7 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< rate_transformer_tanh >( "rate_transformer_tanh" );
   kernel().model_manager.register_node_model< rate_transformer_threshold_lin >( "rate_transformer_threshold_lin" );
 
+  kernel().model_manager.register_node_model< aif_psc_delta_eprop >( "aif_psc_delta_eprop" );
   kernel().model_manager.register_node_model< iaf_chs_2007 >( "iaf_chs_2007" );
   kernel().model_manager.register_node_model< iaf_psc_alpha >( "iaf_psc_alpha" );
   kernel().model_manager.register_node_model< iaf_psc_alpha_multisynapse >( "iaf_psc_alpha_multisynapse" );

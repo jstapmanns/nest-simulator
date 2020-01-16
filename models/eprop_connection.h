@@ -273,30 +273,53 @@ EpropConnection< targetidentifierT >::send( Event& e,
         dw += start->learning_signal_ * last_e_trace_;
         start++;
       }
-     dw *= learning_rate_ * dt;  // TODO: multiply by dt?
+     dw *= learning_rate_ * dt;
     }
     else  // if target is a neuron of the recurrent network
     {
-      //std::cout << "I'm a eprop lif neuron" << std::endl;
-      // std::cout << "from: " << start->t_ << " to: " << finish->t_ << std::endl;
       std::vector< double > elegibility_trace;
       double alpha = target->get_leak_propagator();
       double sum_h_zhat = 0.0;
-      //std::cout << "alpha = " << alpha << ", kappa = " << kappa << ", tau_kappa = " << tau_kappa_ << std::endl;
-      //std::cout << "trace: " << std::endl;
-      for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
+      if ( target->is_eprop_adaptive() )
       {
-        last_e_trace_ *= alpha;
-        if ( std::fabs( *t_pre_spike - runner->t_ ) < 1.0e-6 )
+        // if the target is of type aif_psc_delta_eprop (adaptive threshold)
+        double beta = target->get_beta();
+        double rho = target->get_adapt_propagator();
+        double epsilon = 0.0;
+        for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
         {
-          last_e_trace_ += 1.0;
-          t_pre_spike++;
+          double pseudo_deriv = runner->V_m_;
+          // Eq.(22)
+          last_e_trace_ *= alpha;
+          // Eq.(27)
+          epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
+          if ( std::fabs( *t_pre_spike - runner->t_ ) < 1.0e-6 )
+          {
+            last_e_trace_ += 1.0;
+            t_pre_spike++;
+          }
+          sum_h_zhat += pseudo_deriv * last_e_trace_;
+          // Eq.(28)
+          elegibility_trace.push_back( pseudo_deriv * ( last_e_trace_  - beta * epsilon ) );
         }
-        sum_h_zhat += runner->V_m_ * last_e_trace_;
-        elegibility_trace.push_back( runner->V_m_ * last_e_trace_ );
-        //std::cout << last_e_trace_ << " ";
       }
-      //std::cout << std::endl;
+      else
+      {
+        // if the target is of type iaf_psc_delta_eprop
+        for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
+        {
+          // Eq.(22)
+          last_e_trace_ *= alpha;
+          if ( std::fabs( *t_pre_spike - runner->t_ ) < 1.0e-6 )
+          {
+            last_e_trace_ += 1.0;
+            t_pre_spike++;
+          }
+          sum_h_zhat += runner->V_m_ * last_e_trace_;
+          // Eq.(23)
+          elegibility_trace.push_back( runner->V_m_ * last_e_trace_ );
+        }
+      }
 
       /*
          std::cout << "elegibility trace (" << elegibility_trace.size() << "): " << std::endl;

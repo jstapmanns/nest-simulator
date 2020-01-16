@@ -1,5 +1,5 @@
 /*
- *  iaf_psc_delta_eprop.h
+ *  aif_psc_delta_eprop.h
  *
  *  This file is part of NEST.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef IAF_PSC_DELTA_H_EPROP
-#define IAF_PSC_DELTA_H_EPROP
+#ifndef AIF_PSC_DELTA_H_EPROP
+#define AIF_PSC_DELTA_H_EPROP
 
 // Includes from nestkernel:
 #include "eprop_archiving_node.h"
@@ -39,11 +39,11 @@ namespace nest
 @ingroup iaf
 @ingroup psc
 
-Name: iaf_psc_delta_eprop - Leaky integrate-and-fire neuron model.
+Name: aif_psc_delta_eprop - Leaky integrate-and-fire neuron model.
 
 Description:
 
-iaf_psc_delta_eprop is an implementation of a leaky integrate-and-fire model
+aif_psc_delta_eprop is an implementation of a leaky integrate-and-fire model
 where the potential jumps on each spike arrival.
 
 The threshold crossing is followed by an absolute refractory period
@@ -71,7 +71,7 @@ Critical tests for the formulation of the neuron model are the
 comparisons of simulation results for different computation step
 sizes. sli/testsuite/nest contains a number of such tests.
 
-The iaf_psc_delta_eprop is the standard model used to check the consistency
+The aif_psc_delta_eprop is the standard model used to check the consistency
 of the nest simulation kernel because it is at the same time complex
 enough to exhibit non-trivial dynamics and simple enough compute
 relevant measures analytically.
@@ -87,7 +87,7 @@ object is required.
 
 The template support of recent C++ compilers enables a more succinct
 formulation without loss of runtime performance already at minimal
-optimization levels. A future version of iaf_psc_delta_eprop will probably
+optimization levels. A future version of aif_psc_delta_eprop will probably
 address the problem of efficient usage of appropriate vector and
 matrix objects.
 
@@ -131,14 +131,14 @@ Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
 
 Author:  September 1999, Diesmann, Gewaltig
 
-SeeAlso: iaf_psc_alpha, iaf_psc_exp, iaf_psc_delta_eprop_canon
+SeeAlso: aif_psc_alpha, aif_psc_exp, aif_psc_delta_eprop_canon
 */
-class iaf_psc_delta_eprop : public Eprop_Archiving_Node
+class aif_psc_delta_eprop : public Eprop_Archiving_Node
 {
 
 public:
-  iaf_psc_delta_eprop();
-  iaf_psc_delta_eprop( const iaf_psc_delta_eprop& );
+  aif_psc_delta_eprop();
+  aif_psc_delta_eprop( const aif_psc_delta_eprop& );
 
   /**
    * Import sets of overloaded virtual functions.
@@ -163,6 +163,8 @@ public:
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
   double get_leak_propagator() const;
+  double get_adapt_propagator() const;
+  double get_beta() const;
   bool is_eprop_readout();
   bool is_eprop_adaptive();
 
@@ -174,8 +176,8 @@ private:
   void update( Time const&, const long, const long );
 
   // The next two classes need to be friends to access the State_ class/member
-  friend class RecordablesMap< iaf_psc_delta_eprop >;
-  friend class UniversalDataLogger< iaf_psc_delta_eprop >;
+  friend class RecordablesMap< aif_psc_delta_eprop >;
+  friend class UniversalDataLogger< aif_psc_delta_eprop >;
 
   // ----------------------------------------------------------------
 
@@ -210,6 +212,12 @@ private:
     /** reset value of the membrane potential */
     double V_reset_;
 
+    /** prefactor of the adaptive threshold*/
+    double beta_;
+
+    /** time constant of the adaptive threshold*/
+    double tau_a_;
+
     bool with_refr_input_; //!< spikes arriving during refractory period are
                            //!< counted
 
@@ -233,6 +241,9 @@ private:
     double y0_;
     //! This is the membrane potential RELATIVE TO RESTING POTENTIAL.
     double y3_;
+
+    // parameter for adaptation of thereshold
+    double a_;
 
     int r_; //!< Number of refractory steps remaining
 
@@ -260,15 +271,15 @@ private:
    */
   struct Buffers_
   {
-    Buffers_( iaf_psc_delta_eprop& );
-    Buffers_( const Buffers_&, iaf_psc_delta_eprop& );
+    Buffers_( aif_psc_delta_eprop& );
+    Buffers_( const Buffers_&, aif_psc_delta_eprop& );
 
     /** buffers and summs up incoming spikes/currents */
     RingBuffer spikes_;
     RingBuffer currents_;
 
     //! Logger for all analog data
-    UniversalDataLogger< iaf_psc_delta_eprop > logger_;
+    UniversalDataLogger< aif_psc_delta_eprop > logger_;
   };
 
   // ----------------------------------------------------------------
@@ -281,6 +292,7 @@ private:
 
     double P30_;
     double P33_;
+    double Pa_;
 
     int RefractoryCounts_;
   };
@@ -314,10 +326,16 @@ private:
     return 0.0;
   }
 
+  double
+  get_spiking_threshold_() const
+  {
+    return P_.V_th_ + P_.E_L_ + P_.beta_ * S_.a_;
+  }
+
   // ----------------------------------------------------------------
 
   /**
-   * @defgroup iaf_psc_alpha_data
+   * @defgroup aif_psc_alpha_data
    * Instances of private data structures for the different types
    * of data pertaining to the model.
    * @note The order of definitions is important for speed.
@@ -330,12 +348,12 @@ private:
   /** @} */
 
   //! Mapping of recordables names to access functions
-  static RecordablesMap< iaf_psc_delta_eprop > recordablesMap_;
+  static RecordablesMap< aif_psc_delta_eprop > recordablesMap_;
 };
 
 
 inline port
-nest::iaf_psc_delta_eprop::send_test_event( Node& target,
+nest::aif_psc_delta_eprop::send_test_event( Node& target,
   rport receptor_type,
   synindex,
   bool )
@@ -346,7 +364,7 @@ nest::iaf_psc_delta_eprop::send_test_event( Node& target,
 }
 
 inline port
-iaf_psc_delta_eprop::handles_test_event( SpikeEvent&, rport receptor_type )
+aif_psc_delta_eprop::handles_test_event( SpikeEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
@@ -356,7 +374,7 @@ iaf_psc_delta_eprop::handles_test_event( SpikeEvent&, rport receptor_type )
 }
 
 inline port
-iaf_psc_delta_eprop::handles_test_event( CurrentEvent&, rport receptor_type )
+aif_psc_delta_eprop::handles_test_event( CurrentEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
@@ -366,7 +384,7 @@ iaf_psc_delta_eprop::handles_test_event( CurrentEvent&, rport receptor_type )
 }
 
 inline port
-iaf_psc_delta_eprop::handles_test_event( DelayedRateConnectionEvent&,
+aif_psc_delta_eprop::handles_test_event( DelayedRateConnectionEvent&,
   rport receptor_type )
 {
   if ( receptor_type != 0 )
@@ -377,7 +395,7 @@ iaf_psc_delta_eprop::handles_test_event( DelayedRateConnectionEvent&,
 }
 
 inline port
-iaf_psc_delta_eprop::handles_test_event( DataLoggingRequest& dlr,
+aif_psc_delta_eprop::handles_test_event( DataLoggingRequest& dlr,
   rport receptor_type )
 {
   if ( receptor_type != 0 )
@@ -388,7 +406,7 @@ iaf_psc_delta_eprop::handles_test_event( DataLoggingRequest& dlr,
 }
 
 inline void
-iaf_psc_delta_eprop::get_status( DictionaryDatum& d ) const
+aif_psc_delta_eprop::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d, P_ );
@@ -397,7 +415,7 @@ iaf_psc_delta_eprop::get_status( DictionaryDatum& d ) const
 }
 
 inline void
-iaf_psc_delta_eprop::set_status( const DictionaryDatum& d )
+aif_psc_delta_eprop::set_status( const DictionaryDatum& d )
 {
   Parameters_ ptmp = P_;                 // temporary copy in case of errors
   const double delta_EL = ptmp.set( d ); // throws if BadProperty
@@ -417,4 +435,4 @@ iaf_psc_delta_eprop::set_status( const DictionaryDatum& d )
 
 } // namespace
 
-#endif /* #ifndef IAF_PSC_DELTA_H */
+#endif /* #ifndef AIF_PSC_DELTA_H */

@@ -450,6 +450,7 @@ extern const Name targets;
 extern const Name tau;
 extern const Name tau_1;
 extern const Name tau_2;
+extern const Name tau_a;
 extern const Name tau_ahp;
 extern const Name tau_alpha;
 extern const Name tau_bar_bar;

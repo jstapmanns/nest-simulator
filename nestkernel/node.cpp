@@ -439,8 +439,26 @@ Node::get_leak_propagator() const
   throw UnexpectedEvent();
 }
 
+double
+Node::get_adapt_propagator() const
+{
+  throw UnexpectedEvent();
+}
+
+double
+Node::get_beta() const
+{
+  throw UnexpectedEvent();
+}
+
 bool
 Node::is_eprop_readout()
+{
+  throw UnexpectedEvent();
+}
+
+bool
+Node::is_eprop_adaptive()
 {
   throw UnexpectedEvent();
 }

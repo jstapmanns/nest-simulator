@@ -683,7 +683,13 @@ public:
 
   virtual double get_leak_propagator() const;
 
+  virtual double get_adapt_propagator() const;
+
+  virtual double get_beta() const;
+
   virtual bool is_eprop_readout();
+
+  virtual bool is_eprop_adaptive();
 
   /**
    * write the Kminus, nearest_neighbor_Kminus, and triplet_Kminus
