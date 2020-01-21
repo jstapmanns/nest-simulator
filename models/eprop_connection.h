@@ -279,7 +279,9 @@ EpropConnection< targetidentifierT >::send( Event& e,
     {
       std::vector< double > elegibility_trace;
       double alpha = target->get_leak_propagator();
-      double sum_h_zhat = 0.0;
+      // compute the sum of the elegibility trace because it is used for the firing rate
+      // regularization
+      double sum_eleg_tr = 0.0;
       if ( target->is_eprop_adaptive() )
       {
         // if the target is of type aif_psc_delta_eprop (adaptive threshold)
@@ -298,9 +300,10 @@ EpropConnection< targetidentifierT >::send( Event& e,
             last_e_trace_ += 1.0;
             t_pre_spike++;
           }
-          sum_h_zhat += pseudo_deriv * last_e_trace_;
+          double eleg_tr = pseudo_deriv * ( last_e_trace_  - beta * epsilon );
+          sum_eleg_tr += eleg_tr;
           // Eq.(28)
-          elegibility_trace.push_back( pseudo_deriv * ( last_e_trace_  - beta * epsilon ) );
+          elegibility_trace.push_back( eleg_tr );
         }
       }
       else
@@ -315,9 +318,10 @@ EpropConnection< targetidentifierT >::send( Event& e,
             last_e_trace_ += 1.0;
             t_pre_spike++;
           }
-          sum_h_zhat += runner->V_m_ * last_e_trace_;
+          double eleg_tr = runner->V_m_ * last_e_trace_;
+          sum_eleg_tr += eleg_tr;
           // Eq.(23)
-          elegibility_trace.push_back( runner->V_m_ * last_e_trace_ );
+          elegibility_trace.push_back( eleg_tr );
         }
       }
 
@@ -343,14 +347,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
       // std::cout << "dw(t): " << std::endl;
       while ( start != finish )
       {
-        /* old implementation
-        sum_t_prime = 0.0;
-        for ( int t_pprime = 0; t_pprime <= t_prime; t_pprime++)
-        {
-          sum_t_prime += std::pow( kappa, t_prime - t_pprime ) * elegibility_trace[ t_pprime ];
-        }
-        sum_t_prime *= dt;
-        */
         sum_t_prime_new = kappa * sum_t_prime_new + elegibility_trace[ t_prime ];
         dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * start->learning_signal_;
         // std::cout << dw*dt + weight_ << " ";
@@ -358,13 +354,15 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_prime++;
         start++;
       }
+      // firing rate regularization
       // compute average firing rate since last update. factor 1000 to convert into Hz
       double av_firing_rate = 1000.0 * nspikes / (t_update_ - t_lastupdate_);
-      dw += rate_reg_ * ( target_firing_rate_ - av_firing_rate ) * sum_h_zhat;
+      // Eq.(56)
+      dw += rate_reg_ * ( target_firing_rate_ - av_firing_rate ) * sum_eleg_tr;
       /*
       std::cout << "target f_rate = " << target_firing_rate_ << "  actual f_rate = " <<
         av_firing_rate << "  dw_f_rate = " << rate_reg_ * ( target_firing_rate_ - av_firing_rate ) *
-        sum_h_zhat << std::endl;
+        sum_eleg_tr << std::endl;
         */
       dw *= dt*learning_rate_;
       t_prime_int_trace_ += sum_t_prime_new * dt;
