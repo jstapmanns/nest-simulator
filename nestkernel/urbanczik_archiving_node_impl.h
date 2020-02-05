@@ -261,8 +261,7 @@ nest::Urbanczik_Archiving_Node< urbanczik_parameters >::write_urbanczik_history(
       }
     }
 
-    double dPI = ( n_spikes - urbanczik_params->phi( V_W_star ) * Time::get_resolution().get_ms() )
-      * urbanczik_params->h( V_W_star );
+    double dPI = ( n_spikes ) * urbanczik_params->h( V_W_star );
     urbanczik_history_[ comp - 1 ].push_back( histentry_extended( t_ms, dPI, 0 ) );
   }
 }
