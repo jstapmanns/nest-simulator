@@ -647,7 +647,6 @@ nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, con
 
       // There is no reset of the membrane potential after a spike
       double rate = 1000.0 * P_.urbanczik_params.phi( S_.y_[ State_::V_M ] );
-      double rate_dendr = 1000.0 * P_.urbanczik_params.phi( S_.y_[ State_::idx( 1, State_::V_M ) ] );
 
       if ( rate > 0.0 )
       {
@@ -665,8 +664,6 @@ nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, con
           // Draw Poisson random number of spikes
           V_.poisson_dev_.set_lambda( rate * V_.h_ * 1e-3 );
           n_spikes = V_.poisson_dev_.ldev( V_.rng_ );
-          V_.poisson_dev_.set_lambda( rate_dendr * V_.h_ * 1e-3 );
-          n_spikes_dendr = V_.poisson_dev_.ldev( V_.rng_ );
         }
 
         if ( n_spikes > 0 ) // Is there a spike? Then set the new dead time.
@@ -686,6 +683,25 @@ nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, con
           }
         }
       } // if (rate > 0.0)
+      double rate_dendr = 1000.0 * P_.urbanczik_params.phi( S_.y_[ State_::idx( 1, State_::V_M ) ] );
+      if ( rate_dendr > 0.0 )
+      {
+
+        if ( P_.t_ref > 0.0 )
+        {
+          // Draw random number and compare to prob to have a spike
+          if ( V_.rng_->drand() <= -numerics::expm1( -rate_dendr * V_.h_ * 1e-3 ) )
+          {
+            n_spikes_dendr = 1;
+          }
+          else
+          {
+            // Draw Poisson random number of spikes
+            V_.poisson_dev_.set_lambda( rate_dendr * V_.h_ * 1e-3 );
+            n_spikes_dendr = V_.poisson_dev_.ldev( V_.rng_ );
+          }
+        }
+      }
     }
     else // Neuron is within dead time
     {
@@ -693,9 +709,12 @@ nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, con
     }
 
     // Store dendritic membrane potential for Urbanczik-Senn plasticity
-    write_urbanczik_history(
-      Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S_.idx( PROX, State_::V_M ) ],
-      n_spikes - n_spikes_dendr, PROX );
+    if (n_spikes - n_spikes_dendr != 0 )
+    {
+      write_urbanczik_history(
+        Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S_.idx( PROX, State_::V_M ) ],
+        n_spikes - n_spikes_dendr, PROX );
+    }
 
     // set new input currents
     for ( size_t n = 0; n < NCOMP; ++n )
