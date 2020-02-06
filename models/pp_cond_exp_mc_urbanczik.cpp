@@ -694,15 +694,15 @@ nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, con
           {
             n_spikes_dendr = 1;
           }
-          else
-          {
-            // Draw Poisson random number of spikes
-            V_.poisson_dev_.set_lambda( rate_dendr * V_.h_ * 1e-3 );
-            n_spikes_dendr = V_.poisson_dev_.ldev( V_.rng_ );
-          }
+        }
+        else
+        {
+          // Draw Poisson random number of spikes
+          V_.poisson_dev_.set_lambda( rate_dendr * V_.h_ * 1e-3 );
+          n_spikes_dendr = V_.poisson_dev_.ldev( V_.rng_ );
         }
       }
-    }
+    } // neuron not refractory
     else // Neuron is within dead time
     {
       --S_.r_;
