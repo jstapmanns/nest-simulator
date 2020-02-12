@@ -122,7 +122,7 @@ protected:
    * \fn void write_urbanczik_history( Time const& t_sp, double V_W, int n_spikes, int comp ))
    * Writes the history for compartment comp into the buffers.
    */
-  void write_urbanczik_history( Time const& t_sp, double V_W, int n_spikes, int comp );
+  void write_urbanczik_history( Time const& t_sp, double V_W, double U, int comp );
 
   urbanczik_parameters* urbanczik_params;
 

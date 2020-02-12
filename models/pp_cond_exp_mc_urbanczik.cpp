@@ -690,7 +690,9 @@ nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, con
 
     // Store dendritic membrane potential for Urbanczik-Senn plasticity
     write_urbanczik_history(
-      Time::step( origin.get_steps() + lag + 1 ), S_.y_[ S_.idx( PROX, State_::V_M ) ], n_spikes, PROX );
+      Time::step( origin.get_steps() + lag + 1 ),
+      S_.y_[ S_.idx( PROX, State_::V_M ) ],
+      S_.y_[ S_.idx( SOMA, State_::V_M ) ], PROX );
 
     // set new input currents
     for ( size_t n = 0; n < NCOMP; ++n )
