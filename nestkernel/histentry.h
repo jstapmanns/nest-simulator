@@ -106,6 +106,5 @@ inline bool operator<( const histentry_eprop he, double t )
     return ( he.t_ ) < t;
 }
 }
-}
 
 #endif
