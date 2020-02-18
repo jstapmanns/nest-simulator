@@ -296,8 +296,9 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     if ( S_.r_ == 0 )
     {
       // neuron not refractory
+      // DEBUG: introduce factor ( 1 - exp( -dt / tau_m ) ) for incoming spikes
       S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
-        + B_.spikes_.get_value( lag );
+        + ( 1.0 - V_.P33_ ) * B_.spikes_.get_value( lag );
 
       // if we have accumulated spikes from refractory period,
       // add and reset accumulator
@@ -327,11 +328,17 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
       --S_.r_;
     }
 
+    // DEBUG: original implementation: write history after threshold crossing
+    write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
     // threshold crossing
     if ( S_.y3_ >= P_.V_th_ )
     {
       S_.r_ = V_.RefractoryCounts_;
-      S_.y3_ = P_.V_reset_;
+      // DEBUG: subtract threshold instead of setting to V_reset
+      //S_.y3_ = P_.V_reset_;
+      std::cout << S_.y3_ + P_.E_L_ << std::endl;
+      std::cout << P_.V_th_ << ",  " << std::fabs( ( S_.y3_ - P_.V_th_ ) / P_.V_th_ ) << std::endl;
+      S_.y3_ -= P_.V_th_;
 
       // EX: must compute spike time
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
@@ -344,7 +351,6 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     // save learning signal for eprop algorithm
     // TODO: check if that are the quantities needed. My guess is that ist correct since 
     // in the paper the membrane potential is also measured wrt the resting potential.
-    write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
     //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), get_V_m_(), P_.E_L_ + P_.V_th_ );
 
     // set new input current

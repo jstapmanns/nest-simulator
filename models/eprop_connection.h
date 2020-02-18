@@ -267,7 +267,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
         //std::cout << last_e_trace_ << " ";
         if ( std::fabs( *t_pre_spike - start->t_ ) < 1.0e-6 )
         {
-          last_e_trace_ += 1.0;
+          // DEBUG: inserted factor ( 1 - dacay )
+          last_e_trace_ += ( 1.0 - alpha );
           t_pre_spike++;
         }
         dw += start->learning_signal_ * last_e_trace_;
@@ -297,7 +298,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
           epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
           if ( std::fabs( *t_pre_spike - runner->t_ ) < 1.0e-6 )
           {
-            last_e_trace_ += 1.0;
+            // DEBUG: inserted factor ( 1 - dacay )
+            last_e_trace_ += ( 1.0 - alpha );
             t_pre_spike++;
           }
           double eleg_tr = pseudo_deriv * ( last_e_trace_  - beta * epsilon );

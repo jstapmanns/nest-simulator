@@ -304,7 +304,9 @@ nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
   if ( n_incoming_ )
   {
     // create new entry in history
-    double h = pseudo_deriv( V_m, V_th );
+    // DEBUG: additional factor 1 / V_th
+    double h = pseudo_deriv( V_m, V_th ) / V_th;
+    //std::cout << V_m << ",  " << h << std::endl;
     eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0 ) );
   }
   /*

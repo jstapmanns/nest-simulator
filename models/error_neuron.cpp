@@ -224,6 +224,7 @@ nest::error_neuron::calibrate()
 
   const double h = Time::get_resolution().get_ms();
   V_.P33_ = std::exp( -h / P_.tau_m_ );
+  std::cout << V_.P33_ << ",  " << 1 - V_.P33_ << std::endl;
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
 }
 
@@ -247,10 +248,12 @@ nest::error_neuron::update_( Time const& origin,
 
   for ( long lag = from; lag < to; ++lag )
   {
-      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + B_.spikes_.get_value( lag );
+    // DEBUG: introduced factor ( 1 - exp( -dt / tau_m ) ) for campatibility wit tf code
+      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + ( 1 - V_.P33_ ) * B_.spikes_.get_value( lag );
       S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
 
-      S_.learning_signal_ = S_.target_rate_ - (S_.y3_ + P_.E_L_);
+      // DEBUG: changed sign (see tf code)
+      S_.learning_signal_ = -( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
       new_learning_signals [ lag ] = S_.learning_signal_;
 
       S_.y0_ = B_.currents_.get_value( lag ); // set new input current
