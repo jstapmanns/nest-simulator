@@ -254,6 +254,8 @@ nest::iaf_psc_delta_eprop::calibrate()
   V_.P33_ = std::exp( -h / P_.tau_m_ );
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
 
+  // DEBUG:
+  V_.reset_next_step_ = false;
 
   // t_ref_ specifies the length of the absolute refractory period as
   // a double in ms. The grid based iaf_psp_delta can only handle refractory
@@ -300,6 +302,12 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
       S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
         + ( 1.0 - V_.P33_ ) * B_.spikes_.get_value( lag );
 
+      // DEBUG: reset in next step after threshold crossing
+      if ( V_.reset_next_step_ )
+      {
+        S_.y3_ -= P_.V_th_;
+        V_.reset_next_step_ = false;
+      }
       // if we have accumulated spikes from refractory period,
       // add and reset accumulator
       if ( P_.with_refr_input_ && S_.refr_spikes_buffer_ != 0.0 )
@@ -328,17 +336,17 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
       --S_.r_;
     }
 
-    // DEBUG: original implementation: write history after threshold crossing
-    write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
     // threshold crossing
     if ( S_.y3_ >= P_.V_th_ )
     {
       S_.r_ = V_.RefractoryCounts_;
+      std::cout << "ref_counts = " << S_.r_ << std::endl;
       // DEBUG: subtract threshold instead of setting to V_reset
       //S_.y3_ = P_.V_reset_;
-      std::cout << S_.y3_ + P_.E_L_ << std::endl;
-      std::cout << P_.V_th_ << ",  " << std::fabs( ( S_.y3_ - P_.V_th_ ) / P_.V_th_ ) << std::endl;
-      S_.y3_ -= P_.V_th_;
+      //std::cout << S_.y3_ + P_.E_L_ << std::endl;
+      //std::cout << P_.V_th_ << ",  " << std::fabs( ( S_.y3_ - P_.V_th_ ) / P_.V_th_ ) << std::endl;
+      //S_.y3_ -= P_.V_th_;
+      V_.reset_next_step_ = true;
 
       // EX: must compute spike time
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
@@ -348,6 +356,7 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
       kernel().event_delivery_manager.send( *this, se, lag );
     }
 
+    write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
     // save learning signal for eprop algorithm
     // TODO: check if that are the quantities needed. My guess is that ist correct since 
     // in the paper the membrane potential is also measured wrt the resting potential.

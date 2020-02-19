@@ -268,7 +268,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         if ( std::fabs( *t_pre_spike - start->t_ ) < 1.0e-6 )
         {
           // DEBUG: inserted factor ( 1 - dacay )
-          last_e_trace_ += ( 1.0 - alpha );
+          last_e_trace_ += ( 1.0 - kappa );
           t_pre_spike++;
         }
         dw += start->learning_signal_ * last_e_trace_;
@@ -317,7 +317,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
           last_e_trace_ *= alpha;
           if ( std::fabs( *t_pre_spike - runner->t_ ) < 1.0e-6 )
           {
-            last_e_trace_ += 1.0;
+            // DEBUG: inserted factor ( 1 - dacay )
+            last_e_trace_ += ( 1.0 - alpha );
             t_pre_spike++;
           }
           double eleg_tr = runner->V_m_ * last_e_trace_;
@@ -349,7 +350,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
       // std::cout << "dw(t): " << std::endl;
       while ( start != finish )
       {
-        sum_t_prime_new = kappa * sum_t_prime_new + elegibility_trace[ t_prime ];
+        // DEBUG: inserted factor ( 1 - decay )
+        sum_t_prime_new = kappa * sum_t_prime_new + ( 1.0 - kappa ) * elegibility_trace[ t_prime ];
         dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * start->learning_signal_;
         // std::cout << dw*dt + weight_ << " ";
         //std::cout << start->V_m_ << ", ";

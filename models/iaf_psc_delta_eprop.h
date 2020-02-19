@@ -283,6 +283,8 @@ private:
     double P33_;
 
     int RefractoryCounts_;
+    // DEBUG:
+    bool reset_next_step_;
   };
 
   // Access functions for UniversalDataLogger -------------------------------
