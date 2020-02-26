@@ -340,7 +340,7 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     if ( S_.y3_ >= P_.V_th_ )
     {
       S_.r_ = V_.RefractoryCounts_;
-      std::cout << "ref_counts = " << S_.r_ << std::endl;
+      /// std::cout << "ref_counts = " << S_.r_ << std::endl;
       // DEBUG: subtract threshold instead of setting to V_reset
       //S_.y3_ = P_.V_reset_;
       //std::cout << S_.y3_ + P_.E_L_ << std::endl;

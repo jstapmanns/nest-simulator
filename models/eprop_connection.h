@@ -247,7 +247,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     //     &start,
     //     &finish );
 
-    target->get_spike_history( t_lastupdate_ - dendritic_delay,
+    target->get_spike_history( t_update_ - update_interval_ - dendritic_delay,
         t_update_ - dendritic_delay,
         &start_spk,
         &finish_spk );
@@ -283,6 +283,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
       // compute the sum of the elegibility trace because it is used for the firing rate
       // regularization
       double sum_eleg_tr = 0.0;
+      double n_eleg_tr = 0.0;
       if ( target->is_eprop_adaptive() )
       {
         // if the target is of type aif_psc_delta_eprop (adaptive threshold)
@@ -323,6 +324,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           }
           double eleg_tr = runner->V_m_ * last_e_trace_;
           sum_eleg_tr += eleg_tr;
+          n_eleg_tr += 1.0;
           // Eq.(23)
           elegibility_trace.push_back( eleg_tr );
         }
@@ -360,9 +362,10 @@ EpropConnection< targetidentifierT >::send( Event& e,
       }
       // firing rate regularization
       // compute average firing rate since last update. factor 1000 to convert into Hz
-      double av_firing_rate = 1000.0 * nspikes / (t_update_ - t_lastupdate_);
+      double av_firing_rate = nspikes / update_interval_;
       // Eq.(56)
-      dw += rate_reg_ * ( target_firing_rate_ - av_firing_rate ) * sum_eleg_tr;
+      dw += rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_eleg_tr / n_eleg_tr;
+
       /*
       std::cout << "target f_rate = " << target_firing_rate_ << "  actual f_rate = " <<
         av_firing_rate << "  dw_f_rate = " << rate_reg_ * ( target_firing_rate_ - av_firing_rate ) *
@@ -393,7 +396,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     pre_syn_spike_times_.clear();
     pre_syn_spike_times_.push_back( t_spike );
     target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
-    target->tidy_spike_history( t_lastupdate_ - dendritic_delay );
+    target->tidy_spike_history( t_update_ - update_interval_- dendritic_delay );
   }
 
   e.set_receiver( *target );
@@ -415,7 +418,7 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , tau_alpha_( 10.0 )
   , tau_kappa_( 10.0 )
   , learning_rate_( 0.0001 )
-  , update_interval_( 100.0 )
+  , update_interval_( 1000.0 )
   , Wmin_( 0.0 )
   , Wmax_( 100.0 )
   , t_lastspike_( -1000.0 )
@@ -424,8 +427,8 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , last_e_trace_( 0.0 )
   , t_prime_int_trace_( 0.0 )
   , keep_traces_( true )
-  , rate_reg_( 0 )
-  , target_firing_rate_( 0.01 )
+  , rate_reg_( 0. )
+  , target_firing_rate_( 10. )
 {
 }
 
