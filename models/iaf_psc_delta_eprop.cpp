@@ -239,7 +239,9 @@ nest::iaf_psc_delta_eprop::init_buffers_()
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
   B_.logger_.reset();   // includes resize
-  init_eprop_buffers();
+  //init_eprop_buffers();
+  // DEBUG: print last spike per synapse
+  //print_t_ls_per_syn();
   Eprop_Archiving_Node::clear_history();
 }
 
@@ -295,6 +297,15 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
   const double h = Time::get_resolution().get_ms();
   for ( long lag = from; lag < to; ++lag )
   {
+    // DEBUG: added reset after each T to be compatible with tf code
+    if ( ( origin.get_steps() + lag - 1 ) % static_cast< int >( ( get_update_interval() / h) ) == 0 )
+    {
+      //std::cout << "reset rec neuron, step: " << origin.get_steps() + lag << "  update interval: "
+        //<< get_update_interval() << std::endl;
+      S_.y3_ = 0.0;
+      B_.spikes_.clear();   // includes resize
+      V_.reset_next_step_ = false;
+    }
     if ( S_.r_ == 0 )
     {
       // neuron not refractory
@@ -340,7 +351,6 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     if ( S_.y3_ >= P_.V_th_ )
     {
       S_.r_ = V_.RefractoryCounts_;
-      std::cout << "ref_counts = " << S_.r_ << std::endl;
       // DEBUG: subtract threshold instead of setting to V_reset
       //S_.y3_ = P_.V_reset_;
       //std::cout << S_.y3_ + P_.E_L_ << std::endl;

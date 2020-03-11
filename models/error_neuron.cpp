@@ -212,7 +212,7 @@ nest::error_neuron::init_buffers_()
   B_.logger_.reset(); // includes resize
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
-  init_eprop_buffers();
+  //init_eprop_buffers();
   Archiving_Node::clear_history();
 }
 
@@ -224,7 +224,7 @@ nest::error_neuron::calibrate()
 
   const double h = Time::get_resolution().get_ms();
   V_.P33_ = std::exp( -h / P_.tau_m_ );
-  std::cout << V_.P33_ << ",  " << 1 - V_.P33_ << std::endl;
+  //std::cout << V_.P33_ << ",  " << 1 - V_.P33_ << std::endl;
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
 }
 
@@ -241,6 +241,7 @@ nest::error_neuron::update_( Time const& origin,
     to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
+  const double h = Time::get_resolution().get_ms();
   const size_t buffer_size = kernel().connection_manager.get_min_delay();
 
   // allocate memory to store rates to be sent by rate events
@@ -248,12 +249,20 @@ nest::error_neuron::update_( Time const& origin,
 
   for ( long lag = from; lag < to; ++lag )
   {
+    // DEBUG: added reset after each T to be compatible with tf code
+    if ( ( origin.get_steps() + lag - 2 ) % static_cast< int >( ( get_update_interval() / h) ) == 0 )
+    {
+      //std::cout << "reset readout neuron, step: " << origin.get_steps() + lag << "  update interval: "
+        //<< get_update_interval() << std::endl;
+      S_.y3_ = 0.0;
+      B_.spikes_.clear();   // includes resize
+    }
     // DEBUG: introduced factor ( 1 - exp( -dt / tau_m ) ) for campatibility wit tf code
       S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + ( 1 - V_.P33_ ) * B_.spikes_.get_value( lag );
       S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
 
       // DEBUG: changed sign (see tf code)
-      S_.learning_signal_ = -( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
+      S_.learning_signal_ = ( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
       new_learning_signals [ lag ] = S_.learning_signal_;
 
       S_.y0_ = B_.currents_.get_value( lag ); // set new input current

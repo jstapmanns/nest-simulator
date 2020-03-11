@@ -85,6 +85,13 @@ public:
   double get_spike_history_len() const;
   double get_ls_per_syn_len() const;
 
+  // TODO: this was protected and made public to be able to execute init_eprop_buffers() from the
+  // synapse 
+  void init_eprop_buffers( double delay );
+  // DEBUG: print last_spike_per_synapse_
+  void print_t_ls_per_syn();
+  void print_eprop_history();
+
   //TODO: make history private again!
   std::deque< histentry_eprop > eprop_history_;
   std::deque< double > spike_history_;
@@ -113,8 +120,6 @@ protected:
 
   void get_status( DictionaryDatum& d ) const;
   void set_status( const DictionaryDatum& d );
-
-  void init_eprop_buffers();
 
   double get_update_interval();
   //TODO: propagate information from readout neuron

@@ -250,7 +250,7 @@ nest::aif_psc_delta_eprop::init_buffers_()
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
   B_.logger_.reset();   // includes resize
-  init_eprop_buffers();
+  //init_eprop_buffers();
   Eprop_Archiving_Node::clear_history();
 }
 

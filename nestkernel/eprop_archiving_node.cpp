@@ -54,6 +54,7 @@ nest::Eprop_Archiving_Node::get_status( DictionaryDatum& d ) const
   Archiving_Node::get_status( d );
 
   def< double >( d, names::dampening_factor, dampening_factor_ );
+  def< double >( d, names::update_interval, update_interval_ );
 }
 
 void
@@ -72,9 +73,23 @@ nest::Eprop_Archiving_Node::set_status( const DictionaryDatum& d )
 }
 
 void
-nest::Eprop_Archiving_Node::init_eprop_buffers()
+nest::Eprop_Archiving_Node::init_eprop_buffers( double delay )
 {
-  last_spike_per_synapse_.push_back( histentry_extended( -1000.0, 0.0, n_incoming_ ) );
+  //std::cout << "Eprop_Archiving_Node init_eprop_buffers" << std::endl;
+  // register first etry for every synapse. If it is already in the list increase access counter.
+  std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
+      last_spike_per_synapse_.begin(),
+      last_spike_per_synapse_.end(),
+      delay - kernel().connection_manager.get_stdp_eps() );
+  if ( it_reg == last_spike_per_synapse_.end() ||
+      fabs( delay - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
+  {
+    last_spike_per_synapse_.insert( it_reg, histentry_extended( delay, 0.0, 1 ) );
+  }
+  else
+  {
+    it_reg->access_counter_++;
+  }
 }
 
 double
@@ -90,6 +105,37 @@ nest:: Eprop_Archiving_Node::get_spike_history_len() const
   return spike_history_.size();
 }
 
+void
+nest::Eprop_Archiving_Node::print_t_ls_per_syn()
+{
+  std::cout << "t_ls per syn:" << std::endl;
+  for ( std::vector< histentry_extended >::iterator it = last_spike_per_synapse_.begin();
+      it != last_spike_per_synapse_.end(); it++)
+  {
+    std::cout << it->t_ << "  " << it->access_counter_ << ",  ";
+  }
+  std::cout << std::endl;
+}
+
+void
+nest::Eprop_Archiving_Node::print_eprop_history()
+{
+  std::cout << "eprop hist t, h, ls:" << std::endl;
+  /*
+  for ( std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
+      runner != eprop_history_.end(); runner++ )
+  {
+    std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->learning_signal_ << "; ";
+  }
+  */
+  std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
+  for ( int i = 0; i < 10; i++ )
+  {
+    std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->learning_signal_ << "; ";
+    runner++;
+  }
+  std::cout << std::endl;
+}
 
 void
 nest::Eprop_Archiving_Node::get_eprop_history( double t1,
@@ -100,7 +146,7 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
 {
   // t1 = t_last_spike_ equals -1000.0 - dendritic delay at the beginning of the simulation. To find
   // the correct entry in last_spikes_per_synapse we use the the max function.
-  t1 = std::max( -1000.0, t1 );
+  //t1 = std::max( -1000.0, t1 );
   if ( decrease_access_counter )
   {
     // register spike time if it is not in the list, otherwise increase access counter.
@@ -127,15 +173,6 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
         fabs( t1 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
     {
       std::cout << "found nothing, searched for:" << t1 << std::endl;
-      /*
-      std::cout << "hist:" << std::endl;
-      for ( std::vector< histentry_extended >::iterator it = last_spike_per_synapse_.begin();
-          it != last_spike_per_synapse_.end(); it++)
-      {
-        std::cout << it->t_ << "  " << it->access_counter_ << ",  ";
-      }
-      std::cout << std::endl;
-      */
     }
     else
     {
@@ -161,11 +198,12 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
     // times t1 and t2. This is straight forward because there are no time steps missing in the
     // eprop history. We just have to take care that *start points at least to hist.begin() and
     // *finish at most to hist.end().
+    // DEBUG: set pointers to one step earlier (removed + 1)
     double t_first = eprop_history_.begin()->t_;
     int pos_t1 = std::max( 0,
-        ( (int) std::round( ( t1 - t_first ) / Time::get_resolution().get_ms() ) ) + 1 );
+        ( (int) std::round( ( t1 - t_first ) / Time::get_resolution().get_ms() ) ) + 0*1 );
     int pos_t2 = std::min( (int)( eprop_history_.size() ),
-        ( (int) std::round( ( t2 - t_first ) / Time::get_resolution().get_ms() ) ) + 1 );
+        ( (int) std::round( ( t2 - t_first ) / Time::get_resolution().get_ms() ) ) + 0*1 );
 
     std::deque< histentry_eprop >::iterator it_first = eprop_history_.begin();
     *start = it_first + std::max( 0, pos_t1);
@@ -356,7 +394,9 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e 
   {
     // Add learning signal and reduce access counter
     start->learning_signal_ += weight * e.get_coeffvalue( it );
-    ( start->access_counter_ )--;
+    // DEBUG: I think we do not need that any more since get_eprop_history doe not modify the access
+    // counter if the last argument is set to false
+    //( start->access_counter_ )--;
     //std::cout << start->t_ << ", " << start->V_m_ << ", " << start->learning_signal_ << "; ";
     start++;
   }
