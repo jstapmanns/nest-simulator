@@ -272,8 +272,9 @@ EpropConnection< targetidentifierT >::send( Event& e,
     double dw = 0.0;
     if (target->is_eprop_readout() )  // if target is a readout neuron
     {
+      //std::cout << "t_lu out : " << t_lastupdate_ << "  t_updadte = " << t_update_ << std::endl;
       target->get_eprop_history( t_lastupdate_ + dendritic_delay,
-          t_update_ + dendritic_delay,
+          t_lastupdate_ + update_interval_ + dendritic_delay,
           &start,
           &finish );
 
@@ -306,8 +307,10 @@ EpropConnection< targetidentifierT >::send( Event& e,
     }
     else  // if target is a neuron of the recurrent network
     {
+      //std::cout << "from rec: " << t_lastupdate_  << "  to: " << t_lastupdate_ + update_interval_ 
+        //<< "  t_updadte = " << t_update_ << std::endl;
       target->get_eprop_history( t_lastupdate_ - 0.0 * dendritic_delay,
-          t_update_ - 0.0 * dendritic_delay,
+          t_lastupdate_ + update_interval_ - 0.0 * dendritic_delay,
           &start,
           &finish );
 
@@ -428,7 +431,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         */
       dw *= dt*learning_rate_;
       t_prime_int_trace_ += sum_t_prime_new * dt;
-      //std::cout << "dw rec/in: " << dw << std::endl;
+      //std::cout << "dw rec/in: " << dw << "  new weight: " << dw + weight_ << std::endl;
     }
 
     weight_ += dw;
@@ -451,12 +454,14 @@ EpropConnection< targetidentifierT >::send( Event& e,
       weight_ = Wmin_;
     }
     */
+    // DEBUG: define t_lastupdate_ to be the end of the last period T to be compatible with tf code
     t_lastupdate_ = t_update_;
     t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) *
       update_interval_;
     // clear history of presynaptic spike because we don't need them any more
     pre_syn_spike_times_.clear();
     pre_syn_spike_times_.push_back( t_spike );
+    // TODO: uncomment again
     target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
     target->tidy_spike_history( t_lastupdate_ - dendritic_delay );
   }

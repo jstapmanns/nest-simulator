@@ -177,11 +177,11 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
     else
     {
       it_reg->access_counter_--;
-    }
-    // delete old entry
-    if ( decrease_access_counter && it_reg->access_counter_ == 0 )
-    {
-      it_reg = last_spike_per_synapse_.erase( it_reg );
+      // delete old entry
+      if ( decrease_access_counter && it_reg->access_counter_ == 0 )
+      {
+        it_reg = last_spike_per_synapse_.erase( it_reg );
+      }
     }
   }
 
