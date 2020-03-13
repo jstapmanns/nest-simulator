@@ -260,12 +260,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
     //     &start,
     //     &finish );
 
-    target->get_spike_history( t_update_ - update_interval_ - dendritic_delay,
-        t_update_ - dendritic_delay,
-        &start_spk,
-        &finish_spk );
-    int nspikes = std::distance(start_spk, finish_spk);
-    // std::cout << "nspikes " << nspikes << std::endl;
     double const dt = Time::get_resolution().get_ms();
     double kappa = std::exp( -dt / tau_kappa_ );
     std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
@@ -302,8 +296,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
         dw += start->learning_signal_ * last_e_trace_;
         start++;
       }
-     dw *= learning_rate_ * dt;
-     //std::cout << std::endl << "dw out = " << dw << std::endl;
+      dw *= learning_rate_ * dt;
+      //std::cout << std::endl << "dw out = " << dw << std::endl;
     }
     else  // if target is a neuron of the recurrent network
     {
@@ -421,20 +415,27 @@ EpropConnection< targetidentifierT >::send( Event& e,
         start++;
       }
       //std::cout << std::endl;
-      // firing rate regularization
-      // compute average firing rate since last update. factor 1000 to convert into Hz
-      double av_firing_rate = nspikes / update_interval_;
-      // Eq.(56)
-      dw += rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_eleg_tr / n_eleg_tr;
-
       /*
       std::cout << "target f_rate = " << target_firing_rate_ << "  actual f_rate = " <<
         av_firing_rate << "  dw_f_rate = " << rate_reg_ * ( target_firing_rate_ - av_firing_rate ) *
         sum_eleg_tr << std::endl;
         */
+      // firing rate regularization
+      target->get_spike_history( t_lastupdate_,
+          t_lastupdate_ + update_interval_,
+          &start_spk,
+          &finish_spk );
+      int nspikes = std::distance(start_spk, finish_spk);
+      // std::cout << "nspikes " << nspikes << std::endl;
+      // compute average firing rate since last update. factor 1000 to convert into Hz
+      double av_firing_rate = nspikes / update_interval_;
+      // Eq.(56)
+      dw += -rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_eleg_tr / n_eleg_tr;
+
       dw *= dt*learning_rate_;
       t_prime_int_trace_ += sum_t_prime_new * dt;
-      //std::cout << "dw rec/in: " << dw << "  new weight: " << dw + weight_ << std::endl;
+      //std::cout << "dw rec/in: " << dw << "  new weight: " << dw + weight_ << "  n_spikes: " <<
+        //nspikes << "  sum tr: " << sum_eleg_tr << "  n tr: " << n_eleg_tr << std::endl;
     }
 
     weight_ += dw;
@@ -466,7 +467,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     pre_syn_spike_times_.push_back( t_spike );
     // TODO: uncomment again
     target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
-    target->tidy_spike_history( t_update_ - update_interval_- dendritic_delay );
+    //target->tidy_spike_history( t_update_ - update_interval_- dendritic_delay );
   }
 
   e.set_receiver( *target );
