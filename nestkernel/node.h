@@ -728,9 +728,9 @@ public:
 
   virtual void get_eprop_history( double t1,
     double t2,
+    double t3,
     std::deque< histentry_eprop >::iterator* start,
-    std::deque< histentry_eprop >::iterator* finish,
-    bool decrease_access_counter = true );
+    std::deque< histentry_eprop >::iterator* finish );
 
   virtual void get_spike_history( double t1,
     double t2,
@@ -740,7 +740,6 @@ public:
   virtual double get_spike_history_len() const;
 
   virtual void tidy_eprop_history( double t1 );
-  virtual void tidy_spike_history( double t1 );
 
   /**
    * Modify Event object parameters during event delivery.

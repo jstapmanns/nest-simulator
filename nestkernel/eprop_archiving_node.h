@@ -69,9 +69,9 @@ public:
    */
   void get_eprop_history( double t1,
     double t2,
+    double t3,
     std::deque< histentry_eprop >::iterator* start,
-    std::deque< histentry_eprop >::iterator* finish,
-    bool decrease_access_counter );
+    std::deque< histentry_eprop >::iterator* finish );
 
   void get_spike_history( double t1,
     double t2,
@@ -79,7 +79,6 @@ public:
     std::deque< double >::iterator* finish);
 
   void tidy_eprop_history( double t1 );
-  void tidy_spike_history( double t1 );
 
   double get_eprop_history_len() const;
   double get_spike_history_len() const;
@@ -129,6 +128,14 @@ private:
   double dampening_factor_; // called gamma in paper
   double update_interval_;
   std::vector< histentry_extended > last_spike_per_synapse_;
+
+  void find_eprop_hist_entries( double t1,
+    double t2,
+    std::deque< histentry_eprop >::iterator* start,
+    std::deque< histentry_eprop >::iterator* finish );
+
+  void register_update( double t_lastupdate,
+     double t_update );
 
 };
 

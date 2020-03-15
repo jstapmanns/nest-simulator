@@ -239,7 +239,6 @@ nest::iaf_psc_delta_eprop::init_buffers_()
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
   B_.logger_.reset();   // includes resize
-  //init_eprop_buffers();
   // DEBUG: print last spike per synapse
   //print_t_ls_per_syn();
   Eprop_Archiving_Node::clear_history();
@@ -300,8 +299,6 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     // DEBUG: added reset after each T to be compatible with tf code
     if ( ( origin.get_steps() + lag - 1 ) % static_cast< int >( ( get_update_interval() / h) ) == 0 )
     {
-      //std::cout << "reset rec neuron, step: " << origin.get_steps() + lag << "  update interval: "
-        //<< get_update_interval() << std::endl;
       S_.y3_ = 0.0;
       B_.spikes_.clear();   // includes resize
       V_.reset_next_step_ = false;
@@ -351,12 +348,7 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     if ( S_.y3_ >= P_.V_th_ )
     {
       S_.r_ = V_.RefractoryCounts_;
-      /// std::cout << "ref_counts = " << S_.r_ << std::endl;
       // DEBUG: subtract threshold instead of setting to V_reset
-      //S_.y3_ = P_.V_reset_;
-      //std::cout << S_.y3_ + P_.E_L_ << std::endl;
-      //std::cout << P_.V_th_ << ",  " << std::fabs( ( S_.y3_ - P_.V_th_ ) / P_.V_th_ ) << std::endl;
-      //S_.y3_ -= P_.V_th_;
       V_.reset_next_step_ = true;
 
       // EX: must compute spike time
@@ -368,11 +360,6 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     }
 
     write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
-    // save learning signal for eprop algorithm
-    // TODO: check if that are the quantities needed. My guess is that ist correct since 
-    // in the paper the membrane potential is also measured wrt the resting potential.
-    //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), get_V_m_(), P_.E_L_ + P_.V_th_ );
-
     // set new input current
     S_.y0_ = B_.currents_.get_value( lag );
 
@@ -431,25 +418,8 @@ void
 nest::iaf_psc_delta_eprop::handle(
   DelayedRateConnectionEvent& e )
 {
-  /*
-  const double weight = e.get_weight();
-  const long delay = e.get_delay_steps();
-  const Time stamp = e.get_stamp();
-
-  std::vector< unsigned int >::iterator it = e.begin();
-  */
-
   // Add learning signal to hist entries
   add_learning_to_hist( e );
-  /*
-  std::cout << "weight: " << weight << ", delay: " << delay << ", rate events: " << std::endl;
-  while ( it != e.end() )
-  {
-    ++i;
-    std::cout << e.get_coeffvalue( it ) << ", ";
-  }
-  std::cout << std::endl;
-  */
 }
 
 void

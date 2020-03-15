@@ -533,9 +533,9 @@ nest::Node::get_tau_syn_in( int )
 void
 nest::Node::get_eprop_history( double,
   double,
+  double,
   std::deque< histentry_eprop >::iterator*,
-  std::deque< histentry_eprop >::iterator*,
-  bool )
+  std::deque< histentry_eprop >::iterator* )
 {
   throw UnexpectedEvent();
 }
@@ -559,12 +559,6 @@ nest::Node::get_spike_history_len( ) const
 
 void
 Node::tidy_eprop_history( double )
-{
-    throw UnexpectedEvent();
-}
-
-void
-Node::tidy_spike_history( double )
 {
     throw UnexpectedEvent();
 }

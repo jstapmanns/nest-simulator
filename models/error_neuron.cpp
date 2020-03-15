@@ -106,7 +106,6 @@ nest::error_neuron::Parameters_::set(
 {
   const double ELold = E_L_;
   updateValue< double >( d, names::E_L, E_L_ );
-  //std::cout << "EL" << E_L_ << std::endl;
   const double delta_EL = E_L_ - ELold;
   if ( updateValue< double >( d, names::V_min, V_min_ ) )
   {
@@ -147,12 +146,10 @@ nest::error_neuron::State_::set(
 
   if ( updateValue< double >( d, names::V_m, y3_ ) )
   {
-    //std::cout << "p.EL" << -p.E_L_ << std::endl;
     y3_ -= p.E_L_;
   }
   else
   {
-    //std::cout << "delta_EL" << -delta_EL << std::endl;
     y3_ -= delta_EL;
   }
 }
@@ -212,7 +209,6 @@ nest::error_neuron::init_buffers_()
   B_.logger_.reset(); // includes resize
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
-  //init_eprop_buffers();
   Archiving_Node::clear_history();
 }
 
@@ -224,7 +220,6 @@ nest::error_neuron::calibrate()
 
   const double h = Time::get_resolution().get_ms();
   V_.P33_ = std::exp( -h / P_.tau_m_ );
-  //std::cout << V_.P33_ << ",  " << 1 - V_.P33_ << std::endl;
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
 }
 
@@ -252,8 +247,6 @@ nest::error_neuron::update_( Time const& origin,
     // DEBUG: added reset after each T to be compatible with tf code
     if ( ( origin.get_steps() + lag - 2 ) % static_cast< int >( ( get_update_interval() / h) ) == 0 )
     {
-      //std::cout << "reset readout neuron, step: " << origin.get_steps() + lag << "  update interval: "
-        //<< get_update_interval() << std::endl;
       S_.y3_ = 0.0;
       B_.spikes_.clear();   // includes resize
     }
@@ -261,7 +254,7 @@ nest::error_neuron::update_( Time const& origin,
       S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + ( 1 - V_.P33_ ) * B_.spikes_.get_value( lag );
       S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
 
-      // DEBUG: changed sign (see tf code)
+      // DEBUG: changed sign (see tf code) (maybe this is not true any more)
       S_.learning_signal_ = ( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
       new_learning_signals [ lag ] = S_.learning_signal_;
 
@@ -271,16 +264,6 @@ nest::error_neuron::update_( Time const& origin,
       B_.logger_.record_data( origin.get_steps() + lag );
       write_readout_history( Time::step( origin.get_steps() + lag + 1), S_.learning_signal_);
   }
-
-  /*
-  std::cout << "learning_signal: ";
-  for ( std::vector< double >::iterator runner = new_learning_signals.begin();
-      runner != learning_signals.end(); runner++ )
-  {
-    std::cout << *runner << " ";
-  }
-  std::cout << std::endl;
-  */
 
   // Send delay-rate-neuron-event. This only happens in the final iteration
   // to avoid accumulation in the buffers of the receiving neurons.
@@ -296,7 +279,6 @@ nest::error_neuron::is_eprop_readout()
     {
         return true;
     }
-
 
 void
 nest::error_neuron::handle(
@@ -315,7 +297,6 @@ nest::error_neuron::handle(
   }
 }
 
-
 void
 nest::error_neuron::handle( SpikeEvent& e )
 {
@@ -330,7 +311,6 @@ nest::error_neuron::handle( SpikeEvent& e )
     e.get_weight() * e.get_multiplicity() );
 }
 
-
 void
 nest::error_neuron::handle( CurrentEvent& e )
 {
@@ -344,7 +324,6 @@ nest::error_neuron::handle( CurrentEvent& e )
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
     w * c );
 }
-
 
 void
 nest::error_neuron::handle( DataLoggingRequest& e )

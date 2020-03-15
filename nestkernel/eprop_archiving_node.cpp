@@ -75,7 +75,6 @@ nest::Eprop_Archiving_Node::set_status( const DictionaryDatum& d )
 void
 nest::Eprop_Archiving_Node::init_eprop_buffers( double delay )
 {
-  //std::cout << "Eprop_Archiving_Node init_eprop_buffers" << std::endl;
   // register first etry for every synapse. If it is already in the list increase access counter.
   std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
       last_spike_per_synapse_.begin(),
@@ -121,13 +120,6 @@ void
 nest::Eprop_Archiving_Node::print_eprop_history()
 {
   std::cout << "eprop hist t, h, ls:" << std::endl;
-  /*
-  for ( std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
-      runner != eprop_history_.end(); runner++ )
-  {
-    std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->learning_signal_ << "; ";
-  }
-  */
   std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
   for ( int i = 0; i < 10; i++ )
   {
@@ -138,54 +130,12 @@ nest::Eprop_Archiving_Node::print_eprop_history()
 }
 
 void
-nest::Eprop_Archiving_Node::get_eprop_history( double t1,
+nest::Eprop_Archiving_Node::find_eprop_hist_entries( double t1,
   double t2,
   std::deque< histentry_eprop >::iterator* start,
-  std::deque< histentry_eprop >::iterator* finish,
-  bool decrease_access_counter = true )
+  std::deque< histentry_eprop >::iterator* finish )
 {
-  // t1 = t_last_spike_ equals -1000.0 - dendritic delay at the beginning of the simulation. To find
-  // the correct entry in last_spikes_per_synapse we use the the max function.
-  //t1 = std::max( -1000.0, t1 );
-  if ( decrease_access_counter )
-  {
-    // register spike time if it is not in the list, otherwise increase access counter.
-    std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
-        last_spike_per_synapse_.begin(),
-        last_spike_per_synapse_.end(),
-        t2 - kernel().connection_manager.get_stdp_eps() );
-    if ( it_reg == last_spike_per_synapse_.end() ||
-        fabs( t2 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
-    {
-      last_spike_per_synapse_.insert( it_reg, histentry_extended( t2, 0.0, 1 ) );
-    }
-    else
-    {
-      it_reg->access_counter_++;
-    }
-    // search for old entry and decrease access counter and delete entry if the access counter
-    // equals zero
-    it_reg = std::lower_bound(
-        last_spike_per_synapse_.begin(),
-        last_spike_per_synapse_.end(),
-        t1 - kernel().connection_manager.get_stdp_eps() );
-    if ( it_reg == last_spike_per_synapse_.end() ||
-        fabs( t1 - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
-    {
-      std::cout << "found nothing, searched for:" << t1 << std::endl;
-    }
-    else
-    {
-      it_reg->access_counter_--;
-      // delete old entry
-      if ( decrease_access_counter && it_reg->access_counter_ == 0 )
-      {
-        it_reg = last_spike_per_synapse_.erase( it_reg );
-      }
-    }
-  }
-
-  // set pointer to entries of LTP hist that correspond to the times t1 and t2.
+  // set pointer to entries of eprop history hist that correspond to the times t1 and t2.
   *finish = eprop_history_.end();
   if ( eprop_history_.empty() )
   {
@@ -212,13 +162,62 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
 }
 
 void
+nest::Eprop_Archiving_Node::register_update( double t_lastupdate,
+   double t_update )
+{
+  // register spike time if it is not in the list, otherwise increase access counter.
+  std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
+      last_spike_per_synapse_.begin(),
+      last_spike_per_synapse_.end(),
+      t_update - kernel().connection_manager.get_stdp_eps() );
+  if ( it_reg == last_spike_per_synapse_.end() ||
+      fabs( t_update - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
+  {
+    last_spike_per_synapse_.insert( it_reg, histentry_extended( t_update, 0.0, 1 ) );
+  }
+  else
+  {
+    it_reg->access_counter_++;
+  }
+  // search for old entry and decrease access counter and delete entry if the access counter
+  // equals zero
+  it_reg = std::lower_bound(
+      last_spike_per_synapse_.begin(),
+      last_spike_per_synapse_.end(),
+      t_lastupdate - kernel().connection_manager.get_stdp_eps() );
+  if ( it_reg == last_spike_per_synapse_.end() ||
+      fabs( t_lastupdate - it_reg->t_ ) > kernel().connection_manager.get_stdp_eps() )
+  {
+    std::cout << "found nothing, searched for:" << t_lastupdate << std::endl;
+  }
+  else
+  {
+    it_reg->access_counter_--;
+    // delete old entry
+    if ( it_reg->access_counter_ == 0 )
+    {
+      it_reg = last_spike_per_synapse_.erase( it_reg );
+    }
+  }
+}
+
+void
+nest::Eprop_Archiving_Node::get_eprop_history( double t1,
+  double t2,
+  double t3,
+  std::deque< histentry_eprop >::iterator* start,
+  std::deque< histentry_eprop >::iterator* finish )
+{
+  register_update( t1, t3 );
+  nest::Eprop_Archiving_Node::find_eprop_hist_entries( t1, t2, start, finish );
+}
+
+void
 nest::Eprop_Archiving_Node::get_spike_history( double t1,
   double t2,
   std::deque< double >::iterator* start,
   std::deque< double >::iterator* finish)
 {
-  t1 = std::max( -1000.0, t1 );
-
   // set pointer to entries of LTP hist that correspond to the times t1 and t2.
   *finish = spike_history_.end();
   if ( spike_history_.empty() )
@@ -246,60 +245,30 @@ nest::Eprop_Archiving_Node::get_spike_history( double t1,
 void
 nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
 {
+  double smallest_time_to_keep = ( last_spike_per_synapse_.begin() )->t_;
   if ( !eprop_history_.empty() )
   {
     // erase history for times smaller than the smallest last spike time.
     // search for coresponding hist entry
-    t1 = std::max( -1000.0, t1 );
-
     std::deque< histentry_eprop >::iterator start;
     std::deque< histentry_eprop >::iterator finish;
-    
-    // Get part of history to which the learning signal is added
-    // This increases the access counter which is undone below
-    nest::Eprop_Archiving_Node::get_eprop_history(
-       1000.0, ( last_spike_per_synapse_.begin() )->t_, &start, &finish, false );
-
-    /*
-    std::deque< histentry_eprop >::iterator it_del_upper = std::lower_bound(
-        eprop_history_.begin(),
-        eprop_history_.end(),
-        ( last_spike_per_synapse_.begin() )->t_ + kernel().connection_manager.get_stdp_eps() );
-
-    if ( finish != it_del_upper )
-    {
-      std::cout << "got ";
-      if ( finish != eprop_history_.end() )
-      {
-        std::cout << "here";
-        std::cout << finish->t_ << " and ";
-      }
-      else
-      {
-        std::cout << "there";
-        std::cout << "end() and ";
-      }
-      std::cout << it_del_upper->t_ << " at: " << t1 << std::endl;
-      throw std::exception();
-    }
-    */
+    nest::Eprop_Archiving_Node::find_eprop_hist_entries(
+       0.0, smallest_time_to_keep, &start, &finish );
     // erase entries that are no longer used
     eprop_history_.erase( eprop_history_.begin(), finish );
   }
-}
-
-
-void
-nest::Eprop_Archiving_Node::tidy_spike_history( double t1_spk )
-{
-  if ( !spike_history_.empty() )
+  // tidy spike history
+  for ( std::deque< double >::iterator runner = spike_history_.begin();
+      runner != spike_history_.end(); runner++ )
   {
-    t1_spk = std::max( -1000.0, t1_spk );
-    std::deque< double >::iterator start_spk;
-    std::deque< double >::iterator finish_spk;
-    nest::Eprop_Archiving_Node::get_spike_history(
-       1000.0, ( last_spike_per_synapse_.begin() )->t_, &start_spk, &finish_spk );
-    spike_history_.erase( spike_history_.begin(), finish_spk );
+    if ( *runner + 1.0e-6 < smallest_time_to_keep )
+    {
+      spike_history_.erase( runner );
+    }
+    else
+    {
+      break;
+    }
   }
 }
 
@@ -308,25 +277,8 @@ nest::Eprop_Archiving_Node::write_readout_history( Time const& t_sp,
   double learning_signal )
 {
   const double t_ms = t_sp.get_ms();
-  //std::cout << "learning_signal: " << learning_signal << std::endl;
-
   if ( n_incoming_ )
   {
-    /* old code
-    // prune all entries from history which are no longer needed
-    // except the penultimate one. we might still need it.
-    while ( eprop_history_.size() > 1 )
-    {
-      if ( eprop_history_.front().access_counter_ >= n_incoming_ )
-      {
-        eprop_history_.pop_front();
-      }
-      else
-      {
-        break;
-      }
-    }
-    */
     // create new entry in history
     eprop_history_.push_back( histentry_eprop( t_ms, 0.0, learning_signal, 0 ) );
   }
@@ -344,18 +296,8 @@ nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
     // create new entry in history
     // DEBUG: additional factor 1 / V_th
     double h = pseudo_deriv( V_m, V_th ) / V_th;
-    //std::cout << V_m << ",  " << h << std::endl;
     eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0 ) );
   }
-  /*
-  std::cout << "learning hisotry: " << std::endl;
-  for ( std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
-      runner != eprop_history_.end(); runner++ )
-  {
-    std::cout << runner->V_m_ << " ";
-  }
-  std::cout << std::endl;
-  */
 }
 
 
@@ -381,26 +323,15 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e 
   
   // Get part of history to which the learning signal is added
   // This increases the access counter which is undone below
-  nest::Eprop_Archiving_Node::get_eprop_history(
-     t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish, false );
-
+  nest::Eprop_Archiving_Node::find_eprop_hist_entries(
+     t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish );
   std::vector< unsigned int >::iterator it = e.begin();
-
-  //std::cout << "t_ms = " << t_ms << std::endl;
-  //std::cout << "learning to hist: " << std::endl;
-
-  // The call to get_coeffvalue( it ) in this loop also advances the iterator it
   while ( start != finish && it != e.end() )
   {
     // Add learning signal and reduce access counter
     start->learning_signal_ += weight * e.get_coeffvalue( it );
-    // DEBUG: I think we do not need that any more since get_eprop_history doe not modify the access
-    // counter if the last argument is set to false
-    //( start->access_counter_ )--;
-    //std::cout << start->t_ << ", " << start->V_m_ << ", " << start->learning_signal_ << "; ";
     start++;
   }
-  //std::cout << std::endl;
 }
 
 double

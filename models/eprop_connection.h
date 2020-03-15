@@ -220,7 +220,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
   // store times of incoming spikes to enable computation of eligibility trace
   pre_syn_spike_times_.push_back( t_spike );
 
-  // do update only 
+  // do update only if this is the first spike in a new inverval T
   if ( t_spike > t_nextupdate_ )
   {
     if ( keep_traces_ < 1.0 )
@@ -234,55 +234,25 @@ EpropConnection< targetidentifierT >::send( Event& e,
 
     std::deque< double >::iterator start_spk;
     std::deque< double >::iterator finish_spk;
-    // For a new synapse, t_lastspike_ contains the point in time of the last
-    // spike. So we initially read the
-    // history(t_last_spike - dendritic_delay, ..., T_spike-dendritic_delay]
-    // which increases the access counter for these entries.
-    // At registration, all entries' access counters of
-    // history[0, ..., t_last_spike - dendritic_delay] have been
-    // incremented by Archiving_Node::register_stdp_connection(). See bug #218 for
-    // details.
     //DEBUG: added 2*delay to be in sync with TF code
     double t_update_ = ( floor( t_spike / update_interval_ ) ) * update_interval_ + 2.0 *
       dendritic_delay;
-    //std::cout << "t_update = " << t_update_ << " update interval = " << update_interval_ << std::endl;
-    // double t1 = std::max( 0.0, ( floor( t_lastspike_ / update_interval_ ) ) * update_interval_ );
-    // double t2 = t1 + update_interval_;
-
-    //std::cout << "in synapse at time: " << t_spike << ", t_lu: " << t_lastupdate_
-     //<< ", t_u: " << t_update_ << std::endl;
     if ( start != finish )
     {
       ++start;
     }
-    // target->get_eprop_history( t1 - dendritic_delay,
-    //     t2 - dendritic_delay,
-    //     &start,
-    //     &finish );
-
     double const dt = Time::get_resolution().get_ms();
     double kappa = std::exp( -dt / tau_kappa_ );
     std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
     double dw = 0.0;
     if (target->is_eprop_readout() )  // if target is a readout neuron
     {
-      //std::cout << "t_lu out : " << t_lastupdate_ << "  t_updadte = " << t_update_ << std::endl;
       target->get_eprop_history( t_lastupdate_ + dendritic_delay,
           t_lastupdate_ + update_interval_ + dendritic_delay,
+          t_update_ + dendritic_delay,
           &start,
           &finish );
 
-      /*
-      if ( Eprop_Archiving_Node* t_eprop = dynamic_cast< Eprop_Archiving_Node* >( target ) )
-      {
-        std::cout << "update readout" << std::endl;
-        t_eprop->print_eprop_history();
-      }
-      */
-      //std::cout << "I'm a readout neuron" << std::endl;
-      //std::cout << "lu + delay = " << t_lastupdate_ + dendritic_delay << "  t_update + delay = " <<
-        //t_update_ + dendritic_delay << std::endl;
-      //std::cout << "trace: t, z_hat, ls:" << std::endl;
       while ( start != finish )
       {
         last_e_trace_ *= kappa;
@@ -292,19 +262,16 @@ EpropConnection< targetidentifierT >::send( Event& e,
           last_e_trace_ += ( 1.0 - kappa );
           t_pre_spike++;
         }
-        //std::cout << start->t_ << " " << last_e_trace_ << " " << start->learning_signal_ << "; ";
         dw += start->learning_signal_ * last_e_trace_;
         start++;
       }
       dw *= learning_rate_ * dt;
-      //std::cout << std::endl << "dw out = " << dw << std::endl;
     }
     else  // if target is a neuron of the recurrent network
     {
-      //std::cout << "from rec: " << t_lastupdate_  << "  to: " << t_lastupdate_ + update_interval_ 
-        //<< "  t_updadte = " << t_update_ << std::endl;
       target->get_eprop_history( t_lastupdate_ - 0.0 * dendritic_delay,
           t_lastupdate_ + update_interval_ - 0.0 * dendritic_delay,
+          t_update_,
           &start,
           &finish );
 
@@ -342,23 +309,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
       else
       {
         // if the target is of type iaf_psc_delta_eprop
-        /*
-        std::cout << "pre syn spike times:" << std::endl;
-        for ( std::vector< double >::iterator sp_it = pre_syn_spike_times_.begin(); sp_it !=
-            pre_syn_spike_times_.end(); sp_it++ )
-        {
-          std::cout << *sp_it << ", ";
-        }
-        std::cout << std::endl;
-        */
-        /*
-        if ( Eprop_Archiving_Node* t_eprop = dynamic_cast< Eprop_Archiving_Node* >( target ) )
-        {
-          std::cout << "update recurrent" << std::endl;
-          t_eprop->print_eprop_history();
-        }
-        */
-        //std::cout << "t, ls, h, z_hat: " << std::endl;
         for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
         {
           // Eq.(22)
@@ -370,63 +320,30 @@ EpropConnection< targetidentifierT >::send( Event& e,
             last_e_trace_ += ( 1.0 - alpha );
             t_pre_spike++;
           }
-          //std::cout << runner->t_ << " " << runner->learning_signal_ << " " << runner->V_m_ << " " << last_e_trace_ << ";  ";
           double eleg_tr = runner->V_m_ * last_e_trace_;
           sum_eleg_tr += eleg_tr;
           n_eleg_tr += 1.0;
           // Eq.(23)
           elegibility_trace.push_back( eleg_tr );
         }
-        //std::cout << std::endl;
       }
-
-      /*
-      std::cout << "elegibility trace (" << elegibility_trace.size() << "): " << std::endl;
-      for ( std::vector< double >::iterator it = elegibility_trace.begin(); it !=
-      elegibility_trace.end(); it++)
-      {
-      std::cout << *it << ", ";
-      }
-      std::cout << std::endl;
-      */
-      /*
-      std::cout  << "learning_signal: " << std::endl;;
-      for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
-      {
-        std::cout << runner->learning_signal_ << " ";
-      }
-      std::cout << std::endl;
-      */
 
       int t_prime = 0;
-      //double sum_t_prime = 0.0;
       double sum_t_prime_new = 0.0;
-      // std::cout << "dw(t): " << std::endl;
-      //std::cout << "learning signal:" << std::endl;
       while ( start != finish )
       {
         // DEBUG: inserted factor ( 1 - decay )
         sum_t_prime_new = kappa * sum_t_prime_new + ( 1.0 - kappa ) * elegibility_trace[ t_prime ];
         dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * start->learning_signal_;
-        //std::cout << start->learning_signal_ << ",  ";
-        // std::cout << dw*dt + weight_ << " ";
-        //std::cout << start->V_m_ << ", ";
         t_prime++;
         start++;
       }
-      //std::cout << std::endl;
-      /*
-      std::cout << "target f_rate = " << target_firing_rate_ << "  actual f_rate = " <<
-        av_firing_rate << "  dw_f_rate = " << rate_reg_ * ( target_firing_rate_ - av_firing_rate ) *
-        sum_eleg_tr << std::endl;
-        */
       // firing rate regularization
       target->get_spike_history( t_lastupdate_,
           t_lastupdate_ + update_interval_,
           &start_spk,
           &finish_spk );
       int nspikes = std::distance(start_spk, finish_spk);
-      // std::cout << "nspikes " << nspikes << std::endl;
       // compute average firing rate since last update. factor 1000 to convert into Hz
       double av_firing_rate = nspikes / update_interval_;
       // Eq.(56)
@@ -434,30 +351,9 @@ EpropConnection< targetidentifierT >::send( Event& e,
 
       dw *= dt*learning_rate_;
       t_prime_int_trace_ += sum_t_prime_new * dt;
-      //std::cout << "dw rec/in: " << dw << "  new weight: " << dw + weight_ << "  n_spikes: " <<
-        //nspikes << "  sum tr: " << sum_eleg_tr << "  n tr: " << n_eleg_tr << std::endl;
     }
 
     weight_ += dw;
-    //std::cout << "dw: " << dw << std::endl;
-    /*
-    if ( ! target->is_eprop_readout() )  // if target is a readout neuron
-    {
-      std::cout << "weight: " << weight_ << std::endl;
-    }
-    */
-
-    // TODO: keep this in final implementation
-    /*
-    if ( weight_ > Wmax_ )
-    {
-      weight_ = Wmax_;
-    }
-    else if ( weight_ < Wmin_ )
-    {
-      weight_ = Wmin_;
-    }
-    */
     // DEBUG: define t_lastupdate_ to be the end of the last period T to be compatible with tf code
     t_lastupdate_ = t_update_;
     t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) *
@@ -465,9 +361,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
     // clear history of presynaptic spike because we don't need them any more
     pre_syn_spike_times_.clear();
     pre_syn_spike_times_.push_back( t_spike );
-    // TODO: uncomment again
+    // DEBUG: tidy_eprop_history also takes care of the spike_history
     target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
-    //target->tidy_spike_history( t_update_ - update_interval_- dendritic_delay );
   }
 
   e.set_receiver( *target );
