@@ -266,6 +266,8 @@ nest::aif_psc_delta_eprop::calibrate()
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
   V_.Pa_ = std::exp( -h / P_.tau_a_ );
 
+  // DEBUG:
+  V_.reset_next_step_ = false;
 
   // t_ref_ specifies the length of the absolute refractory period as
   // a double in ms. The grid based iaf_psp_delta can only handle refractory
@@ -305,42 +307,84 @@ nest::aif_psc_delta_eprop::update( Time const& origin,
   const double h = Time::get_resolution().get_ms();
   for ( long lag = from; lag < to; ++lag )
   {
-    if ( S_.r_ == 0 )
+    // DEBUG: added reset after each T to be compatible with tf code
+    if ( ( origin.get_steps() + lag - 1 ) % static_cast< int >( ( get_update_interval() / h) ) == 0 )
     {
-      // neuron not refractory
-      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
-        + B_.spikes_.get_value( lag );
-
-      // if we have accumulated spikes from refractory period,
-      // add and reset accumulator
-      if ( P_.with_refr_input_ && S_.refr_spikes_buffer_ != 0.0 )
-      {
-        S_.y3_ += S_.refr_spikes_buffer_;
-        S_.refr_spikes_buffer_ = 0.0;
-      }
-
-      // lower bound of membrane potential
-      S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
+      S_.y3_ = 0.0;
+      B_.spikes_.clear();   // includes resize
+      V_.reset_next_step_ = false;
     }
-    else // neuron is absolute refractory
-    {
-      // read spikes from buffer and accumulate them, discounting
-      // for decay until end of refractory period
-      if ( P_.with_refr_input_ )
-      {
-        S_.refr_spikes_buffer_ +=
-          B_.spikes_.get_value( lag ) * std::exp( -S_.r_ * h / P_.tau_m_ );
-      }
-      else
-      {
-        B_.spikes_.get_value( lag );
-      } // clear buffer entry, ignore spike
-
-      --S_.r_;
-    }
-
     // update spiking threshold
     S_.a_ *= V_.Pa_;
+    // DEBUG: introduce factor ( 1 - exp( -dt / tau_m ) ) for incoming spikes
+    S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
+      // DEBUG: in evidence accumulation this factor is not there
+      //+ ( 1.0 - V_.P33_ ) * B_.spikes_.get_value( lag );
+      + B_.spikes_.get_value( lag );
+
+    // DEBUG: reset in next step after threshold crossing
+    if ( V_.reset_next_step_ )
+    {
+      S_.y3_ -= P_.V_th_;
+      // jump of spiking threshold
+      S_.a_ += 1.0;
+      V_.reset_next_step_ = false;
+      S_.r_ = V_.RefractoryCounts_ - 1;
+    }
+    // TODO: Do we need this lower bound of the membrane potential?
+    // lower bound of membrane potential
+    //S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
+    // threshold crossing (fixed + adaptive)
+    double thr = P_.V_th_ + P_.beta_ * S_.a_;
+    if ( ( S_.y3_ >= thr ) && ( S_.r_ == 0 ) )
+    {
+      // DEBUG: subtract threshold instead of setting to V_reset
+      V_.reset_next_step_ = true;
+      set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
+      //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
+      write_spike_history( Time::step( origin.get_steps() + lag + 1 ) );
+      SpikeEvent se;
+      kernel().event_delivery_manager.send( *this, se, lag );
+    }
+    if ( S_.r_ > 0 )
+    {
+      // if neuron is refractory, the preudo derivative is set to zero
+      write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), P_.V_th_, P_.V_th_ );
+      --S_.r_;
+    }
+    else
+    {
+      write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_ - thr, P_.V_th_ );
+    }
+    // set new input current
+    S_.y0_ = B_.currents_.get_value( lag );
+
+    // voltage logging
+    B_.logger_.record_data( origin.get_steps() + lag );
+  }
+  /*
+  for ( long lag = from; lag < to; ++lag )
+  {
+    // DEBUG: added reset after each T to be compatible with tf code
+    if ( ( origin.get_steps() + lag - 1 ) % static_cast< int >( ( get_update_interval() / h) ) == 0 )
+    {
+      S_.y3_ = 0.0;
+      B_.spikes_.clear();   // includes resize
+      V_.reset_next_step_ = false;
+    }
+    // update spiking threshold
+    S_.a_ *= V_.Pa_;
+    // DEBUG: rewrote code that handles refractory time
+    S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
+      + B_.spikes_.get_value( lag );
+      //+ ( 1.0 - V_.P33_ ) * B_.spikes_.get_value( lag );
+
+    // DEBUG: reset in next step after threshold crossing
+    if ( V_.reset_next_step_ )
+    {
+      S_.y3_ -= P_.V_th_;
+      V_.reset_next_step_ = false;
+    }
     // threshold crossing (fixed + adaptive)
     if ( S_.y3_ >= P_.V_th_ + P_.beta_ * S_.a_ )
     {
@@ -348,20 +392,25 @@ nest::aif_psc_delta_eprop::update( Time const& origin,
       S_.y3_ = P_.V_reset_;
       // jump of spiking threshold
       S_.a_ += 1.0;
-
-      // EX: must compute spike time
-      set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
-
-      write_spike_history( Time::step( origin.get_steps() + lag + 1 ) );
-      SpikeEvent se;
-      kernel().event_delivery_manager.send( *this, se, lag );
+      // send a spike only if the neuron is not refractory
+      if ( S_.r_ == 0 )
+      {
+        // DEBUG: subtract threshold in next step instead of setting to V_reset
+        V_.reset_next_step_ = true;
+        set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
+        // save spike time which is needed to compute the average firing rate
+        write_spike_history( Time::step( origin.get_steps() + lag + 1 ) );
+        SpikeEvent se;
+        kernel().event_delivery_manager.send( *this, se, lag );
+        //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
+      }
+      else
+      {
+        --S_.r_;
+        // if neuron is refractory, the preudo derivative is set to zero
+        //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), 0.0, P_.V_th_ );
+      }
     }
-
-    // save learning signal for eprop algorithm
-    // TODO: check if that are the quantities needed. My guess is that ist correct since 
-    // in the paper the membrane potential is also measured wrt the resting potential.
-    write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
-    //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), get_V_m_(), P_.E_L_ + P_.V_th_ );
 
     // set new input current
     S_.y0_ = B_.currents_.get_value( lag );
@@ -369,6 +418,7 @@ nest::aif_psc_delta_eprop::update( Time const& origin,
     // voltage logging
     B_.logger_.record_data( origin.get_steps() + lag );
   }
+  */
 }
 
 double
@@ -398,7 +448,7 @@ nest::aif_psc_delta_eprop::is_eprop_readout()
 bool
 nest::aif_psc_delta_eprop::is_eprop_adaptive()
 {
-  return false;
+  return true;
 }
 
 void

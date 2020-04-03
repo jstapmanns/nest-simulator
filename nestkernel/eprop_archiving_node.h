@@ -114,7 +114,7 @@ protected:
 
   void add_learning_to_hist( DelayedRateConnectionEvent& e );
 
-  double pseudo_deriv( double V_m, double V_th ) const;
+  double pseudo_deriv( double diff_V_m_V_th, double V_th_const ) const;
   // TODO: V_th as variable of archiving node? Or archiving node as template class?
 
   void get_status( DictionaryDatum& d ) const;

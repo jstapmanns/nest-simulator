@@ -303,63 +303,44 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
       B_.spikes_.clear();   // includes resize
       V_.reset_next_step_ = false;
     }
-    if ( S_.r_ == 0 )
+    // DEBUG: introduce factor ( 1 - exp( -dt / tau_m ) ) for incoming spikes
+    S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
+      // DEBUG II: in evidence accumulation this factor is not there
+      //+ ( 1.0 - V_.P33_ ) * B_.spikes_.get_value( lag );
+      + B_.spikes_.get_value( lag );
+
+    // DEBUG: reset in next step after threshold crossing
+    if ( V_.reset_next_step_ )
     {
-      // neuron not refractory
-      // DEBUG: introduce factor ( 1 - exp( -dt / tau_m ) ) for incoming spikes
-      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
-        + ( 1.0 - V_.P33_ ) * B_.spikes_.get_value( lag );
-
-      // DEBUG: reset in next step after threshold crossing
-      if ( V_.reset_next_step_ )
-      {
-        S_.y3_ -= P_.V_th_;
-        V_.reset_next_step_ = false;
-      }
-      // if we have accumulated spikes from refractory period,
-      // add and reset accumulator
-      if ( P_.with_refr_input_ && S_.refr_spikes_buffer_ != 0.0 )
-      {
-        S_.y3_ += S_.refr_spikes_buffer_;
-        S_.refr_spikes_buffer_ = 0.0;
-      }
-
-      // lower bound of membrane potential
-      S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
+      S_.y3_ -= P_.V_th_;
+      V_.reset_next_step_ = false;
+      S_.r_ = V_.RefractoryCounts_ - 1;
     }
-    else // neuron is absolute refractory
-    {
-      // read spikes from buffer and accumulate them, discounting
-      // for decay until end of refractory period
-      if ( P_.with_refr_input_ )
-      {
-        S_.refr_spikes_buffer_ +=
-          B_.spikes_.get_value( lag ) * std::exp( -S_.r_ * h / P_.tau_m_ );
-      }
-      else
-      {
-        B_.spikes_.get_value( lag );
-      } // clear buffer entry, ignore spike
-
-      --S_.r_;
-    }
-
+    // TODO: Do we need this lower bound of the membrane potential?
+    // lower bound of membrane potential
+    //S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
     // threshold crossing
-    if ( S_.y3_ >= P_.V_th_ )
+    if ( ( S_.y3_ >= P_.V_th_ ) && ( S_.r_ == 0 ) )
     {
-      S_.r_ = V_.RefractoryCounts_;
       // DEBUG: subtract threshold instead of setting to V_reset
       V_.reset_next_step_ = true;
-
-      // EX: must compute spike time
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
-
+      //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
       write_spike_history( Time::step( origin.get_steps() + lag + 1 ) );
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );
     }
+    if ( S_.r_ > 0 )
+    {
+      // if neuron is refractory, the preudo derivative is set to zero
+      write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), P_.V_th_, P_.V_th_ );
+      --S_.r_;
+    }
+    else
+    {
+      write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_ - P_.V_th_, P_.V_th_ );
+    }
 
-    write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
     // set new input current
     S_.y0_ = B_.currents_.get_value( lag );
 

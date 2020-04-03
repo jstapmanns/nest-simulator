@@ -286,7 +286,7 @@ nest::Eprop_Archiving_Node::write_readout_history( Time const& t_sp,
 
 void
 nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
-  double V_m,
+  double diff_V_m_V_th,
   double V_th )
 {
   const double t_ms = t_sp.get_ms();
@@ -295,7 +295,7 @@ nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
   {
     // create new entry in history
     // DEBUG: additional factor 1 / V_th
-    double h = pseudo_deriv( V_m, V_th ) / V_th;
+    double h = pseudo_deriv( diff_V_m_V_th, V_th ) / V_th;
     eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0 ) );
   }
 }
@@ -335,9 +335,13 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e 
 }
 
 double
-nest::Eprop_Archiving_Node::pseudo_deriv( double V_m, double V_th ) const
+nest::Eprop_Archiving_Node::pseudo_deriv( double diff_V_m_V_th, double V_th_const ) const
 {
-  double norm_diff_threshold = 1.0 - std::fabs( ( V_m - V_th ) / V_th );
+  // DEBUG: v_scaled = (Vm - adaptive_thr) / V_th,
+  // where adaptive_thr is the spiking threshold including the adaptive part and
+  // V_th is the constant part of the threshold. In the normal LIF neuron
+  // adaptive_thr = V_th
+  double norm_diff_threshold = 1.0 - std::fabs( ( diff_V_m_V_th ) / V_th_const );
   return dampening_factor_ * ( ( norm_diff_threshold > 0.0 ) ? norm_diff_threshold : 0.0 );
 }
 

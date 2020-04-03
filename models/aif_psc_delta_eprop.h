@@ -295,6 +295,8 @@ private:
     double Pa_;
 
     int RefractoryCounts_;
+    // DEBUG:
+    bool reset_next_step_;
   };
 
   // Access functions for UniversalDataLogger -------------------------------
@@ -329,7 +331,9 @@ private:
   double
   get_spiking_threshold_() const
   {
-    return P_.V_th_ + P_.E_L_ + P_.beta_ * S_.a_;
+    // DEBUG: retunr only a
+    return S_.a_;
+    //return P_.V_th_ + P_.E_L_ + P_.beta_ * S_.a_;
   }
 
   // ----------------------------------------------------------------

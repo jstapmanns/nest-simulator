@@ -194,6 +194,8 @@ private:
   double keep_traces_;
   double rate_reg_;
   double target_firing_rate_;
+  double tau_low_pass_e_tr_; // time constant for low pass filtering of the eligibility trace
+  double propagator_low_pass_; // exp( -dt / tau_low_pass_e_tr_ )
 
   std::vector< double > pre_syn_spike_times_;
 };
@@ -279,32 +281,51 @@ EpropConnection< targetidentifierT >::send( Event& e,
       double alpha = target->get_leak_propagator();
       // compute the sum of the elegibility trace because it is used for the firing rate
       // regularization
-      double sum_eleg_tr = 0.0;
-      double n_eleg_tr = 0.0;
+      double sum_elig_tr = 0.0;
+      double n_elig_tr = 0.0;
+      // auxiliary variable to compute low pass filtering of eligibility trace
+      double elig_tr_low_pass = 0.0;
       if ( target->is_eprop_adaptive() )
       {
         // if the target is of type aif_psc_delta_eprop (adaptive threshold)
         double beta = target->get_beta();
         double rho = target->get_adapt_propagator();
         double epsilon = 0.0;
+        // DEBUG: store epsilon in a vector for debugging purposes
+        std::vector< double > epsilon_a;
         for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
         {
           double pseudo_deriv = runner->V_m_;
           // Eq.(22)
           last_e_trace_ *= alpha;
-          // Eq.(27)
-          epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
-          if ( std::fabs( *t_pre_spike - runner->t_ ) < 1.0e-6 )
+          if ( std::fabs( *t_pre_spike - runner->t_  + 1.0*dendritic_delay) < 1.0e-6 )
           {
             // DEBUG: inserted factor ( 1 - dacay )
-            last_e_trace_ += ( 1.0 - alpha );
+            // DEBUG II: removed factor ( 1 - decay )
+            //last_e_trace_ += ( 1.0 - alpha );
+            last_e_trace_ += 1.0;
             t_pre_spike++;
           }
-          double eleg_tr = pseudo_deriv * ( last_e_trace_  - beta * epsilon );
-          sum_eleg_tr += eleg_tr;
           // Eq.(28)
-          elegibility_trace.push_back( eleg_tr );
+          double elig_tr = pseudo_deriv * ( last_e_trace_  - beta * epsilon );
+          elig_tr_low_pass = elig_tr_low_pass * propagator_low_pass_
+            + elig_tr * ( 1.0 - propagator_low_pass_ );
+          sum_elig_tr += elig_tr_low_pass;
+          // Eq.(27)
+          epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
+          elegibility_trace.push_back( elig_tr_low_pass );
+          // DEBUG:
+          epsilon_a.push_back( elig_tr_low_pass );
         }
+        std::cout << "e trace low pass adaptive:" << std::endl;
+        int counter = 0;
+        for (std::vector< double >::iterator runner = epsilon_a.begin();
+            runner != epsilon_a.end(); runner++ )
+        {
+          std::cout << counter << ". " << *runner << "| ";
+          counter++;
+        }
+        std::cout << std::endl;
       }
       else
       {
@@ -317,15 +338,28 @@ EpropConnection< targetidentifierT >::send( Event& e,
           if ( std::fabs( *t_pre_spike - runner->t_ + dendritic_delay ) < 1.0e-6 )
           {
             // DEBUG: inserted factor ( 1 - dacay )
-            last_e_trace_ += ( 1.0 - alpha );
+            // DEBUG II: removed factor ( 1 - decay )
+            //last_e_trace_ += ( 1.0 - alpha );
+            last_e_trace_ += 1.0;
             t_pre_spike++;
           }
-          double eleg_tr = runner->V_m_ * last_e_trace_;
-          sum_eleg_tr += eleg_tr;
-          n_eleg_tr += 1.0;
+          double elig_tr = runner->V_m_ * last_e_trace_;
+          elig_tr_low_pass = elig_tr_low_pass * propagator_low_pass_
+            + elig_tr * ( 1.0 - propagator_low_pass_ );
+          sum_elig_tr += elig_tr_low_pass;
+          n_elig_tr += 1.0;
           // Eq.(23)
-          elegibility_trace.push_back( eleg_tr );
+          elegibility_trace.push_back( elig_tr_low_pass );
         }
+        std::cout << "e trace regular:" << std::endl;
+        int counter = 0;
+        for (std::vector< double >::iterator runner = elegibility_trace.begin();
+            runner != elegibility_trace.end(); runner++ )
+        {
+          std::cout << counter << ". " << *runner << "| ";
+          counter++;
+        }
+        std::cout << std::endl;
       }
 
       int t_prime = 0;
@@ -347,7 +381,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
       // compute average firing rate since last update. factor 1000 to convert into Hz
       double av_firing_rate = nspikes / update_interval_;
       // Eq.(56)
-      dw += -rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_eleg_tr / n_eleg_tr;
+      dw += -rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_elig_tr / n_elig_tr;
 
       dw *= dt*learning_rate_;
       t_prime_int_trace_ += sum_t_prime_new * dt;
@@ -395,6 +429,7 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , keep_traces_( true )
   , rate_reg_( 0. )
   , target_firing_rate_( 10. )
+  , tau_low_pass_e_tr_( 0.0 )
 {
 }
 
@@ -417,6 +452,7 @@ EpropConnection< targetidentifierT >::EpropConnection(
   , keep_traces_( rhs.keep_traces_ )
   , rate_reg_( rhs.rate_reg_ )
   , target_firing_rate_( rhs.target_firing_rate_ )
+  , tau_low_pass_e_tr_( rhs.tau_low_pass_e_tr_ )
 {
 }
 
@@ -435,6 +471,7 @@ EpropConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::keep_traces, keep_traces_ );
   def< double >( d, names::rate_reg, rate_reg_ );
   def< double >( d, names::target_firing_rate, target_firing_rate_ );
+  def< double >( d, names::tau_decay, tau_low_pass_e_tr_ );
   def< long >( d, names::size_of, sizeof( *this ) );
 }
 
@@ -454,12 +491,27 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   updateValue< double >( d, names::keep_traces, keep_traces_ );
   updateValue< double >( d, names::rate_reg, rate_reg_ );
   updateValue< double >( d, names::target_firing_rate, target_firing_rate_ );
+  updateValue< double >( d, names::tau_decay, tau_low_pass_e_tr_ );
 
   // TODO: t_nextupdate and t_lastupdate should be initialized even if set_status is not called
   // DEBUG: added + delay to correct for the delay of the learning signal
   t_nextupdate_ = update_interval_ + 2.0 * get_delay(); // TODO: is this waht we want?
   //DEBUG: shifted initial value of t_lastupdate to be in sync with TF code
   t_lastupdate_ = 2.0 * get_delay();
+  // compute propagator for low pass filtering of eligibility trace
+  if ( tau_low_pass_e_tr_ > 0.0 )
+  {
+    const double h = Time::get_resolution().get_ms();
+    propagator_low_pass_ = exp( -h / tau_low_pass_e_tr_ );
+  }
+  else if ( tau_low_pass_e_tr_ == 0.0 )
+  {
+    propagator_low_pass_ = 0.0;
+  }
+  else
+  {
+    throw BadProperty( "The synaptic time constant tau_decay must be greater than zero." );
+  }
 
   // check if weight_ and Wmin_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
