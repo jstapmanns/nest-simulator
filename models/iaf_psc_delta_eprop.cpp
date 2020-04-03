@@ -314,7 +314,12 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     {
       S_.y3_ -= P_.V_th_;
       V_.reset_next_step_ = false;
-      S_.r_ = V_.RefractoryCounts_ - 1;
+      if ( V_.RefractoryCounts_ > 0 )
+      {
+        // TODO: This reproduces the behaviour of the tf code but we have to test it in case
+        // Refractory_Counts == 1
+        S_.r_ = V_.RefractoryCounts_ - 1;
+      }
     }
     // TODO: Do we need this lower bound of the membrane potential?
     // lower bound of membrane potential

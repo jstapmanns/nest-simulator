@@ -317,6 +317,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           // DEBUG:
           epsilon_a.push_back( elig_tr_low_pass );
         }
+        /*
         std::cout << "e trace low pass adaptive:" << std::endl;
         int counter = 0;
         for (std::vector< double >::iterator runner = epsilon_a.begin();
@@ -326,6 +327,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           counter++;
         }
         std::cout << std::endl;
+        */
       }
       else
       {
@@ -344,13 +346,17 @@ EpropConnection< targetidentifierT >::send( Event& e,
             t_pre_spike++;
           }
           double elig_tr = runner->V_m_ * last_e_trace_;
+          /*
           elig_tr_low_pass = elig_tr_low_pass * propagator_low_pass_
             + elig_tr * ( 1.0 - propagator_low_pass_ );
+            */
+          elig_tr_low_pass = elig_tr;
           sum_elig_tr += elig_tr_low_pass;
           n_elig_tr += 1.0;
           // Eq.(23)
           elegibility_trace.push_back( elig_tr_low_pass );
         }
+        /*
         std::cout << "e trace regular:" << std::endl;
         int counter = 0;
         for (std::vector< double >::iterator runner = elegibility_trace.begin();
@@ -360,6 +366,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           counter++;
         }
         std::cout << std::endl;
+        */
       }
 
       int t_prime = 0;
@@ -396,7 +403,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     pre_syn_spike_times_.clear();
     pre_syn_spike_times_.push_back( t_spike );
     // DEBUG: tidy_eprop_history also takes care of the spike_history
-    target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
+    //target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
   }
 
   e.set_receiver( *target );

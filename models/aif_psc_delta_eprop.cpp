@@ -311,6 +311,7 @@ nest::aif_psc_delta_eprop::update( Time const& origin,
     if ( ( origin.get_steps() + lag - 1 ) % static_cast< int >( ( get_update_interval() / h) ) == 0 )
     {
       S_.y3_ = 0.0;
+      S_.a_ = 0.0;
       B_.spikes_.clear();   // includes resize
       V_.reset_next_step_ = false;
     }
@@ -329,7 +330,12 @@ nest::aif_psc_delta_eprop::update( Time const& origin,
       // jump of spiking threshold
       S_.a_ += 1.0;
       V_.reset_next_step_ = false;
-      S_.r_ = V_.RefractoryCounts_ - 1;
+      if ( V_.RefractoryCounts_ > 0 )
+      {
+        // TODO: This reproduces the behaviour of the tf code but we have to test it in case
+        // Refractory_Counts == 1
+        S_.r_ = V_.RefractoryCounts_ - 1;
+      }
     }
     // TODO: Do we need this lower bound of the membrane potential?
     // lower bound of membrane potential
