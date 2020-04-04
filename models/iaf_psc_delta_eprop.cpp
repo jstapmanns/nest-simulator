@@ -300,6 +300,7 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     if ( ( origin.get_steps() + lag - 1 ) % static_cast< int >( ( get_update_interval() / h) ) == 0 )
     {
       S_.y3_ = 0.0;
+      S_.r_ = 0;
       B_.spikes_.clear();   // includes resize
       V_.reset_next_step_ = false;
     }

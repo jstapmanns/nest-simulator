@@ -282,7 +282,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
       // compute the sum of the elegibility trace because it is used for the firing rate
       // regularization
       double sum_elig_tr = 0.0;
-      double n_elig_tr = 0.0;
       // auxiliary variable to compute low pass filtering of eligibility trace
       double elig_tr_low_pass = 0.0;
       if ( target->is_eprop_adaptive() )
@@ -308,6 +307,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           }
           // Eq.(28)
           double elig_tr = pseudo_deriv * ( last_e_trace_  - beta * epsilon );
+          //elig_tr_low_pass = elig_tr;
           elig_tr_low_pass = elig_tr_low_pass * propagator_low_pass_
             + elig_tr * ( 1.0 - propagator_low_pass_ );
           sum_elig_tr += elig_tr_low_pass;
@@ -317,6 +317,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           // DEBUG:
           epsilon_a.push_back( elig_tr_low_pass );
         }
+        //std::cout << "sum_elig_tr adaptive = " << sum_elig_tr << std::endl;
         /*
         std::cout << "e trace low pass adaptive:" << std::endl;
         int counter = 0;
@@ -332,6 +333,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
       else
       {
         // if the target is of type iaf_psc_delta_eprop
+        // DEBUG: store epsilon in a vector for debugging purposes
+        std::vector< double > epsilon_a;
         for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
         {
           // Eq.(22)
@@ -346,21 +349,21 @@ EpropConnection< targetidentifierT >::send( Event& e,
             t_pre_spike++;
           }
           double elig_tr = runner->V_m_ * last_e_trace_;
-          /*
+          //elig_tr_low_pass = elig_tr;
           elig_tr_low_pass = elig_tr_low_pass * propagator_low_pass_
             + elig_tr * ( 1.0 - propagator_low_pass_ );
-            */
-          elig_tr_low_pass = elig_tr;
           sum_elig_tr += elig_tr_low_pass;
-          n_elig_tr += 1.0;
           // Eq.(23)
           elegibility_trace.push_back( elig_tr_low_pass );
+          epsilon_a.push_back( last_e_trace_ );
         }
         /*
+        std::cout << "sum_elig_tr regular = " << sum_elig_tr  << "  propagator_low_pass_ = " <<
+          propagator_low_pass_ << std::endl;
         std::cout << "e trace regular:" << std::endl;
         int counter = 0;
-        for (std::vector< double >::iterator runner = elegibility_trace.begin();
-            runner != elegibility_trace.end(); runner++ )
+        for (std::vector< double >::iterator runner = epsilon_a.begin();
+            runner != epsilon_a.end(); runner++ )
         {
           std::cout << counter << ". " << *runner << "| ";
           counter++;
@@ -388,10 +391,16 @@ EpropConnection< targetidentifierT >::send( Event& e,
       // compute average firing rate since last update. factor 1000 to convert into Hz
       double av_firing_rate = nspikes / update_interval_;
       // Eq.(56)
-      dw += -rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_elig_tr / n_elig_tr;
+      dw += -rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_elig_tr /
+        elegibility_trace.size();
 
       dw *= dt*learning_rate_;
+      /*
+      std::cout << "dw = " << dw << "  nspikes = " << nspikes << "  av_firing_rate = " <<
+        av_firing_rate << "  target_firing_rate = " << target_firing_rate_ << "  sum_elig_tr = " <<
+        sum_elig_tr << "  rate_reg = " << rate_reg_ << "  n_elig_tr = " << elegibility_trace.size() << std::endl;
       t_prime_int_trace_ += sum_t_prime_new * dt;
+      */
     }
 
     weight_ += dw;
@@ -403,7 +412,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     pre_syn_spike_times_.clear();
     pre_syn_spike_times_.push_back( t_spike );
     // DEBUG: tidy_eprop_history also takes care of the spike_history
-    //target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
+    target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
   }
 
   e.set_receiver( *target );
@@ -437,6 +446,7 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , rate_reg_( 0. )
   , target_firing_rate_( 10. )
   , tau_low_pass_e_tr_( 0.0 )
+  , propagator_low_pass_( 0.0 )
 {
 }
 
@@ -460,6 +470,7 @@ EpropConnection< targetidentifierT >::EpropConnection(
   , rate_reg_( rhs.rate_reg_ )
   , target_firing_rate_( rhs.target_firing_rate_ )
   , tau_low_pass_e_tr_( rhs.tau_low_pass_e_tr_ )
+  , propagator_low_pass_( rhs.propagator_low_pass_ )
 {
 }
 

@@ -312,6 +312,7 @@ nest::aif_psc_delta_eprop::update( Time const& origin,
     {
       S_.y3_ = 0.0;
       S_.a_ = 0.0;
+      S_.r_ = 0.0;
       B_.spikes_.clear();   // includes resize
       V_.reset_next_step_ = false;
     }
