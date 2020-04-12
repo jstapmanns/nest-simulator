@@ -74,6 +74,7 @@ nest::error_neuron::Parameters_::Parameters_()
   , E_L_( -70.0 )                                   // mV
   , I_e_( 0.0 )                                     // pA
   , V_min_( -std::numeric_limits< double >::max() ) // relative E_L_-55.0-E_L_
+  , t_start_ls_( 0.0 )                               // ms
 {
 }
 
@@ -98,6 +99,7 @@ nest::error_neuron::Parameters_::get(
   def< double >( d, names::V_min, V_min_ + E_L_ );
   def< double >( d, names::C_m, c_m_ );
   def< double >( d, names::tau_m, tau_m_ );
+  def< double >( d, names::start, t_start_ls_ );
 }
 
 double
@@ -115,6 +117,7 @@ nest::error_neuron::Parameters_::set(
   updateValue< double >( d, names::I_e, I_e_ );
   updateValue< double >( d, names::C_m, c_m_ );
   updateValue< double >( d, names::tau_m, tau_m_ );
+  updateValue< double >( d, names::start, t_start_ls_ );
 
   if ( c_m_ <= 0 )
   {
@@ -221,6 +224,9 @@ nest::error_neuron::calibrate()
   const double h = Time::get_resolution().get_ms();
   V_.P33_ = std::exp( -h / P_.tau_m_ );
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
+  V_.step_start_ls_ = Time( Time::ms( P_.t_start_ls_ ) ).get_steps();
+  V_.prnt = true;
+  //std::cout << "start = " << V_.step_start_ls_ << std::endl;
 }
 
 /* ----------------------------------------------------------------
@@ -245,10 +251,12 @@ nest::error_neuron::update_( Time const& origin,
   for ( long lag = from; lag < to; ++lag )
   {
     // DEBUG: added reset after each T to be compatible with tf code
-    if ( ( origin.get_steps() + lag - 2 ) % static_cast< int >( ( get_update_interval() / h) ) == 0 )
+    int t_mod_T = ( origin.get_steps() + lag - 2 ) % get_update_interval_steps();
+    if ( t_mod_T == 0 )
     {
       S_.y3_ = 0.0;
       B_.spikes_.clear();   // includes resize
+      V_.prnt = true;
     }
     // DEBUG: introduced factor ( 1 - exp( -dt / tau_m ) ) for campatibility wit tf code
       S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + ( 1 - V_.P33_ ) * B_.spikes_.get_value( lag );
@@ -256,7 +264,16 @@ nest::error_neuron::update_( Time const& origin,
 
       // DEBUG: changed sign (see tf code) (maybe this is not true any more)
       S_.learning_signal_ = ( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
-      new_learning_signals [ lag ] = S_.learning_signal_;
+      if ( t_mod_T > V_.step_start_ls_ )
+      {
+        // TODO: replace -1 by ls
+        //std::cout << "error neuron send: " << S_.learning_signal_ << std::endl;
+        new_learning_signals [ lag ] = S_.learning_signal_;
+      }
+      else
+      {
+        new_learning_signals[ lag ] = 0.0;
+      }
 
       S_.y0_ = B_.currents_.get_value( lag ); // set new input current
       S_.target_rate_ =  1. * B_.delayed_rates_.get_value( lag );

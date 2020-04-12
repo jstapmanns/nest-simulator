@@ -121,6 +121,7 @@ protected:
   void set_status( const DictionaryDatum& d );
 
   double get_update_interval();
+  int get_update_interval_steps();
   //TODO: propagate information from readout neuron
 
 private:

@@ -196,6 +196,9 @@ private:
   double target_firing_rate_;
   double tau_low_pass_e_tr_; // time constant for low pass filtering of the eligibility trace
   double propagator_low_pass_; // exp( -dt / tau_low_pass_e_tr_ )
+  // TODO: Find a more efficient way to deal with a recall task, i.e. store eprop history only
+  // within recall period. This leads to a discontinuous history which needs a different
+  // implementation of get_eprop_history, i.e. binary search.
 
   std::vector< double > pre_syn_spike_times_;
 };
@@ -255,6 +258,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           &start,
           &finish );
 
+      //std::cout << "start evaluation of eprop trace at t = " << start->t_ << std::endl;
       while ( start != finish )
       {
         last_e_trace_ *= kappa;
@@ -374,11 +378,32 @@ EpropConnection< targetidentifierT >::send( Event& e,
 
       int t_prime = 0;
       double sum_t_prime_new = 0.0;
+      //bool p = true;
+      /*
+      std::cout << "learning signal:" << std::endl;
+      for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
+      {
+        if ( runner->learning_signal_ > 0.0 )
+        {
+          std::cout << "t = " << runner->t_ << "  ls = " << runner->learning_signal_ << " | ";
+        }
+      }
+      std::cout << std::endl;
+      */
+
       while ( start != finish )
       {
         // DEBUG: inserted factor ( 1 - decay )
         sum_t_prime_new = kappa * sum_t_prime_new + ( 1.0 - kappa ) * elegibility_trace[ t_prime ];
         dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * start->learning_signal_;
+        /*
+        if ( start->learning_signal_ > 0.0 && p )
+        {
+          std::cout << "first non-zero learning signal at t = " << start->t_  << "  ls = " <<
+            start->learning_signal_ << std::endl;
+          p = false;
+        }
+        */
         t_prime++;
         start++;
       }
@@ -511,6 +536,7 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   updateValue< double >( d, names::target_firing_rate, target_firing_rate_ );
   updateValue< double >( d, names::tau_decay, tau_low_pass_e_tr_ );
 
+  const double h = Time::get_resolution().get_ms();
   // TODO: t_nextupdate and t_lastupdate should be initialized even if set_status is not called
   // DEBUG: added + delay to correct for the delay of the learning signal
   t_nextupdate_ = update_interval_ + 2.0 * get_delay(); // TODO: is this waht we want?
@@ -519,7 +545,6 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   // compute propagator for low pass filtering of eligibility trace
   if ( tau_low_pass_e_tr_ > 0.0 )
   {
-    const double h = Time::get_resolution().get_ms();
     propagator_low_pass_ = exp( -h / tau_low_pass_e_tr_ );
   }
   else if ( tau_low_pass_e_tr_ == 0.0 )

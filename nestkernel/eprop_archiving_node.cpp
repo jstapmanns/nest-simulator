@@ -97,6 +97,11 @@ nest::Eprop_Archiving_Node::get_update_interval()
   return update_interval_;
 }
 
+int
+nest::Eprop_Archiving_Node::get_update_interval_steps()
+{
+  return Time( Time::ms( update_interval_ ) ).get_steps();
+}
 
 double
 nest:: Eprop_Archiving_Node::get_spike_history_len() const
@@ -326,10 +331,18 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e 
   nest::Eprop_Archiving_Node::find_eprop_hist_entries(
      t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish );
   std::vector< unsigned int >::iterator it = e.begin();
+  /*
+  double ls = e.get_coeffvalue( it );
+  if ( ls != 0.0 && t_ms < 3510.0 )
+  {
+    std::cout << "add learning_signal at t = " << t_ms << std::endl;
+  }
+  */
   while ( start != finish && it != e.end() )
   {
     // Add learning signal and reduce access counter
-    start->learning_signal_ += weight * e.get_coeffvalue( it );
+    //double ls = e.get_coeffvalue( it );
+    start->learning_signal_  += weight * e.get_coeffvalue( it );
     start++;
   }
 }

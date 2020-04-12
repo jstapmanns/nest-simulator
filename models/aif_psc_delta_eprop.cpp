@@ -59,7 +59,7 @@ RecordablesMap< aif_psc_delta_eprop >::create()
   // use standard names whereever you can for consistency!
   insert_( names::V_m, &aif_psc_delta_eprop::get_V_m_ );
   insert_( names::V_th, &aif_psc_delta_eprop::get_last_h_ );
-  insert_( names::E_L, &aif_psc_delta_eprop::get_last_ls_ );
+  insert_( names::learning_signal, &aif_psc_delta_eprop::get_last_ls_ );
   insert_( names::threshold_voltage, &aif_psc_delta_eprop::get_spiking_threshold_ );
   insert_( names::len_eprop_hist, &aif_psc_delta_eprop::get_eprop_history_len );
   insert_( names::len_ls_per_syn, &aif_psc_delta_eprop::get_ls_per_syn_len );

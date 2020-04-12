@@ -152,6 +152,7 @@ private:
     double E_L_;  // Resting potential in mV.
     double I_e_;  // External DC current.
     double V_min_;  // Lower bound relative to resting potential.
+    double t_start_ls_; // time after which a learning signal is sent to the recurrent neurons
     Parameters_(); //!< Sets default parameter values
 
     void get( DictionaryDatum& ) const; //!< Store current values in dictionary
@@ -213,6 +214,9 @@ private:
 
     double P30_;
     double P33_;
+    int step_start_ls_; // step after which a learning signal is sent to the recurrent neurons
+    int T_steps_; // length of one period T in steps
+    bool prnt;
 
    };
 
