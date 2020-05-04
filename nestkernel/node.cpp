@@ -381,6 +381,12 @@ Node::handle( DelayedRateConnectionEvent& )
   throw UnexpectedEvent();
 }
 
+void
+Node::handle( LearningSignalConnectionEvent& )
+{
+  throw UnexpectedEvent();
+}
+
 port
 Node::handles_test_event( InstantaneousRateConnectionEvent&, rport )
 {
@@ -397,6 +403,13 @@ Node::handles_test_event( DiffusionConnectionEvent&, rport )
 
 port
 Node::handles_test_event( DelayedRateConnectionEvent&, rport )
+{
+  throw IllegalConnection();
+  return invalid_port_;
+}
+
+port
+Node::handles_test_event( LearningSignalConnectionEvent&, rport )
 {
   throw IllegalConnection();
   return invalid_port_;
@@ -420,6 +433,11 @@ Node::sends_secondary_event( DelayedRateConnectionEvent& )
   throw IllegalConnection();
 }
 
+void
+Node::sends_secondary_event( LearningSignalConnectionEvent& )
+{
+  throw IllegalConnection();
+}
 
 double
 Node::get_K_value( double )

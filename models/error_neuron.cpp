@@ -246,7 +246,7 @@ nest::error_neuron::update_( Time const& origin,
   const size_t buffer_size = kernel().connection_manager.get_min_delay();
 
   // allocate memory to store rates to be sent by rate events
-  std::vector< double > new_learning_signals( buffer_size, 0.0 );
+  std::vector< double > readout_and_target_signals( 3*buffer_size, 0.0 );
 
   for ( long lag = from; lag < to; ++lag )
   {
@@ -263,29 +263,38 @@ nest::error_neuron::update_( Time const& origin,
       S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
 
       // DEBUG: changed sign (see tf code) (maybe this is not true any more)
-      S_.learning_signal_ = ( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
+      // S_.learning_signal_ = ( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
+      // 0: regression 1: classification
+      readout_and_target_signals [ lag ] = 0.;  // TODO replace by settable parameter
       if ( t_mod_T > V_.step_start_ls_ )
       {
         // TODO: replace -1 by ls
         //std::cout << "error neuron send: " << S_.learning_signal_ << std::endl;
-        new_learning_signals [ lag ] = S_.learning_signal_;
+        // new_learning_signals [ lag ] = S_.learning_signal_;
+        readout_and_target_signals [ lag + 1 ] =  S_.y3_ + P_.E_L_;
+        readout_and_target_signals [ lag + 2 ] = S_.target_rate_;
+        // std::cout << "rs error " << readout_and_target_signals [ lag + 1 ] << std::endl;
+        // std::cout << "ts error " << readout_and_target_signals [ lag + 2 ] << std::endl;
+        // std::cout << "...." << std::endl;
       }
       else
       {
-        new_learning_signals[ lag ] = 0.0;
+        // new_learning_signals[ lag ] = 0.0;
+        readout_and_target_signals [ lag + 1 ] = 0.;
+        readout_and_target_signals [ lag + 2 ] = 0.;
       }
 
       S_.y0_ = B_.currents_.get_value( lag ); // set new input current
       S_.target_rate_ =  1. * B_.delayed_rates_.get_value( lag );
 
       B_.logger_.record_data( origin.get_steps() + lag );
-      write_readout_history( Time::step( origin.get_steps() + lag + 1), S_.learning_signal_);
+      // write_readout_history( Time::step( origin.get_steps() + lag + 1), S_.learning_signal_);
   }
 
   // Send delay-rate-neuron-event. This only happens in the final iteration
   // to avoid accumulation in the buffers of the receiving neurons.
-  DelayedRateConnectionEvent drve;
-  drve.set_coeffarray( new_learning_signals );
+  LearningSignalConnectionEvent drve;
+  drve.set_coeffarray( readout_and_target_signals );
   kernel().event_delivery_manager.send_secondary( *this, drve );
 
   return;

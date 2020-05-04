@@ -97,7 +97,7 @@ public:
 
 protected:
   void write_readout_history( Time const& t_sp,
-    double learning_signal );
+  double readout_signal, double target_signal );
 
   /**
    * \fn void write_eprop_history( Time const& t_sp,
@@ -112,7 +112,7 @@ protected:
 
   void write_spike_history( Time const& t_sp );
 
-  void add_learning_to_hist( DelayedRateConnectionEvent& e );
+  void add_learning_to_hist( LearningSignalConnectionEvent& e );
 
   double pseudo_deriv( double diff_V_m_V_th, double V_th_const ) const;
   // TODO: V_th as variable of archiving node? Or archiving node as template class?

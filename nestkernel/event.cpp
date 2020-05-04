@@ -116,6 +116,11 @@ void DelayedRateConnectionEvent::operator()()
   receiver_->handle( *this );
 }
 
+void LearningSignalConnectionEvent::operator()()
+{
+  receiver_->handle( *this );
+}
+
 void DiffusionConnectionEvent::operator()()
 {
   receiver_->handle( *this );

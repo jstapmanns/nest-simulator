@@ -114,7 +114,7 @@ public:
   port handles_test_event( DataLoggingRequest&, rport );
 
   void
-  sends_secondary_event( DelayedRateConnectionEvent& )
+  sends_secondary_event( LearningSignalConnectionEvent& )
   {
   }
 

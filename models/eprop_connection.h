@@ -259,6 +259,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
           &finish );
 
       //std::cout << "start evaluation of eprop trace at t = " << start->t_ << std::endl;
+      //
+
       while ( start != finish )
       {
         last_e_trace_ *= kappa;
@@ -268,7 +270,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           last_e_trace_ += ( 1.0 - kappa );
           t_pre_spike++;
         }
-        dw += start->learning_signal_ * last_e_trace_;
+        dw += (start->target_signal_ - ( start->readout_signal_ / start->normalization_ )) * last_e_trace_;
         start++;
       }
       dw *= learning_rate_ * dt;
@@ -305,8 +307,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
           {
             // DEBUG: inserted factor ( 1 - dacay )
             // DEBUG II: removed factor ( 1 - decay )
-            //last_e_trace_ += ( 1.0 - alpha );
-            last_e_trace_ += 1.0;
+            last_e_trace_ += ( 1.0 - alpha );
+            // last_e_trace_ += 1.0;
             t_pre_spike++;
           }
           // Eq.(28)
@@ -348,8 +350,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
           {
             // DEBUG: inserted factor ( 1 - dacay )
             // DEBUG II: removed factor ( 1 - decay )
-            //last_e_trace_ += ( 1.0 - alpha );
-            last_e_trace_ += 1.0;
+            last_e_trace_ += ( 1.0 - alpha );
+            // last_e_trace_ += 1.0;
             t_pre_spike++;
           }
           double elig_tr = runner->V_m_ * last_e_trace_;
@@ -391,11 +393,24 @@ EpropConnection< targetidentifierT >::send( Event& e,
       std::cout << std::endl;
       */
 
+      // std::cout << "conn, recurrent:" << std::endl;
+      // for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
+      // {
+      //     std::cout << "t = " << runner->t_ << "  ts = " << runner->target_signal_ << std::endl;
+      //     std::cout << "rs = " << runner->readout_signal_ << std::endl;
+      //     std::cout << "norm = " << runner->normalization_ << std::endl;
+      //     std::cout << "ls = " << runner->target_signal_ - (start->readout_signal_ / start->normalization_) << std::endl;
+
+      //     std::cout << " " << std::endl;
+      // }
+      // std::cout << "=========================================" << std::endl;
+
       while ( start != finish )
       {
         // DEBUG: inserted factor ( 1 - decay )
         sum_t_prime_new = kappa * sum_t_prime_new + ( 1.0 - kappa ) * elegibility_trace[ t_prime ];
-        dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * start->learning_signal_;
+        dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * (start->target_signal_ - ( start->readout_signal_ / start->normalization_ ));
+        std::cout << "dw " << dw << std::endl;
         /*
         if ( start->learning_signal_ > 0.0 && p )
         {
@@ -407,6 +422,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_prime++;
         start++;
       }
+      std::cout << "========================" << std::endl;
       // firing rate regularization
       target->get_spike_history( t_lastupdate_,
           t_lastupdate_ + update_interval_,
@@ -437,7 +453,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     pre_syn_spike_times_.clear();
     pre_syn_spike_times_.push_back( t_spike );
     // DEBUG: tidy_eprop_history also takes care of the spike_history
-    target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
+    // target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
   }
 
   e.set_receiver( *target );
