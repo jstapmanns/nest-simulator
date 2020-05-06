@@ -424,8 +424,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
       std::cout << "dw = " << dw << "  nspikes = " << nspikes << "  av_firing_rate = " <<
         av_firing_rate << "  target_firing_rate = " << target_firing_rate_ << "  sum_elig_tr = " <<
         sum_elig_tr << "  rate_reg = " << rate_reg_ << "  n_elig_tr = " << elegibility_trace.size() << std::endl;
-      t_prime_int_trace_ += sum_t_prime_new * dt;
       */
+      t_prime_int_trace_ += sum_t_prime_new * dt;
     }
 
     weight_ += dw;
@@ -437,7 +437,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     pre_syn_spike_times_.clear();
     pre_syn_spike_times_.push_back( t_spike );
     // DEBUG: tidy_eprop_history also takes care of the spike_history
-    target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
+    //target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
   }
 
   e.set_receiver( *target );
