@@ -267,7 +267,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           last_e_trace_ += ( 1.0 - kappa );
           t_pre_spike++;
         }
-          "  norm = " << start->normalization_ << " | ";
+        // std::cout << "  norm = " << start->normalization_ << " | ";
         dw += (start->target_signal_ - ( start->readout_signal_ / start->normalization_ )) * last_e_trace_;
         start++;
       }
