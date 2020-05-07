@@ -258,9 +258,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
           &start,
           &finish );
 
-      //std::cout << "start evaluation of eprop trace at t = " << start->t_ << std::endl;
-      //
-
       while ( start != finish )
       {
         last_e_trace_ *= kappa;
@@ -270,6 +267,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           last_e_trace_ += ( 1.0 - kappa );
           t_pre_spike++;
         }
+          "  norm = " << start->normalization_ << " | ";
         dw += (start->target_signal_ - ( start->readout_signal_ / start->normalization_ )) * last_e_trace_;
         start++;
       }
@@ -410,7 +408,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         // DEBUG: inserted factor ( 1 - decay )
         sum_t_prime_new = kappa * sum_t_prime_new + ( 1.0 - kappa ) * elegibility_trace[ t_prime ];
         dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * (start->target_signal_ - ( start->readout_signal_ / start->normalization_ ));
-        std::cout << "dw " << dw << std::endl;
+        //std::cout << "dw " << dw << std::endl;
         /*
         if ( start->learning_signal_ > 0.0 && p )
         {
@@ -422,7 +420,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_prime++;
         start++;
       }
-      std::cout << "========================" << std::endl;
+      //std::cout << "========================" << std::endl;
       // firing rate regularization
       target->get_spike_history( t_lastupdate_,
           t_lastupdate_ + update_interval_,

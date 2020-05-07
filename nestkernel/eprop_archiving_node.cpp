@@ -240,7 +240,6 @@ nest::Eprop_Archiving_Node::get_spike_history( double t1,
         t1 + kernel().connection_manager.get_stdp_eps() );
     *start = runner1;
 
-
     std::deque< double >::iterator runner2 = std::lower_bound(
         runner1,
         spike_history_.end(),
@@ -287,7 +286,7 @@ nest::Eprop_Archiving_Node::write_readout_history( Time const& t_sp,
   if ( n_incoming_ )
   {
     // create new entry in history
-    eprop_history_.push_back( histentry_eprop( t_ms, 0.0, readout_signal, 0, target_signal, 0 ) );
+    eprop_history_.push_back( histentry_eprop( t_ms, 0.0, readout_signal, 1.0, target_signal, 0 ) );
   }
 }
 

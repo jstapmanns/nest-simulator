@@ -288,7 +288,8 @@ nest::error_neuron::update_( Time const& origin,
       S_.target_rate_ =  1. * B_.delayed_rates_.get_value( lag );
 
       B_.logger_.record_data( origin.get_steps() + lag );
-      // write_readout_history( Time::step( origin.get_steps() + lag + 1), S_.learning_signal_);
+      write_readout_history( Time::step( origin.get_steps() + lag + 1), S_.y3_ + P_.E_L_,
+          S_.target_rate_);
   }
 
   // Send delay-rate-neuron-event. This only happens in the final iteration
