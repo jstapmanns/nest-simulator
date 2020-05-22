@@ -238,7 +238,6 @@ nest::Eprop_Archiving_Node::get_spike_history( double t1,
         t1 + kernel().connection_manager.get_stdp_eps() );
     *start = runner1;
 
-
     std::deque< double >::iterator runner2 = std::lower_bound(
         runner1,
         spike_history_.end(),
