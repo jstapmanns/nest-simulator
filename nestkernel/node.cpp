@@ -417,11 +417,23 @@ Node::sends_secondary_event( DelayedRateConnectionEvent& )
   throw IllegalConnection( "The source node does not support delayed rate output." );
 }
 
-
-double
-Node::get_LTD_value( double )
+void
+Node::handle( LearningSignalConnectionEvent& )
 {
   throw UnexpectedEvent();
+}
+
+port
+Node::handles_test_event( LearningSignalConnectionEvent&, rport )
+{
+  throw IllegalConnection();
+  return invalid_port_;
+}
+
+void
+Node::sends_secondary_event( LearningSignalConnectionEvent& )
+{
+  throw IllegalConnection();
 }
 
 double
@@ -430,6 +442,41 @@ Node::get_K_value( double )
   throw UnexpectedEvent();
 }
 
+double
+Node::get_LTD_value( double )
+{
+  throw UnexpectedEvent();
+}
+
+double
+Node::get_leak_propagator() const
+{
+  throw UnexpectedEvent();
+}
+
+double
+Node::get_adapt_propagator() const
+{
+  throw UnexpectedEvent();
+}
+
+double
+Node::get_beta() const
+{
+  throw UnexpectedEvent();
+}
+
+bool
+Node::is_eprop_readout()
+{
+  throw UnexpectedEvent();
+}
+
+bool
+Node::is_eprop_adaptive()
+{
+  throw UnexpectedEvent();
+}
 
 void
 Node::get_K_values( double, double&, double&, double& )
@@ -496,6 +543,39 @@ double
 nest::Node::get_tau_syn_in( int )
 {
   throw UnexpectedEvent();
+}
+
+void
+nest::Node::get_eprop_history( double,
+  double,
+  double,
+  std::deque< histentry_eprop >::iterator*,
+  std::deque< histentry_eprop >::iterator* )
+{
+  throw UnexpectedEvent();
+}
+
+void
+nest::Node::get_spike_history( double,
+  double,
+  std::deque< double >::iterator*,
+  std::deque< double >::iterator*)
+{
+  throw UnexpectedEvent();
+}
+
+
+double
+nest::Node::get_spike_history_len( ) const
+{
+  throw UnexpectedEvent();
+}
+
+
+void
+Node::tidy_eprop_history( double )
+{
+    throw UnexpectedEvent();
 }
 
 void
