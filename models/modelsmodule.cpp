@@ -31,7 +31,6 @@
 // Neuron models
 #include "aeif_cond_alpha.h"
 #include "aeif_cond_alpha_multisynapse.h"
-#include "aeif_cond_alpha_RK5.h"
 #include "aeif_cond_beta_multisynapse.h"
 #include "aeif_cond_exp.h"
 #include "aeif_psc_alpha.h"
@@ -58,7 +57,6 @@
 #include "hh_psc_alpha_gap.h"
 #include "ht_neuron.h"
 #include "iaf_chs_2007.h"
-#include "iaf_chxk_2008.h"
 #include "iaf_cond_alpha.h"
 #include "iaf_cond_alpha_mc.h"
 #include "iaf_cond_beta.h"
@@ -69,8 +67,8 @@
 #include "iaf_psc_delta.h"
 #include "iaf_psc_delta_eprop.h"
 #include "iaf_psc_exp.h"
+#include "iaf_psc_exp_htum.h"
 #include "iaf_psc_exp_multisynapse.h"
-#include "iaf_tum_2000.h"
 #include "izhikevich.h"
 #include "lin_rate.h"
 #include "mat2_psc_exp.h"
@@ -107,7 +105,6 @@
 #include "multimeter.h"
 #include "spike_detector.h"
 #include "spin_detector.h"
-#include "voltmeter.h"
 #include "volume_transmitter.h"
 #include "weight_recorder.h"
 
@@ -159,6 +156,8 @@
 #include "music_event_in_proxy.h"
 #include "music_event_out_proxy.h"
 #include "music_message_in_proxy.h"
+#include "music_rate_in_proxy.h"
+#include "music_rate_out_proxy.h"
 #endif
 
 namespace nest
@@ -221,8 +220,8 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< iaf_psc_delta_eprop >( "iaf_psc_delta_eprop" );
   kernel().model_manager.register_node_model< error_neuron >( "error_neuron" );
   kernel().model_manager.register_node_model< iaf_psc_exp >( "iaf_psc_exp" );
+  kernel().model_manager.register_node_model< iaf_psc_exp_htum >( "iaf_psc_exp_htum" );
   kernel().model_manager.register_node_model< iaf_psc_exp_multisynapse >( "iaf_psc_exp_multisynapse" );
-  kernel().model_manager.register_node_model< iaf_tum_2000 >( "iaf_tum_2000" );
   kernel().model_manager.register_node_model< amat2_psc_exp >( "amat2_psc_exp" );
   kernel().model_manager.register_node_model< mat2_psc_exp >( "mat2_psc_exp" );
   kernel().model_manager.register_node_model< parrot_neuron >( "parrot_neuron" );
@@ -262,7 +261,6 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< volume_transmitter >( "volume_transmitter" );
 
 #ifdef HAVE_GSL
-  kernel().model_manager.register_node_model< iaf_chxk_2008 >( "iaf_chxk_2008" );
   kernel().model_manager.register_node_model< iaf_cond_alpha >( "iaf_cond_alpha" );
   kernel().model_manager.register_node_model< iaf_cond_beta >( "iaf_cond_beta" );
   kernel().model_manager.register_node_model< iaf_cond_exp >( "iaf_cond_exp" );
@@ -291,11 +289,6 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< siegert_neuron >( "siegert_neuron" );
 #endif
 
-  // This version of the AdEx model does not depend on GSL.
-  kernel().model_manager.register_node_model< aeif_cond_alpha_RK5 >( "aeif_cond_alpha_RK5",
-    /*private_model*/ false,
-    /*deprecation_info*/ "NEST 3.0" );
-
 #ifdef HAVE_MUSIC
   //// proxies for inter-application communication using MUSIC
   kernel().model_manager.register_node_model< music_event_in_proxy >( "music_event_in_proxy" );
@@ -303,6 +296,8 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< music_cont_in_proxy >( "music_cont_in_proxy" );
   kernel().model_manager.register_node_model< music_cont_out_proxy >( "music_cont_out_proxy" );
   kernel().model_manager.register_node_model< music_message_in_proxy >( "music_message_in_proxy" );
+  kernel().model_manager.register_node_model< music_rate_in_proxy >( "music_rate_in_proxy" );
+  kernel().model_manager.register_node_model< music_rate_out_proxy >( "music_rate_out_proxy" );
 #endif
 
   // register all connection models
@@ -327,6 +322,8 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< TsodyksConnection >( "tsodyks_synapse" );
   register_connection_model< TsodyksConnectionHom >( "tsodyks_synapse_hom" );
   register_connection_model< Tsodyks2Connection >( "tsodyks2_synapse" );
+  register_connection_model< UrbanczikConnection >(
+    "urbanczik_synapse", default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_URBANCZIK_ARCHIVING );
   register_connection_model< VogelsSprekelerConnection >( "vogels_sprekeler_synapse" );
 
   // register secondary connection models
