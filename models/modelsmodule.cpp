@@ -121,6 +121,7 @@
 #include "eprop_connection.h"
 #include "gap_junction.h"
 #include "ht_connection.h"
+#include "learning_signal_connection_delayed.h"
 #include "quantal_stp_connection.h"
 #include "quantal_stp_connection_impl.h"
 #include "rate_connection_delayed.h"
@@ -336,6 +337,8 @@ ModelsModule::init( SLIInterpreter* )
     "rate_connection_instantaneous", RegisterConnectionModelFlags::SUPPORTS_WFR );
   register_secondary_connection_model< RateConnectionDelayed >(
     "rate_connection_delayed", RegisterConnectionModelFlags::HAS_DELAY );
+  register_secondary_connection_model< LearningSignalConnectionDelayed >(
+    "learning_signal_connection_delayed", RegisterConnectionModelFlags::HAS_DELAY );
   register_secondary_connection_model< DiffusionConnection >(
     "diffusion_connection", RegisterConnectionModelFlags::SUPPORTS_WFR );
 }

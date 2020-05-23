@@ -267,7 +267,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           last_e_trace_ += ( 1.0 - kappa );
           t_pre_spike++;
         }
-        dw += start->learning_signal_ * last_e_trace_;
+        dw += (start->target_signal_ - ( start->readout_signal_ / start->normalization_ )) * last_e_trace_;
         start++;
       }
       dw *= learning_rate_ * dt;
@@ -300,7 +300,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
           double pseudo_deriv = runner->V_m_;
           // Eq.(22)
           last_e_trace_ *= alpha;
-          if ( std::fabs( *t_pre_spike - runner->t_  + 0.0*dendritic_delay) < 1.0e-6 )
+          // DEBUG II: + 1.0 * dendritic_delay
+          if ( std::fabs( *t_pre_spike - runner->t_  + 0.0 * dendritic_delay) < 1.0e-6 )
           {
             // DEBUG: inserted factor ( 1 - dacay )
             // DEBUG II: removed factor ( 1 - decay )
@@ -348,7 +349,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
             // DEBUG: inserted factor ( 1 - dacay )
             // DEBUG II: removed factor ( 1 - decay )
             last_e_trace_ += ( 1.0 - alpha );
-            //last_e_trace_ += 1.0;
+            // last_e_trace_ += 1.0;
             t_pre_spike++;
           }
           double elig_tr = runner->V_m_ * last_e_trace_;
@@ -394,7 +395,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
       {
         // DEBUG: inserted factor ( 1 - decay )
         sum_t_prime_new = kappa * sum_t_prime_new + ( 1.0 - kappa ) * elegibility_trace[ t_prime ];
-        dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * start->learning_signal_;
+        dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * (start->target_signal_ - ( start->readout_signal_ / start->normalization_ ));
         /*
         if ( start->learning_signal_ > 0.0 && p )
         {
@@ -428,7 +429,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
     }
 
     weight_ += dw;
-    //std::cout << "new weight = " << weight_ << std::endl;
     // DEBUG: define t_lastupdate_ to be the end of the last period T to be compatible with tf code
     t_lastupdate_ = t_update_;
     t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) *

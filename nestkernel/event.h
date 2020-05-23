@@ -81,6 +81,7 @@ class Node;
  * @see GapJunctionEvent
  * @see InstantaneousRateConnectionEvent
  * @see DelayedRateConnectionEvent
+ * @see LearningSignalConnectionEvent
  * @see DiffusionConnectionEvent
  * @ingroup event_interface
  */
@@ -1160,6 +1161,22 @@ public:
   DelayedRateConnectionEvent* clone() const;
 };
 
+class LearningSignalConnectionEvent : public DataSecondaryEvent< double, LearningSignalConnectionEvent >
+{
+
+public:
+  LearningSignalConnectionEvent()
+  {
+  }
+
+  void operator()();
+  LearningSignalConnectionEvent* clone() const;
+};
+
+
+
+
+
 /**
  * Event for diffusion connections (rate model connections for the
  * siegert_neuron). The event transmits the rate to the connected neurons.
@@ -1230,6 +1247,12 @@ inline DelayedRateConnectionEvent*
 DelayedRateConnectionEvent::clone() const
 {
   return new DelayedRateConnectionEvent( *this );
+}
+
+inline LearningSignalConnectionEvent*
+LearningSignalConnectionEvent::clone() const
+{
+  return new LearningSignalConnectionEvent( *this );
 }
 
 inline DiffusionConnectionEvent*

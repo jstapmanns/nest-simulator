@@ -403,7 +403,7 @@ nest::iaf_psc_delta_eprop::handle( CurrentEvent& e )
 
 void
 nest::iaf_psc_delta_eprop::handle(
-  DelayedRateConnectionEvent& e )
+  LearningSignalConnectionEvent& e )
 {
   // Add learning signal to hist entries
   add_learning_to_hist( e );

@@ -488,7 +488,7 @@ nest::aif_psc_delta_eprop::handle( CurrentEvent& e )
 
 void
 nest::aif_psc_delta_eprop::handle(
-  DelayedRateConnectionEvent& e )
+  LearningSignalConnectionEvent& e )
 {
   /*
   const double weight = e.get_weight();

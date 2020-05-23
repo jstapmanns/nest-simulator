@@ -69,11 +69,13 @@ public:
 class histentry_eprop
 {
 public:
-  histentry_eprop( double t, double V_m, double learning_signal, size_t access_counter );
+  histentry_eprop( double t, double V_m, double readout_signal, double normalization, double target_signal, size_t access_counter );
 
   double t_; //!< point in time when spike occurred (in ms)
   double V_m_;
-  double learning_signal_;
+  double readout_signal_;
+  double normalization_;
+  double target_signal_;
   //! how often this entry was accessed (to enable removal, once read by all
   //! neurons which need it)
   size_t access_counter_;

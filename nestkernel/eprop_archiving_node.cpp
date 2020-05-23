@@ -128,7 +128,9 @@ nest::Eprop_Archiving_Node::print_eprop_history()
   std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
   for ( int i = 0; i < 10; i++ )
   {
-    std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->learning_signal_ << "; ";
+    // std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->learning_signal_ << "; ";
+    std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->readout_signal_ << "; ";
+    runner++;
     runner++;
   }
   std::cout << std::endl;
@@ -278,13 +280,13 @@ nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
 
 void
 nest::Eprop_Archiving_Node::write_readout_history( Time const& t_sp,
-  double learning_signal )
+  double readout_signal, double target_signal )
 {
   const double t_ms = t_sp.get_ms();
   if ( n_incoming_ )
   {
     // create new entry in history
-    eprop_history_.push_back( histentry_eprop( t_ms, 0.0, learning_signal, 0 ) );
+    eprop_history_.push_back( histentry_eprop( t_ms, 0.0, readout_signal, 1.0, target_signal, 0 ) );
   }
 }
 
@@ -300,7 +302,7 @@ nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
     // create new entry in history
     // DEBUG: additional factor 1 / V_th
     double h = pseudo_deriv( diff_V_m_V_th, V_th ) / V_th;
-    eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0 ) );
+    eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0.0, 0.0, 0 ) );
   }
 }
 
@@ -313,7 +315,7 @@ nest::Eprop_Archiving_Node::write_spike_history( Time const& t_sp )
 }
 
 void
-nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e )
+nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent& e )
 {
   const double weight = e.get_weight();
   const long delay = e.get_delay_steps();
@@ -324,7 +326,7 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e 
 
   std::deque< histentry_eprop >::iterator start;
   std::deque< histentry_eprop >::iterator finish;
-  
+
   // Get part of history to which the learning signal is added
   // This increases the access counter which is undone below
   nest::Eprop_Archiving_Node::find_eprop_hist_entries(
@@ -340,8 +342,21 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( DelayedRateConnectionEvent& e 
   while ( start != finish && it != e.end() )
   {
     // Add learning signal and reduce access counter
-    //double ls = e.get_coeffvalue( it );
-    start->learning_signal_  += weight * e.get_coeffvalue( it );
+    double task = e.get_coeffvalue(it);
+    double readout_signal = e.get_coeffvalue(it);
+    double target_signal = e.get_coeffvalue(it);
+    if (task == 0.)
+    {
+        start->readout_signal_ += weight * readout_signal;
+        start->target_signal_ += weight * target_signal;
+        start->normalization_ = 1.;
+    }
+    else if (task == 1.)
+    {
+        start->readout_signal_ += weight * std::exp(readout_signal);
+        start->target_signal_ += weight * target_signal;
+        start->normalization_ += std::exp(readout_signal);
+    }
     start++;
   }
 }

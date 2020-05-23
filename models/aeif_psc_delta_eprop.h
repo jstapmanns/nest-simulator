@@ -173,12 +173,12 @@ public:
 
   void handle( SpikeEvent& );
   void handle( CurrentEvent& );
-  void handle( DelayedRateConnectionEvent& );
+  void handle( LearningSignalConnectionEvent& );
   void handle( DataLoggingRequest& );
 
   port handles_test_event( SpikeEvent&, rport );
   port handles_test_event( CurrentEvent&, rport );
-  port handles_test_event( DelayedRateConnectionEvent&, rport );
+  port handles_test_event( LearningSignalConnectionEvent&, rport );
   port handles_test_event( DataLoggingRequest&, rport );
 
   void get_status( DictionaryDatum& ) const;
@@ -388,7 +388,7 @@ aeif_psc_delta_eprop::handles_test_event( CurrentEvent&, rport receptor_type )
 }
 
 inline port
-aeif_psc_delta_eprop::handles_test_event( DelayedRateConnectionEvent&,
+aeif_psc_delta_eprop::handles_test_event( LearningSignalConnectionEvent&,
   rport receptor_type )
 {
   if ( receptor_type != 0 )
