@@ -342,16 +342,16 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent&
   while ( start != finish && it != e.end() )
   {
     // Add learning signal and reduce access counter
-    double task = e.get_coeffvalue(it);
+    double regression = e.get_coeffvalue(it);
     double readout_signal = e.get_coeffvalue(it);
     double target_signal = e.get_coeffvalue(it);
-    if (task == 0.)
+    if (regression == 1.)
     {
         start->readout_signal_ += weight * readout_signal;
         start->target_signal_ += weight * target_signal;
         start->normalization_ = 1.;
     }
-    else if (task == 1.)
+    else if (regression == 0.)
     {
         start->readout_signal_ += weight * std::exp(readout_signal);
         start->target_signal_ += weight * target_signal;

@@ -378,6 +378,7 @@ extern const Name recording_backends;
 extern const Name rectify_output;
 extern const Name refractory_input;
 extern const Name registered;
+extern const Name regression;
 extern const Name relative_amplitude;
 extern const Name requires_symmetric;
 extern const Name reset_pattern;

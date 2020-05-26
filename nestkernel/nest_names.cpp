@@ -357,6 +357,7 @@ const Name recording_backends( "recording_backends" );
 const Name rectify_output( "rectify_output" );
 const Name refractory_input( "refractory_input" );
 const Name registered( "registered" );
+const Name regression( "regression" );
 const Name relative_amplitude( "relative_amplitude" );
 const Name requires_symmetric( "requires_symmetric" );
 const Name reset_pattern( "reset_pattern" );

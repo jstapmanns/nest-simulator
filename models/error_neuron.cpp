@@ -75,6 +75,7 @@ nest::error_neuron::Parameters_::Parameters_()
   , I_e_( 0.0 )                                     // pA
   , V_min_( -std::numeric_limits< double >::max() ) // relative E_L_-55.0-E_L_
   , t_start_ls_( 0.0 )                               // ms
+  , regression_( true )
 {
 }
 
@@ -100,6 +101,7 @@ nest::error_neuron::Parameters_::get(
   def< double >( d, names::C_m, c_m_ );
   def< double >( d, names::tau_m, tau_m_ );
   def< double >( d, names::start, t_start_ls_ );
+  def< bool >( d, names::regression, regression_ );
 }
 
 double
@@ -118,6 +120,7 @@ nest::error_neuron::Parameters_::set(
   updateValue< double >( d, names::C_m, c_m_ );
   updateValue< double >( d, names::tau_m, tau_m_ );
   updateValue< double >( d, names::start, t_start_ls_ );
+  updateValue< bool >( d, names::regression, regression_ );
 
   if ( c_m_ <= 0 )
   {
@@ -264,8 +267,7 @@ nest::error_neuron::update_( Time const& origin,
 
       // DEBUG: changed sign (see tf code) (maybe this is not true any more)
       // S_.learning_signal_ = ( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
-      // 0: regression 1: classification
-      readout_and_target_signals [ 3*lag ] = 0.;  // TODO replace by settable parameter
+      readout_and_target_signals [ 3*lag ] = double(P_.regression_);
       if ( t_mod_T > V_.step_start_ls_ )
       {
         // TODO: replace -1 by ls
