@@ -67,7 +67,7 @@ class UrbanczikSynapseTestCase(unittest.TestCase):
             n = nest.Create(nm, 2)
 
             nest.Connect(n, n, {"rule": "all_to_all"},
-                         {"model": "urbanczik_synapse", "receptor_type": r_type})
+                         {"synapse_model": "urbanczik_synapse", "receptor_type": r_type})
 
         # Ensure that connecting not supported models fails
         for nm in not_supported_models:
@@ -83,7 +83,7 @@ class UrbanczikSynapseTestCase(unittest.TestCase):
             # try to connect with urbanczik synapse
             with self.assertRaises(nest.kernel.NESTError):
                 nest.Connect(n, n, {"rule": "all_to_all"},
-                             {"model": "urbanczik_synapse", "receptor_type": r_type})
+                             {"synapse_model": "urbanczik_synapse", "receptor_type": r_type})
 
     def test_SynapseDepressionFacilitation(self):
         """Ensure that depression and facilitation work correctly"""
@@ -100,7 +100,7 @@ class UrbanczikSynapseTestCase(unittest.TestCase):
         nrn_model = 'pp_cond_exp_mc_urbanczik'
         nrn_params = {
             't_ref': 3.0,        # refractory period
-            'g_sp': 600.0,       # somato-proximal coupling conductance
+            'g_sp': 600.0,       # somato-dendritic coupling conductance
             'soma': {
                 'V_m': -70.0,    # initial value of V_m
                 'C_m': 300.0,    # capacitance of membrane
@@ -111,7 +111,7 @@ class UrbanczikSynapseTestCase(unittest.TestCase):
                 'tau_syn_ex': 3.0,  # time constant of exc conductance
                 'tau_syn_in': 3.0,  # time constant of inh conductance
             },
-            'proximal': {
+            'dendritic': {
                 'V_m': -70.0,    # initial value of V_m
                 'C_m': 300.0,    # capacitance of membrane
                 'E_L': -70.0,    # resting potential
@@ -132,12 +132,12 @@ class UrbanczikSynapseTestCase(unittest.TestCase):
         syns = nest.GetDefaults(nrn_model)['receptor_types']
         init_w = 100.0
         syn_params = {
-            'model': 'urbanczik_synapse_wr',
-            'receptor_type': syns['proximal_exc'],
+            'synapse_model': 'urbanczik_synapse_wr',
+            'receptor_type': syns['dendritic_exc'],
             'tau_Delta': 100.0,  # time constant of low pass filtering of the weight change
             'eta': 0.75,         # learning rate
             'weight': init_w,
-            'Wmax': 4.5*nrn_params['proximal']['C_m'],
+            'Wmax': 4.5*nrn_params['dendritic']['C_m'],
             'delay': resolution,
         }
 
@@ -151,8 +151,9 @@ class UrbanczikSynapseTestCase(unittest.TestCase):
         prrt_nrn = nest.Create('parrot_neuron')
 
         # excitiatory input to the dendrite
+        pre_syn_spike_times = np.array([1.0, 98.0])
         sg_prox = nest.Create('spike_generator', params={
-                              'spike_times': [1.0, 98.0]})
+                              'spike_times': pre_syn_spike_times})
 
         # excitatory input to the soma
         spike_times_soma_inp = np.arange(10.0, 50.0, resolution)
@@ -166,7 +167,7 @@ class UrbanczikSynapseTestCase(unittest.TestCase):
                          'record_from': rqs, 'interval': 0.1})
 
         # for recoding the synaptic weights of the Urbanczik synapses
-        wr = nest.Create('weight_recorder', params={'to_file': False})
+        wr = nest.Create('weight_recorder')
 
         # for recording the spiking of the soma
         sd_soma = nest.Create('spike_detector')
@@ -224,19 +225,19 @@ class UrbanczikSynapseTestCase(unittest.TestCase):
         h = (15.0*beta / (1.0 + np.exp(-beta*(theta - V_w_star)) / k))
 
         # compute alpha response kernel
-        tau_s = nrn_params['proximal']['tau_syn_ex']
-        g_L_prox = nrn_params['proximal']['g_L']
-        C_m_prox = nrn_params['proximal']['C_m']
+        tau_s = nrn_params['dendritic']['tau_syn_ex']
+        g_L_prox = nrn_params['dendritic']['g_L']
+        C_m_prox = nrn_params['dendritic']['C_m']
         tau_L = C_m_prox / g_L_prox
-        E_L_prox = nrn_params['proximal']['E_L']
-        t0 = 1.0
+        E_L_prox = nrn_params['dendritic']['E_L']
+        t0 = 1.2
         alpha_response = (np.heaviside(t - t0, 0.5)*tau_s*(np.exp(-(t - t0) / tau_L) - np.exp(-(t - t0) / tau_s)) /
                           (g_L_prox*(tau_L - tau_s)))
 
         # compute PI(t)
         if len(spike_times_soma) > 0:
             t = np.around(t, 4)
-            spike_times_soma = np.around(spike_times_soma, 4)
+            spike_times_soma = np.around(spike_times_soma + 0.2, 4)
             idx = np.nonzero(np.in1d(t, spike_times_soma))[0]
             rate[idx] -= 1.0 / resolution
 
@@ -250,13 +251,16 @@ class UrbanczikSynapseTestCase(unittest.TestCase):
         integrated_w_change = np.cumsum(w_change_low_pass)*resolution
         syn_weight_comp = init_w + integrated_w_change
 
-        realtive_error = (
-            (weights[-1] - syn_weight_comp[-1]) / (weights[-1] - init_w))
-
         '''
         comparison between Nest and python implementation
         '''
-        self.assertTrue(abs(realtive_error) < 0.03)
+        # extract the weight computed in python at the times of the presynaptic spikes
+        idx = np.nonzero(np.in1d(np.around(t, 4), np.around(pre_syn_spike_times + resolution, 4)))[0]
+        syn_w_comp_at_spike_times = syn_weight_comp[idx]
+        realtive_error = (
+            (weights[-1] - syn_w_comp_at_spike_times[-1]) / (weights[-1] - init_w))
+
+        self.assertTrue(abs(realtive_error) < 0.001)
 
 
 def suite():
