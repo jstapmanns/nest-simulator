@@ -317,7 +317,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           sum_elig_tr += elig_tr_low_pass;
           // Eq.(27)
           epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
-          elegibility_trace.push_back( elig_tr_low_pass );
+          elegibility_trace.push_back( elig_tr );
           // DEBUG:
           epsilon_a.push_back( elig_tr_low_pass );
         }
@@ -358,12 +358,14 @@ EpropConnection< targetidentifierT >::send( Event& e,
             + elig_tr * ( 1.0 - propagator_low_pass_ );
           sum_elig_tr += elig_tr_low_pass;
           // Eq.(23)
-          elegibility_trace.push_back( elig_tr_low_pass );
-          epsilon_a.push_back( last_e_trace_ );
+          elegibility_trace.push_back( elig_tr );
+          epsilon_a.push_back( elig_tr_low_pass );
         }
         /*
         std::cout << "sum_elig_tr regular = " << sum_elig_tr  << "  propagator_low_pass_ = " <<
           propagator_low_pass_ << std::endl;
+        */
+        /*
         std::cout << "e trace regular:" << std::endl;
         int counter = 0;
         for (std::vector< double >::iterator runner = epsilon_a.begin();
@@ -391,19 +393,15 @@ EpropConnection< targetidentifierT >::send( Event& e,
       std::cout << std::endl;
       */
 
+      // DEBUG II: removed lowpass filtering of elegibility trace here
+      // Instead dw = sum over elig trace
+      //dw += sum_elig_tr;
       while ( start != finish )
       {
         // DEBUG: inserted factor ( 1 - decay )
-        sum_t_prime_new = kappa * sum_t_prime_new + ( 1.0 - kappa ) * elegibility_trace[ t_prime ];
-        dw += ( sum_t_prime_new * dt + std::pow( kappa, t_prime ) * t_prime_int_trace_ ) * (start->target_signal_ - ( start->readout_signal_ / start->normalization_ ));
-        /*
-        if ( start->learning_signal_ > 0.0 && p )
-        {
-          std::cout << "first non-zero learning signal at t = " << start->t_  << "  ls = " <<
-            start->learning_signal_ << std::endl;
-          p = false;
-        }
-        */
+        sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 - propagator_low_pass_ ) * elegibility_trace[ t_prime ];
+        dw += ( sum_t_prime_new * dt + std::pow( propagator_low_pass_, t_prime ) *
+            t_prime_int_trace_ );// * (start->target_signal_ - ( start->readout_signal_ / start->normalization_ ));
         t_prime++;
         start++;
       }
@@ -420,11 +418,9 @@ EpropConnection< targetidentifierT >::send( Event& e,
         elegibility_trace.size();
 
       dw *= dt*learning_rate_;
-      /*
-      std::cout << "dw = " << dw << "  nspikes = " << nspikes << "  av_firing_rate = " <<
-        av_firing_rate << "  target_firing_rate = " << target_firing_rate_ << "  sum_elig_tr = " <<
-        sum_elig_tr << "  rate_reg = " << rate_reg_ << "  n_elig_tr = " << elegibility_trace.size() << std::endl;
-      */
+      //std::cout << "dw = " << dw << "  nspikes = " << nspikes << "  av_firing_rate = " <<
+      //  av_firing_rate << "  target_firing_rate = " << target_firing_rate_ << "  sum_elig_tr = " <<
+      //  sum_elig_tr << "  rate_reg = " << rate_reg_ << "  n_elig_tr = " << elegibility_trace.size() << std::endl;
       t_prime_int_trace_ += sum_t_prime_new * dt;
     }
 

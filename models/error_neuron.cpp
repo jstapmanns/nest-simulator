@@ -283,7 +283,7 @@ nest::error_neuron::update_( Time const& origin,
       {
         // new_learning_signals[ lag ] = 0.0;
         readout_and_target_signals [ 3*lag + 1 ] = 0.;
-        readout_and_target_signals [ 3*lag + 2 ] = 0.;
+        readout_and_target_signals [ 3*lag + 2 ] = 1.;
       }
 
       S_.y0_ = B_.currents_.get_value( lag ); // set new input current

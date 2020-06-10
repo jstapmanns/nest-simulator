@@ -318,13 +318,15 @@ private:
     return 0.0;
   }
 
+  // TODO: shift this funktion to archiving node?
   double
   get_last_ls_() const
   {
     if ( eprop_history_.size() > 2 )
     {
-      return ( ( eprop_history_.rbegin() ) + 2 )->target_signal_
-        - ( ( eprop_history_.rbegin() ) + 2 )->readout_signal_;
+      return ( ( ( eprop_history_.rbegin() ) + 2 )->target_signal_
+        - ( ( eprop_history_.rbegin() ) + 2 )->readout_signal_ )
+        / ( ( eprop_history_.rbegin() ) + 2 )->normalization_ ;
     }
     return 0.0;
   }
