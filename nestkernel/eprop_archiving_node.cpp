@@ -345,17 +345,27 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent&
     double regression = e.get_coeffvalue(it);
     double readout_signal = e.get_coeffvalue(it);
     double target_signal = e.get_coeffvalue(it);
-    if (regression == 1.)
+    double recall = e.get_coeffvalue(it);
+    if (recall == 1.)
     {
-        start->readout_signal_ += weight * readout_signal;
-        start->target_signal_ += weight * target_signal;
-        start->normalization_ = 1.;
+        if (regression == 1.)
+        {
+            start->readout_signal_ += weight * readout_signal;
+            start->target_signal_ += weight * target_signal;
+            start->normalization_ = 1.;
+        }
+        else if (regression == 0.)
+        {
+            start->readout_signal_ += weight * std::exp(readout_signal);
+            start->target_signal_ += weight * target_signal;
+            start->normalization_ += std::exp(readout_signal);
+        }
     }
-    else if (regression == 0.)
+    else
     {
-        start->readout_signal_ += weight * std::exp(readout_signal);
-        start->target_signal_ += weight * target_signal;
-        start->normalization_ += std::exp(readout_signal);
+         start->readout_signal_ += 0.;
+         start->target_signal_ += 0.;
+         start->normalization_ += 1.;
     }
     start++;
   }

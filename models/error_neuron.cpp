@@ -249,7 +249,7 @@ nest::error_neuron::update_( Time const& origin,
   const size_t buffer_size = kernel().connection_manager.get_min_delay();
 
   // allocate memory to store rates to be sent by rate events
-  std::vector< double > readout_and_target_signals( 3*buffer_size, 0.0 );
+  std::vector< double > readout_and_target_signals( 4*buffer_size, 0.0 );
 
   for ( long lag = from; lag < to; ++lag )
   {
@@ -268,24 +268,22 @@ nest::error_neuron::update_( Time const& origin,
       // DEBUG: changed sign (see tf code) (maybe this is not true any more)
       // S_.learning_signal_ = ( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
       readout_and_target_signals [ 3*lag ] = double(P_.regression_);
+      // TODO: replace -1 by ls
+      //std::cout << "error neuron send: " << S_.learning_signal_ << std::endl;
+      // new_learning_signals [ lag ] = S_.learning_signal_;
+      readout_and_target_signals [ 3*lag + 1 ] =  S_.y3_ + P_.E_L_;
+      readout_and_target_signals [ 3*lag + 2 ] = S_.target_rate_;
+      // std::cout << "rs error " << readout_and_target_signals [ lag + 1 ] << std::endl;
+      // std::cout << "ts error " << readout_and_target_signals [ lag + 2 ] << std::endl;
+      // std::cout << "...." << std::endl;
+
       if ( t_mod_T > V_.step_start_ls_ )
       {
-        // TODO: replace -1 by ls
-        //std::cout << "error neuron send: " << S_.learning_signal_ << std::endl;
-        // new_learning_signals [ lag ] = S_.learning_signal_;
-        readout_and_target_signals [ 3*lag + 1 ] =  S_.y3_ + P_.E_L_;
-        readout_and_target_signals [ 3*lag + 2 ] = S_.target_rate_;
-        // std::cout << "rs error " << readout_and_target_signals [ lag + 1 ] << std::endl;
-        // std::cout << "ts error " << readout_and_target_signals [ lag + 2 ] << std::endl;
-        // std::cout << "...." << std::endl;
+      readout_and_target_signals [ 3*lag + 3 ] =  0.0;
       }
       else
       {
-        // new_learning_signals[ lag ] = 0.0;
-        // TODO: This gives the correct result only if task = 1.0 and 2 error_neurons neurons
-        // connected to every recurrent neuron.
-        readout_and_target_signals [ 3*lag + 1 ] = 0.;  // readout signal
-        readout_and_target_signals [ 3*lag + 2 ] = 0.5; // target signal
+      readout_and_target_signals [ 3*lag + 3 ] = 1.0;
       }
 
       S_.y0_ = B_.currents_.get_value( lag ); // set new input current
