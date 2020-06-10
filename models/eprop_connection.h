@@ -401,7 +401,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         // DEBUG: inserted factor ( 1 - decay )
         sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 - propagator_low_pass_ ) * elegibility_trace[ t_prime ];
         dw += ( sum_t_prime_new * dt + std::pow( propagator_low_pass_, t_prime ) *
-            t_prime_int_trace_ );// * (start->target_signal_ - ( start->readout_signal_ / start->normalization_ ));
+            t_prime_int_trace_ ) * (start->target_signal_ - ( start->readout_signal_ / start->normalization_ ));
         t_prime++;
         start++;
       }
