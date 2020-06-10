@@ -282,8 +282,10 @@ nest::error_neuron::update_( Time const& origin,
       else
       {
         // new_learning_signals[ lag ] = 0.0;
-        readout_and_target_signals [ 3*lag + 1 ] = 0.;
-        readout_and_target_signals [ 3*lag + 2 ] = 1.;
+        // TODO: This gives the correct result only if task = 1.0 and 2 error_neurons neurons
+        // connected to every recurrent neuron.
+        readout_and_target_signals [ 3*lag + 1 ] = 0.;  // readout signal
+        readout_and_target_signals [ 3*lag + 2 ] = 0.5; // target signal
       }
 
       S_.y0_ = B_.currents_.get_value( lag ); // set new input current
