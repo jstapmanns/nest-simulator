@@ -180,7 +180,6 @@ private:
   double weight_;
   // TODO: tau_alpha_ can be determined from neuron params
   double tau_alpha_; // time constant corresponding to leak term of rec neurons
-  double tau_kappa_; // time constant corresponding to leak term of output neurons
   double learning_rate_;
   double update_interval_;
   double Wmin_;
@@ -247,7 +246,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
       ++start;
     }
     double const dt = Time::get_resolution().get_ms();
-    double kappa = std::exp( -dt / tau_kappa_ );
     std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
     double dw = 0.0;
     if (target->is_eprop_readout() )  // if target is a readout neuron
@@ -260,17 +258,18 @@ EpropConnection< targetidentifierT >::send( Event& e,
 
       while ( start != finish )
       {
-        last_e_trace_ *= kappa;
+        last_e_trace_ *= propagator_low_pass_;
         if ( std::fabs( *t_pre_spike - start->t_ + dendritic_delay ) < 1.0e-6 )
         {
           // DEBUG: inserted factor ( 1 - dacay )
-          last_e_trace_ += ( 1.0 - kappa );
+          last_e_trace_ += ( 1.0 - propagator_low_pass_ );
           t_pre_spike++;
         }
         dw += (start->target_signal_ - ( start->readout_signal_ / start->normalization_ )) * last_e_trace_;
         start++;
       }
       dw *= learning_rate_ * dt;
+      //std::cout << "dw_out = " << dw << std::endl;
     }
     else  // if target is a neuron of the recurrent network
     {
@@ -453,7 +452,6 @@ EpropConnection< targetidentifierT >::EpropConnection()
   : ConnectionBase()
   , weight_( 1.0 )
   , tau_alpha_( 10.0 )
-  , tau_kappa_( 10.0 )
   , learning_rate_( 0.0001 )
   , update_interval_( 1000.0 )
   , Wmin_( 0.0 )
@@ -477,7 +475,6 @@ EpropConnection< targetidentifierT >::EpropConnection(
   : ConnectionBase( rhs )
   , weight_( rhs.weight_ )
   , tau_alpha_( rhs.tau_alpha_ )
-  , tau_kappa_( rhs.tau_kappa_ )
   , learning_rate_( rhs.learning_rate_ )
   , update_interval_( rhs.update_interval_ )
   , Wmin_( rhs.Wmin_ )
@@ -502,7 +499,6 @@ EpropConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
   def< double >( d, names::tau_alpha, tau_alpha_ );
-  def< double >( d, names::tau_kappa, tau_kappa_ );
   def< double >( d, names::learning_rate, learning_rate_ );
   def< double >( d, names::update_interval, update_interval_ );
   def< double >( d, names::Wmin, Wmin_ );
@@ -522,7 +518,6 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );
   updateValue< double >( d, names::tau_alpha, tau_alpha_ );
-  updateValue< double >( d, names::tau_kappa, tau_kappa_ );
   updateValue< double >( d, names::learning_rate, learning_rate_ );
   updateValue< double >( d, names::update_interval, update_interval_ );
   updateValue< double >( d, names::Wmin, Wmin_ );

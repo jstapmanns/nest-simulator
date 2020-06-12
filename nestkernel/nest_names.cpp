@@ -441,7 +441,6 @@ const Name tau_Delta( "tau_Delta" );
 const Name tau_epsp( "tau_epsp" );
 const Name tau_eta( "tau_eta" );
 const Name tau_fac( "tau_fac" );
-const Name tau_kappa( "tau_kappa" );
 const Name tau_m( "tau_m" );
 const Name tau_max( "tau_max" );
 const Name tau_Mg_fast_NMDA( "tau_Mg_fast_NMDA" );

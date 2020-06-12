@@ -59,7 +59,9 @@ void
 RecordablesMap< error_neuron >::create()
 {
   insert_( names::target_rate, &error_neuron::get_target_rate_ );
-  insert_( names::learning_signal, &error_neuron::get_learning_signal_ );
+  // DEBUG II: the commented line below was used in the pattern generation task
+  //insert_( names::learning_signal, &error_neuron::get_learning_signal_ );
+  insert_( names::learning_signal, &error_neuron::get_last_ls_ );
   insert_( names::V_m, &error_neuron::get_V_m_ );
   insert_( names::len_eprop_hist, &error_neuron::get_eprop_history_len );
   insert_( names::len_ls_per_syn, &error_neuron::get_ls_per_syn_len );
@@ -354,6 +356,14 @@ nest::error_neuron::handle( CurrentEvent& e )
   B_.currents_.add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
     w * c );
+}
+
+void
+nest::error_neuron::handle(
+  LearningSignalConnectionEvent& e )
+{
+  // Add learning signal to hist entries
+  add_learning_to_hist( e );
 }
 
 void

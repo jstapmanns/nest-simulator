@@ -464,7 +464,6 @@ extern const Name tau_Delta;
 extern const Name tau_epsp;
 extern const Name tau_eta;
 extern const Name tau_fac;
-extern const Name tau_kappa;
 extern const Name tau_m;
 extern const Name tau_max;
 extern const Name tau_Mg_fast_NMDA;

@@ -106,11 +106,13 @@ public:
   void handle( DelayedRateConnectionEvent& );
   void handle( SpikeEvent& );
   void handle( CurrentEvent& );
+  void handle( LearningSignalConnectionEvent& );
   void handle( DataLoggingRequest& );
 
   port handles_test_event( DelayedRateConnectionEvent&, rport );
   port handles_test_event( SpikeEvent&, rport );
   port handles_test_event( CurrentEvent&, rport );
+  port handles_test_event( LearningSignalConnectionEvent&, rport );
   port handles_test_event( DataLoggingRequest&, rport );
 
   void
@@ -221,13 +223,27 @@ private:
 
    };
 
-  //! Read out the rate
+  // DEBUG II:use this function to read learning signal in case of evidence accumulation task
+  double
+  get_last_ls_() const
+  {
+    if ( eprop_history_.size() > 1 )
+    {
+      return ( ( eprop_history_.rbegin() ) + 1 )->target_signal_
+        - ( ( eprop_history_.rbegin() ) + 1 )->readout_signal_
+        / ( ( eprop_history_.rbegin() ) + 1 )->normalization_ ;
+    }
+    return 0.0;
+  }
+
+  // DEBUG II: use this function to read learning signal in case of pattern generation task
   double
   get_learning_signal_() const
   {
     return S_.target_rate_ - (S_.y3_ + P_.E_L_);
   }
 
+  //! Read out the rate
   double
   get_target_rate_() const
   {
@@ -295,6 +311,16 @@ error_neuron::handles_test_event(
   return 0;
 }
 
+inline port
+error_neuron::handles_test_event( LearningSignalConnectionEvent&,
+  rport receptor_type )
+{
+  if ( receptor_type != 0 )
+  {
+    throw UnknownReceptorType( receptor_type, get_name() );
+  }
+  return 0;
+}
 
 inline port
 error_neuron::handles_test_event(
