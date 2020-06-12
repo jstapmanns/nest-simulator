@@ -279,11 +279,13 @@ nest::error_neuron::update_( Time const& origin,
 
       if ( t_mod_T > V_.step_start_ls_ )
       {
-      readout_and_target_signals [ 3*lag + 3 ] =  0.0;
+        // recall active
+        readout_and_target_signals [ 3*lag + 3 ] =  1.0;
       }
       else
       {
-      readout_and_target_signals [ 3*lag + 3 ] = 1.0;
+        // recall inactive -> add archiving fills history with zeros
+        readout_and_target_signals [ 3*lag + 3 ] = 0.0;
       }
 
       S_.y0_ = B_.currents_.get_value( lag ); // set new input current
