@@ -264,38 +264,42 @@ nest::error_neuron::update_( Time const& origin,
       V_.prnt = true;
     }
     // DEBUG: introduced factor ( 1 - exp( -dt / tau_m ) ) for campatibility wit tf code
-      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + ( 1 - V_.P33_ ) * B_.spikes_.get_value( lag );
-      S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
+    S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + ( 1 - V_.P33_ ) * B_.spikes_.get_value( lag );
+    S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
 
-      // DEBUG: changed sign (see tf code) (maybe this is not true any more)
-      // S_.learning_signal_ = ( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
-      readout_and_target_signals [ 3*lag ] = double(P_.regression_);
-      // TODO: replace -1 by ls
-      //std::cout << "error neuron send: " << S_.learning_signal_ << std::endl;
-      // new_learning_signals [ lag ] = S_.learning_signal_;
-      readout_and_target_signals [ 3*lag + 1 ] =  S_.y3_ + P_.E_L_;
-      readout_and_target_signals [ 3*lag + 2 ] = S_.target_rate_;
-      // std::cout << "rs error " << readout_and_target_signals [ lag + 1 ] << std::endl;
-      // std::cout << "ts error " << readout_and_target_signals [ lag + 2 ] << std::endl;
-      // std::cout << "...." << std::endl;
+    // DEBUG: changed sign (see tf code) (maybe this is not true any more)
+    // S_.learning_signal_ = ( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
+    readout_and_target_signals [ 3*lag ] = double(P_.regression_);
+    // TODO: replace -1 by ls
+    //std::cout << "error neuron send: " << S_.learning_signal_ << std::endl;
+    // new_learning_signals [ lag ] = S_.learning_signal_;
+    double readout_signal = S_.y3_ + P_.E_L_;
+    readout_and_target_signals [ 3*lag + 1 ] =  readout_signal;
+    readout_and_target_signals [ 3*lag + 2 ] = S_.target_rate_;
+    // std::cout << "rs error " << readout_and_target_signals [ lag + 1 ] << std::endl;
+    // std::cout << "ts error " << readout_and_target_signals [ lag + 2 ] << std::endl;
+    // std::cout << "...." << std::endl;
 
-      if ( t_mod_T > V_.step_start_ls_ )
+    if ( t_mod_T > V_.step_start_ls_ )
+    {
+      // recall active
+      readout_and_target_signals [ 3*lag + 3 ] =  1.0;
+      if ( !P_.regression_ )
       {
-        // recall active
-        readout_and_target_signals [ 3*lag + 3 ] =  1.0;
+        readout_signal = std::exp( readout_signal );
       }
-      else
-      {
-        // recall inactive -> add archiving fills history with zeros
-        readout_and_target_signals [ 3*lag + 3 ] = 0.0;
-      }
-
-      S_.y0_ = B_.currents_.get_value( lag ); // set new input current
-      S_.target_rate_ =  1. * B_.delayed_rates_.get_value( lag );
-
-      B_.logger_.record_data( origin.get_steps() + lag );
-      write_readout_history( Time::step( origin.get_steps() + lag + 1), S_.y3_ + P_.E_L_,
+      write_readout_history( Time::step( origin.get_steps() + lag + 1), readout_signal,
           S_.target_rate_);
+    }
+    else
+    {
+      // recall inactive -> add archiving fills history with zeros
+      readout_and_target_signals [ 3*lag + 3 ] = 0.0;
+      write_readout_history( Time::step( origin.get_steps() + lag + 1), 0.0, 0.0);
+    }
+    S_.y0_ = B_.currents_.get_value( lag ); // set new input current
+    S_.target_rate_ =  1. * B_.delayed_rates_.get_value( lag );
+    B_.logger_.record_data( origin.get_steps() + lag );
   }
 
   // Send delay-rate-neuron-event. This only happens in the final iteration
@@ -312,6 +316,52 @@ nest::error_neuron::is_eprop_readout()
     {
         return true;
     }
+
+void
+nest::error_neuron::add_learning_to_hist( LearningSignalConnectionEvent& e )
+{
+  const double weight = e.get_weight();
+  const long delay = e.get_delay_steps();
+  const Time stamp = e.get_stamp();
+
+  // TODO: Do we need to sutract the resolution? Examine delays in the network.
+  double t_ms = stamp.get_ms();
+
+  std::deque< histentry_eprop >::iterator start;
+  std::deque< histentry_eprop >::iterator finish;
+
+  // Get part of history to which the learning signal is added
+  // This increases the access counter which is undone below
+  nest::Eprop_Archiving_Node::find_eprop_hist_entries(
+     t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish );
+  std::vector< unsigned int >::iterator it = e.begin();
+  /*
+  double ls = e.get_coeffvalue( it );
+  if ( ls != 0.0 && t_ms < 3510.0 )
+  {
+    std::cout << "add learning_signal at t = " << t_ms << std::endl;
+  }
+  */
+  while ( start != finish && it != e.end() )
+  {
+    // Add learning signal and reduce access counter
+    double regression = e.get_coeffvalue(it);
+    double readout_signal = e.get_coeffvalue(it);
+    double target_signal = e.get_coeffvalue(it);
+    double recall = e.get_coeffvalue(it);
+    if (recall == 1.)
+    {
+      if (regression == 0.)
+      {
+        double old_norm = start->normalization_;
+        start->normalization_ += std::exp(readout_signal);
+        //std::cout << "added normalization: " << start->t_ << ", " << stamp.get_ms() << ", " << old_norm << " -> " <<
+        //  start->normalization_ << std::endl;
+      }
+    }
+    start++;
+  }
+}
 
 void
 nest::error_neuron::handle(

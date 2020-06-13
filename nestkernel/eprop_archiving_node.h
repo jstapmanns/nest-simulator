@@ -124,16 +124,17 @@ protected:
   int get_update_interval_steps();
   //TODO: propagate information from readout neuron
 
+  void find_eprop_hist_entries( double t1,
+    double t2,
+    std::deque< histentry_eprop >::iterator* start,
+    std::deque< histentry_eprop >::iterator* finish );
+
+
 private:
 
   double dampening_factor_; // called gamma in paper
   double update_interval_;
   std::vector< histentry_extended > last_spike_per_synapse_;
-
-  void find_eprop_hist_entries( double t1,
-    double t2,
-    std::deque< histentry_eprop >::iterator* start,
-    std::deque< histentry_eprop >::iterator* finish );
 
   void register_update( double t_lastupdate,
      double t_update );

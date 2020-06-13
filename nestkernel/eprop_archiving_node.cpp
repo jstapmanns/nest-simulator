@@ -124,13 +124,12 @@ nest::Eprop_Archiving_Node::print_t_ls_per_syn()
 void
 nest::Eprop_Archiving_Node::print_eprop_history()
 {
-  std::cout << "eprop hist t, h, ls:" << std::endl;
+  std::cout << "eprop hist t, h, readout, target, normalization:" << std::endl;
   std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
-  for ( int i = 0; i < 10; i++ )
+  while( runner != eprop_history_.end() )
   {
-    // std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->learning_signal_ << "; ";
-    std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->readout_signal_ << "; ";
-    runner++;
+    std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->readout_signal_
+      << " " << runner->target_signal_ << " " << runner->normalization_ << "|  ";
     runner++;
   }
   std::cout << std::endl;
@@ -348,24 +347,27 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent&
     double recall = e.get_coeffvalue(it);
     if (recall == 1.)
     {
-        if (regression == 1.)
-        {
-            start->readout_signal_ += weight * readout_signal;
-            start->target_signal_ += weight * target_signal;
-            start->normalization_ = 1.;
-        }
-        else if (regression == 0.)
-        {
-            start->readout_signal_ += weight * std::exp(readout_signal);
-            start->target_signal_ += weight * target_signal;
-            start->normalization_ += std::exp(readout_signal);
-        }
+      double old_norm = start->normalization_;
+      if (regression == 1.)
+      {
+          start->readout_signal_ += weight * readout_signal;
+          start->target_signal_ += weight * target_signal;
+          start->normalization_ = 1.;
+      }
+      else if (regression == 0.)
+      {
+          start->readout_signal_ += weight * std::exp(readout_signal);
+          start->target_signal_ += weight * target_signal;
+          start->normalization_ += std::exp(readout_signal);
+      }
+      //std::cout << "added normalization: " << start->t_ << ", " << stamp.get_ms() << ", " << old_norm << " -> " <<
+      //  start->normalization_ << std::endl;
     }
     else
     {
-         start->readout_signal_ += 0.;
-         start->target_signal_ += 0.;
-         start->normalization_ += 1.;
+       start->readout_signal_ += 0.;
+       start->target_signal_ += 0.;
+       start->normalization_ += 1.;
     }
     start++;
   }

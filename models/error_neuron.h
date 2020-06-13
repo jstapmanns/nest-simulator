@@ -223,15 +223,17 @@ private:
 
    };
 
+  void add_learning_to_hist( LearningSignalConnectionEvent& e );
+
   // DEBUG II:use this function to read learning signal in case of evidence accumulation task
   double
   get_last_ls_() const
   {
-    if ( eprop_history_.size() > 1 )
+    if ( eprop_history_.size() > 2 )
     {
-      return ( ( eprop_history_.rbegin() ) + 1 )->target_signal_
-        - ( ( eprop_history_.rbegin() ) + 1 )->readout_signal_
-        / ( ( eprop_history_.rbegin() ) + 1 )->normalization_ ;
+      return ( ( eprop_history_.rbegin() ) + 2 )->target_signal_
+        - ( ( eprop_history_.rbegin() ) + 2 )->readout_signal_
+        / ( ( eprop_history_.rbegin() ) + 2 )->normalization_ ;
     }
     return 0.0;
   }
