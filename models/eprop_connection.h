@@ -156,7 +156,6 @@ public:
 
     if ( Eprop_Archiving_Node* t_eprop = dynamic_cast< Eprop_Archiving_Node* >( &t ) )
     {
-      //std::cout << "register eprop node" << std::endl;
       if (t_eprop->is_eprop_readout() )  // if target is a readout neuron
       {
         t_eprop->init_eprop_buffers( 3.0 * get_delay() );
@@ -269,12 +268,11 @@ EpropConnection< targetidentifierT >::send( Event& e,
         start++;
       }
       dw *= learning_rate_ * dt;
-      //std::cout << "dw_out = " << dw << std::endl;
     }
     else  // if target is a neuron of the recurrent network
     {
-      target->get_eprop_history( t_lastupdate_ - 0.0 * dendritic_delay,
-          t_lastupdate_ + update_interval_ - 0.0 * dendritic_delay,
+      target->get_eprop_history( t_lastupdate_,
+          t_lastupdate_ + update_interval_,
           t_update_,
           &start,
           &finish );
@@ -284,16 +282,12 @@ EpropConnection< targetidentifierT >::send( Event& e,
       // compute the sum of the elegibility trace because it is used for the firing rate
       // regularization
       double sum_elig_tr = 0.0;
-      // auxiliary variable to compute low pass filtering of eligibility trace
-      double elig_tr_low_pass = 0.0;
       if ( target->is_eprop_adaptive() )
       {
         // if the target is of type aif_psc_delta_eprop (adaptive threshold)
         double beta = target->get_beta();
         double rho = target->get_adapt_propagator();
         double epsilon = 0.0;
-        // DEBUG: store epsilon in a vector for debugging purposes
-        std::vector< double > epsilon_a;
         for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
         {
           double pseudo_deriv = runner->V_m_;
@@ -310,34 +304,15 @@ EpropConnection< targetidentifierT >::send( Event& e,
           }
           // Eq.(28)
           double elig_tr = pseudo_deriv * ( last_e_trace_  - beta * epsilon );
-          //elig_tr_low_pass = elig_tr;
-          elig_tr_low_pass = elig_tr_low_pass * propagator_low_pass_
-            + elig_tr * ( 1.0 - propagator_low_pass_ );
-          sum_elig_tr += elig_tr_low_pass;
+          sum_elig_tr += elig_tr;
           // Eq.(27)
           epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
           elegibility_trace.push_back( elig_tr );
-          // DEBUG:
-          epsilon_a.push_back( elig_tr_low_pass );
         }
-        //std::cout << "sum_elig_tr adaptive = " << sum_elig_tr << std::endl;
-        /*
-        std::cout << "e trace low pass adaptive:" << std::endl;
-        int counter = 0;
-        for (std::vector< double >::iterator runner = epsilon_a.begin();
-            runner != epsilon_a.end(); runner++ )
-        {
-          std::cout << counter << ". " << *runner << "| ";
-          counter++;
-        }
-        std::cout << std::endl;
-        */
       }
       else
       {
         // if the target is of type iaf_psc_delta_eprop
-        // DEBUG: store epsilon in a vector for debugging purposes
-        std::vector< double > epsilon_a;
         for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
         {
           // Eq.(22)
@@ -352,49 +327,14 @@ EpropConnection< targetidentifierT >::send( Event& e,
             t_pre_spike++;
           }
           double elig_tr = runner->V_m_ * last_e_trace_;
-          //elig_tr_low_pass = elig_tr;
-          elig_tr_low_pass = elig_tr_low_pass * propagator_low_pass_
-            + elig_tr * ( 1.0 - propagator_low_pass_ );
-          sum_elig_tr += elig_tr_low_pass;
+          sum_elig_tr += elig_tr;
           // Eq.(23)
           elegibility_trace.push_back( elig_tr );
-          epsilon_a.push_back( elig_tr_low_pass );
         }
-        /*
-        std::cout << "sum_elig_tr regular = " << sum_elig_tr  << "  propagator_low_pass_ = " <<
-          propagator_low_pass_ << std::endl;
-        */
-        /*
-        std::cout << "e trace regular:" << std::endl;
-        int counter = 0;
-        for (std::vector< double >::iterator runner = epsilon_a.begin();
-            runner != epsilon_a.end(); runner++ )
-        {
-          std::cout << counter << ". " << *runner << "| ";
-          counter++;
-        }
-        std::cout << std::endl;
-        */
       }
 
       int t_prime = 0;
       double sum_t_prime_new = 0.0;
-      //bool p = true;
-      /*
-      std::cout << "learning signal:" << std::endl;
-      for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
-      {
-        if ( runner->learning_signal_ > 0.0 )
-        {
-          std::cout << "t = " << runner->t_ << "  ls = " << runner->learning_signal_ << " | ";
-        }
-      }
-      std::cout << std::endl;
-      */
-
-      // DEBUG II: removed lowpass filtering of elegibility trace here
-      // Instead dw = sum over elig trace
-      //dw += sum_elig_tr;
       while ( start != finish )
       {
         // DEBUG: inserted factor ( 1 - decay )
@@ -405,6 +345,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
         start++;
       }
       // firing rate regularization
+      // TODO: does sum_elig_tr has to be the sum over the eligibility trace or the low-pass
+      // filtered version of it?
       target->get_spike_history( t_lastupdate_,
           t_lastupdate_ + update_interval_,
           &start_spk,
@@ -417,9 +359,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
         elegibility_trace.size();
 
       dw *= dt*learning_rate_;
-      //std::cout << "dw = " << dw << "  nspikes = " << nspikes << "  av_firing_rate = " <<
-      //  av_firing_rate << "  target_firing_rate = " << target_firing_rate_ << "  sum_elig_tr = " <<
-      //  sum_elig_tr << "  rate_reg = " << rate_reg_ << "  n_elig_tr = " << elegibility_trace.size() << std::endl;
       t_prime_int_trace_ += sum_t_prime_new * dt;
     }
 
