@@ -298,8 +298,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
           {
             // DEBUG: inserted factor ( 1 - dacay )
             // DEBUG II: removed factor ( 1 - decay )
-            //last_e_trace_ += ( 1.0 - alpha );
-            last_e_trace_ += 1.0;
+            last_e_trace_ += ( 1.0 - alpha );
+            //last_e_trace_ += 1.0;
             t_pre_spike++;
           }
           // Eq.(28)
@@ -322,8 +322,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
           {
             // DEBUG: inserted factor ( 1 - dacay )
             // DEBUG II: removed factor ( 1 - decay )
-            //last_e_trace_ += ( 1.0 - alpha );
-            last_e_trace_ += 1.0;
+            last_e_trace_ += ( 1.0 - alpha );
+            //last_e_trace_ += 1.0;
             t_pre_spike++;
           }
           double elig_tr = runner->V_m_ * last_e_trace_;
