@@ -223,6 +223,9 @@ private:
 
    };
 
+  void write_readout_history( Time const& t_sp,
+    double readout_signal, double target_signal, double norm );
+
   void add_learning_to_hist( LearningSignalConnectionEvent& e );
 
   // DEBUG II:use this function to read learning signal in case of evidence accumulation task

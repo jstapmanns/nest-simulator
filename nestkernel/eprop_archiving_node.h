@@ -96,9 +96,6 @@ public:
   std::deque< double > spike_history_;
 
 protected:
-  void write_readout_history( Time const& t_sp,
-  double readout_signal, double target_signal );
-
   /**
    * \fn void write_eprop_history( Time const& t_sp,
    * double u, double u_bar_plus, double u_bar_minus, double u_bar_bar )

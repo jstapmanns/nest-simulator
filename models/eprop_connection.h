@@ -267,6 +267,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         dw += (start->target_signal_ - ( start->readout_signal_ / start->normalization_ )) * last_e_trace_;
         start++;
       }
+      //std::cout << "out gradient: " << dw << std::endl;
       dw *= learning_rate_ * dt;
     }
     else  // if target is a neuron of the recurrent network
@@ -309,6 +310,21 @@ EpropConnection< targetidentifierT >::send( Event& e,
           epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
           elegibility_trace.push_back( elig_tr );
         }
+        // start: print eligibility trace
+        /*
+        std::cout << std::endl << "adaptive elig_tr:" << std::endl;
+        int counter = 0;
+        double low_pass_tr = 0.0;
+        for ( auto elig_tr : elegibility_trace )
+        {
+          low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
+            elig_tr;
+          std::cout << counter << ". " << low_pass_tr << " | ";
+          counter++;
+        }
+        std::cout << std::endl;
+        // end: print eligibility trace
+        */
       }
       else
       {
@@ -331,6 +347,21 @@ EpropConnection< targetidentifierT >::send( Event& e,
           // Eq.(23)
           elegibility_trace.push_back( elig_tr );
         }
+        /*
+        // start: print eligibility trace
+        std::cout << std::endl << "regular elig_tr:" << std::endl;
+        int counter = 0;
+        double low_pass_tr = 0.0;
+        for ( auto elig_tr : elegibility_trace )
+        {
+          low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
+            elig_tr;
+          std::cout << counter << ". " << low_pass_tr << " | ";
+          counter++;
+        }
+        std::cout << std::endl;
+        // end: print eligibility trace
+        */
       }
 
       int t_prime = 0;
@@ -344,6 +375,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_prime++;
         start++;
       }
+      //std::cout << "rec gradient: " << dw << std::endl;
       // firing rate regularization
       // TODO: does sum_elig_tr has to be the sum over the eligibility trace or the low-pass
       // filtered version of it?
@@ -363,6 +395,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     }
 
     weight_ += dw;
+    //std::cout << "new weight: " << weight_ << std::endl;
     // DEBUG: define t_lastupdate_ to be the end of the last period T to be compatible with tf code
     t_lastupdate_ = t_update_;
     t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) *

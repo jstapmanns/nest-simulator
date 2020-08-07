@@ -289,13 +289,13 @@ nest::error_neuron::update_( Time const& origin,
         readout_signal = std::exp( readout_signal );
       }
       write_readout_history( Time::step( origin.get_steps() + lag + 1), readout_signal,
-          S_.target_rate_);
+          S_.target_rate_, readout_signal);
     }
     else
     {
       // recall inactive -> add archiving fills history with zeros
       readout_and_target_signals [ 3*lag + 3 ] = 0.0;
-      write_readout_history( Time::step( origin.get_steps() + lag + 1), 0.0, 0.0);
+      write_readout_history( Time::step( origin.get_steps() + lag + 1), 0.0, 0.0, 1.0);
     }
     S_.y0_ = B_.currents_.get_value( lag ); // set new input current
     S_.target_rate_ =  1. * B_.delayed_rates_.get_value( lag );
@@ -316,6 +316,25 @@ nest::error_neuron::is_eprop_readout()
     {
         return true;
     }
+
+void
+nest::error_neuron::write_readout_history( Time const& t_sp,
+  double readout_signal, double target_signal, double norm )
+{
+  const double t_ms = t_sp.get_ms();
+  if ( n_incoming_ )
+  {
+    // create new entry in history
+    if ( !P_.regression_ )
+    {
+      eprop_history_.push_back( histentry_eprop( t_ms, 0.0, readout_signal, norm, target_signal, 0 ) );
+    }
+    else
+    {
+      eprop_history_.push_back( histentry_eprop( t_ms, 0.0, readout_signal, 1.0, target_signal, 0 ) );
+    }
+  }
+}
 
 void
 nest::error_neuron::add_learning_to_hist( LearningSignalConnectionEvent& e )
@@ -356,7 +375,7 @@ nest::error_neuron::add_learning_to_hist( LearningSignalConnectionEvent& e )
         double old_norm = start->normalization_;
         start->normalization_ += std::exp(readout_signal);
         //std::cout << "added normalization: " << start->t_ << ", " << stamp.get_ms() << ", " << old_norm << " -> " <<
-        //  start->normalization_ << std::endl;
+        //start->normalization_ << std::endl;
       }
     }
     start++;

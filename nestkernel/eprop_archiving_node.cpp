@@ -278,18 +278,6 @@ nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
 }
 
 void
-nest::Eprop_Archiving_Node::write_readout_history( Time const& t_sp,
-  double readout_signal, double target_signal )
-{
-  const double t_ms = t_sp.get_ms();
-  if ( n_incoming_ )
-  {
-    // create new entry in history
-    eprop_history_.push_back( histentry_eprop( t_ms, 0.0, readout_signal, 1.0, target_signal, 0 ) );
-  }
-}
-
-void
 nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
   double diff_V_m_V_th,
   double V_th )
