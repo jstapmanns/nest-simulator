@@ -177,8 +177,6 @@ public:
 private:
   // data members of each connection
   double weight_;
-  // TODO: tau_alpha_ can be determined from neuron params
-  double tau_alpha_; // time constant corresponding to leak term of rec neurons
   double learning_rate_;
   double update_interval_;
   double Wmin_;
@@ -423,7 +421,6 @@ template < typename targetidentifierT >
 EpropConnection< targetidentifierT >::EpropConnection()
   : ConnectionBase()
   , weight_( 1.0 )
-  , tau_alpha_( 10.0 )
   , learning_rate_( 0.0001 )
   , update_interval_( 1000.0 )
   , Wmin_( 0.0 )
@@ -446,7 +443,6 @@ EpropConnection< targetidentifierT >::EpropConnection(
   const EpropConnection< targetidentifierT >& rhs )
   : ConnectionBase( rhs )
   , weight_( rhs.weight_ )
-  , tau_alpha_( rhs.tau_alpha_ )
   , learning_rate_( rhs.learning_rate_ )
   , update_interval_( rhs.update_interval_ )
   , Wmin_( rhs.Wmin_ )
@@ -470,7 +466,6 @@ EpropConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
 {
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
-  def< double >( d, names::tau_alpha, tau_alpha_ );
   def< double >( d, names::learning_rate, learning_rate_ );
   def< double >( d, names::update_interval, update_interval_ );
   def< double >( d, names::Wmin, Wmin_ );
@@ -489,7 +484,6 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
 {
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );
-  updateValue< double >( d, names::tau_alpha, tau_alpha_ );
   updateValue< double >( d, names::learning_rate, learning_rate_ );
   updateValue< double >( d, names::update_interval, update_interval_ );
   updateValue< double >( d, names::Wmin, Wmin_ );
@@ -531,11 +525,6 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
          == ( ( Wmax_ > 0 ) - ( Wmax_ <= 0 ) ) ) )
   {
     // throw BadProperty( "Weight and Wmax must have same sign." );
-  }
-
-  if ( tau_alpha_ <= 0.0 )
-  {
-    throw BadProperty( "The synaptic time constant tau must be greater than zero." );
   }
 
   if ( update_interval_ <= 0.0 )
