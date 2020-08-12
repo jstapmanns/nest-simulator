@@ -376,6 +376,7 @@ extern const Name recordables;
 extern const Name recorder;
 extern const Name recording_backends;
 extern const Name rectify_output;
+extern const Name rectify_rate;
 extern const Name refractory_input;
 extern const Name registered;
 extern const Name regression;

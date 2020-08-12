@@ -355,6 +355,7 @@ const Name recordables( "recordables" );
 const Name recorder( "recorder" );
 const Name recording_backends( "recording_backends" );
 const Name rectify_output( "rectify_output" );
+const Name rectify_rate( "rectify_rate" );
 const Name refractory_input( "refractory_input" );
 const Name registered( "registered" );
 const Name regression( "regression" );
