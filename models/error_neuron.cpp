@@ -229,7 +229,7 @@ nest::error_neuron::calibrate()
   const double h = Time::get_resolution().get_ms();
   V_.P33_ = std::exp( -h / P_.tau_m_ );
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
-  V_.step_start_ls_ = Time( Time::ms( P_.t_start_ls_ ) ).get_steps();
+  V_.step_start_ls_ = Time( Time::ms( std::max( P_.t_start_ls_ - h, 0.0 ) ) ).get_steps();
   V_.prnt = true;
   //std::cout << "start = " << V_.step_start_ls_ << std::endl;
 }
