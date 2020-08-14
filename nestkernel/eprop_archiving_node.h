@@ -88,6 +88,7 @@ public:
   // synapse 
   void init_eprop_buffers( double delay );
   // DEBUG: print last_spike_per_synapse_
+  void print_spike_history();
   void print_t_ls_per_syn();
   void print_eprop_history();
 

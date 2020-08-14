@@ -110,6 +110,17 @@ nest:: Eprop_Archiving_Node::get_spike_history_len() const
 }
 
 void
+nest::Eprop_Archiving_Node::print_spike_history()
+{
+  std::cout << "spike history:" << std::endl;
+  for ( auto it : spike_history_ )
+  {
+    std::cout << it << " | ";
+  }
+  std::cout << std::endl;
+}
+
+void
 nest::Eprop_Archiving_Node::print_t_ls_per_syn()
 {
   std::cout << "t_ls per syn:" << std::endl;
@@ -262,18 +273,9 @@ nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
     // erase entries that are no longer used
     eprop_history_.erase( eprop_history_.begin(), finish );
   }
-  // tidy spike history
-  for ( std::deque< double >::iterator runner = spike_history_.begin();
-      runner != spike_history_.end(); runner++ )
+  while( ( !spike_history_.empty() ) && ( spike_history_.front() + 1.0e-6 < smallest_time_to_keep ) )
   {
-    if ( *runner + 1.0e-6 < smallest_time_to_keep )
-    {
-      spike_history_.erase( runner );
-    }
-    else
-    {
-      break;
-    }
+    spike_history_.pop_front();
   }
 }
 
@@ -327,7 +329,6 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent&
     double recall = e.get_coeffvalue(it);
     if (recall == 1.)
     {
-      double old_norm = start->normalization_;
       if (regression == 1.)
       {
           start->readout_signal_ += weight * readout_signal;

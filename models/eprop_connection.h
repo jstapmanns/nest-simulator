@@ -197,6 +197,7 @@ private:
   // implementation of get_eprop_history, i.e. binary search.
 
   std::vector< double > pre_syn_spike_times_;
+  // TODO: remove
 };
 
 
@@ -406,7 +407,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
       pre_syn_spike_times_.clear();
       pre_syn_spike_times_.push_back( t_spike );
       // DEBUG: tidy_eprop_history also takes care of the spike_history
-      //target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
+      target->tidy_eprop_history( t_lastupdate_ - dendritic_delay );
     }
   }
 
