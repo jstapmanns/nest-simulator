@@ -282,10 +282,9 @@ nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
   double diff_V_m_V_th,
   double V_th )
 {
-  const double t_ms = t_sp.get_ms();
-
   if ( n_incoming_ )
   {
+    const double t_ms = t_sp.get_ms();
     // create new entry in history
     // DEBUG: additional factor 1 / V_th
     double h = pseudo_deriv( diff_V_m_V_th, V_th ) / V_th;
@@ -319,13 +318,6 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent&
   nest::Eprop_Archiving_Node::find_eprop_hist_entries(
      t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish );
   std::vector< unsigned int >::iterator it = e.begin();
-  /*
-  double ls = e.get_coeffvalue( it );
-  if ( ls != 0.0 && t_ms < 3510.0 )
-  {
-    std::cout << "add learning_signal at t = " << t_ms << std::endl;
-  }
-  */
   while ( start != finish && it != e.end() )
   {
     // Add learning signal and reduce access counter
@@ -348,8 +340,6 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent&
           start->target_signal_ += weight * target_signal;
           start->normalization_ += std::exp(readout_signal);
       }
-      //std::cout << "added normalization: " << start->t_ << ", " << stamp.get_ms() << ", " << old_norm << " -> " <<
-      //  start->normalization_ << std::endl;
     }
     else
     {

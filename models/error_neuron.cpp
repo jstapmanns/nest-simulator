@@ -231,7 +231,6 @@ nest::error_neuron::calibrate()
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
   V_.step_start_ls_ = Time( Time::ms( std::max( P_.t_start_ls_ - h, 0.0 ) ) ).get_steps();
   V_.prnt = true;
-  //std::cout << "start = " << V_.step_start_ls_ << std::endl;
 }
 
 /* ----------------------------------------------------------------
@@ -267,18 +266,12 @@ nest::error_neuron::update_( Time const& origin,
     S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + ( 1 - V_.P33_ ) * B_.spikes_.get_value( lag );
     S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
 
-    // DEBUG: changed sign (see tf code) (maybe this is not true any more)
-    // S_.learning_signal_ = ( S_.target_rate_ - (S_.y3_ + P_.E_L_) );
+    // DEBUG: changed sign (see tf code)
     readout_and_target_signals [ 3*lag ] = double(P_.regression_);
     // TODO: replace -1 by ls
-    //std::cout << "error neuron send: " << S_.learning_signal_ << std::endl;
-    // new_learning_signals [ lag ] = S_.learning_signal_;
     double readout_signal = S_.y3_ + P_.E_L_;
     readout_and_target_signals [ 3*lag + 1 ] =  readout_signal;
     readout_and_target_signals [ 3*lag + 2 ] = S_.target_rate_;
-    // std::cout << "rs error " << readout_and_target_signals [ lag + 1 ] << std::endl;
-    // std::cout << "ts error " << readout_and_target_signals [ lag + 2 ] << std::endl;
-    // std::cout << "...." << std::endl;
 
     if ( t_mod_T > V_.step_start_ls_ )
     {
@@ -354,13 +347,6 @@ nest::error_neuron::add_learning_to_hist( LearningSignalConnectionEvent& e )
   nest::Eprop_Archiving_Node::find_eprop_hist_entries(
      t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish );
   std::vector< unsigned int >::iterator it = e.begin();
-  /*
-  double ls = e.get_coeffvalue( it );
-  if ( ls != 0.0 && t_ms < 3510.0 )
-  {
-    std::cout << "add learning_signal at t = " << t_ms << std::endl;
-  }
-  */
   while ( start != finish && it != e.end() )
   {
     // Add learning signal and reduce access counter
@@ -374,8 +360,6 @@ nest::error_neuron::add_learning_to_hist( LearningSignalConnectionEvent& e )
       {
         double old_norm = start->normalization_;
         start->normalization_ += std::exp(readout_signal);
-        //std::cout << "added normalization: " << start->t_ << ", " << stamp.get_ms() << ", " << old_norm << " -> " <<
-        //start->normalization_ << std::endl;
       }
     }
     start++;
