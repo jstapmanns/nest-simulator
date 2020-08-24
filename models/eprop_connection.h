@@ -197,7 +197,14 @@ private:
   // implementation of get_eprop_history, i.e. binary search.
 
   std::vector< double > pre_syn_spike_times_;
-  // TODO: remove
+  size_t batch_size_ = 1;
+  double m_adam_ = 0.0;         // auxiliary variable for adam optimizer
+  double v_adam_ = 0.0;         // auxiliary variable for adam optimizer
+  double beta1_adam_ = 0.0;     // default value in tf: 0.9
+  double beta2_adam_ = 0.000;   // default value in tf: 0.999
+  double epsilon_adam_ = 1.0e-0;  // dafault value in tf: 1.0e-8
+  double recall_duration_steps_ = 150.0;  // 150 ms which corresponds to 150 steps
+  std::vector< double > grads_; // vector that stores the gradients of one batch
 };
 
 
@@ -235,6 +242,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         last_e_trace_ = 0.0;
         t_prime_int_trace_ = 0.0;
       }
+      double grad = 0.0;
       double const dt = Time::get_resolution().get_ms();
       // get spike history in relevant range (t1, t2] from post-synaptic neuron
       std::deque< histentry_eprop >::iterator start;
@@ -242,6 +250,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
 
       std::deque< double >::iterator start_spk;
       std::deque< double >::iterator finish_spk;
+      // DEBUG II: the learning_period_counter corresponds to the variable t of the adam optimizer
+      double learning_period_counter_ = floor( ( t_spike - dt ) / update_interval_ )  / batch_size_;
       //DEBUG: added 2*delay to be in sync with TF code
       double t_update_ = ( floor( ( t_spike - dt ) / update_interval_ ) ) * update_interval_ + 2.0 *
         dendritic_delay;
@@ -271,6 +281,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           dw += (start->target_signal_ - ( start->readout_signal_ / start->normalization_ )) * last_e_trace_;
           start++;
         }
+        grad = -dw * dt;
         dw *= learning_rate_ * dt;
       }
       else  // if target is a neuron of the recurrent network
@@ -313,19 +324,22 @@ EpropConnection< targetidentifierT >::send( Event& e,
             epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
             elegibility_trace.push_back( elig_tr );
           }
-          // start: print eligibility trace
           /*
-          std::cout << std::endl << "adaptive elig_tr:" << std::endl;
-          int counter = 0;
-          double low_pass_tr = 0.0;
-          for ( auto elig_tr : elegibility_trace )
+          // start: print eligibility trace
+          if ( t_spike > 2298 && t_spike < 2302 )
           {
-            low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
-              elig_tr;
-            std::cout << counter << ". " << low_pass_tr << " | ";
-            counter++;
+            std::cout << std::endl << "adaptive elig_tr:" << std::endl;
+            int counter = 0;
+            double low_pass_tr = 0.0;
+            for ( auto elig_tr : elegibility_trace )
+            {
+              low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
+                elig_tr;
+              std::cout << counter << ". " << low_pass_tr << " | ";
+              counter++;
+            }
+            std::cout << std::endl;
           }
-          std::cout << std::endl;
           // end: print eligibility trace
           */
         }
@@ -352,17 +366,20 @@ EpropConnection< targetidentifierT >::send( Event& e,
           }
           /*
           // start: print eligibility trace
-          std::cout << std::endl << "regular elig_tr:" << std::endl;
-          int counter = 0;
-          double low_pass_tr = 0.0;
-          for ( auto elig_tr : elegibility_trace )
+          if ( t_spike > 2298 && t_spike < 2302 )
           {
-            low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
-              elig_tr;
-            std::cout << counter << ". " << low_pass_tr << " | ";
-            counter++;
+            std::cout << std::endl << "regular elig_tr:" << std::endl;
+            int counter = 0;
+            double low_pass_tr = 0.0;
+            for ( auto elig_tr : elegibility_trace )
+            {
+              low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
+                elig_tr;
+              std::cout << counter << ". " << low_pass_tr << " | ";
+              counter++;
+            }
+            std::cout << std::endl;
           }
-          std::cout << std::endl;
           // end: print eligibility trace
           */
         }
@@ -389,20 +406,49 @@ EpropConnection< targetidentifierT >::send( Event& e,
         // Eq.(56)
         dw += -rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_elig_tr /
           elegibility_trace.size();
+        grad = -dw * dt;
+        //std::cout << "grad_rec: " << grad / ( recall_duration_steps_ * batch_size_ ) << std::endl;
         dw *= dt*learning_rate_;
         t_prime_int_trace_ += sum_t_prime_new * dt;
       }
 
-      weight_ += dw;
+      grads_.push_back( grad );
+      if ( grads_.size() >= batch_size_ )
+      {
+        double sum_grads = 0.0;
+        for ( auto dw_i : grads_ )
+        {
+          sum_grads += dw_i;
+        }
+        sum_grads /= recall_duration_steps_ * batch_size_;
+        m_adam_ = beta1_adam_ * m_adam_ + ( 1.0 - beta1_adam_ ) * sum_grads / batch_size_;
+        v_adam_ = beta2_adam_ * v_adam_ + ( 1.0 - beta2_adam_ )
+          * std::pow( sum_grads / batch_size_, 2 );
+        double alpha_t = learning_rate_ * std::sqrt( 1.0 - std::pow( beta2_adam_, learning_period_counter_ ) )
+          / ( 1.0 - std::pow( beta1_adam_, learning_period_counter_ ) );
+        //double old_w = weight_;
+        //double delta_w = -alpha_t * m_adam_ / ( std::sqrt( v_adam_ ) + epsilon_adam_ );
+        weight_ -= alpha_t * m_adam_ / ( std::sqrt( v_adam_ ) + epsilon_adam_ );
+        //std::cout << "apply update. counter = " << learning_period_counter_ << "  grads:" <<
+        //  std::endl;
+        //for ( auto gr : grads_ )
+        //{
+        //  std::cout << gr / ( recall_duration_steps_ * batch_size_ ) << " | ";
+        //}
+        //std::cout << std::endl;
+        //std::cout << "m = " << m_adam_ << "  v = " << v_adam_ << "  alpha_t = " << alpha_t <<
+        //  std::endl;
+        //std::cout << "old -> new: " << old_w << " -> " << weight_ << " delta = " << delta_w <<
+        //  std::endl;
+        grads_.clear();
+      }
+      // DEBUG II: the following line implements gradient descent. Uncomment this line and comment
+      // line 430 for gradient descent.
+      //weight_ += dw / ( recall_duration_steps_ * batch_size_ );
       // DEBUG: define t_lastupdate_ to be the end of the last period T to be compatible with tf code
       t_lastupdate_ = t_update_;
       t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) *
         update_interval_;
-      if (t_nextupdate_ == t_lastupdate_ )
-      {
-        std::cout << "something went wrong in the eprop_synapse (t_nextupdate_ == t_lastupdate_)!"
-          << std::endl;
-      }
       // clear history of presynaptic spike because we don't need them any more
       pre_syn_spike_times_.clear();
       pre_syn_spike_times_.push_back( t_spike );
