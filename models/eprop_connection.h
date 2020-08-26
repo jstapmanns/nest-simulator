@@ -197,14 +197,15 @@ private:
   // implementation of get_eprop_history, i.e. binary search.
 
   std::vector< double > pre_syn_spike_times_;
-  size_t batch_size_ = 1;
-  double m_adam_ = 0.0;         // auxiliary variable for adam optimizer
-  double v_adam_ = 0.0;         // auxiliary variable for adam optimizer
-  double beta1_adam_ = 0.0;     // default value in tf: 0.9
-  double beta2_adam_ = 0.000;   // default value in tf: 0.999
-  double epsilon_adam_ = 1.0e-0;  // dafault value in tf: 1.0e-8
-  double recall_duration_steps_ = 150.0;  // 150 ms which corresponds to 150 steps
-  std::vector< double > grads_; // vector that stores the gradients of one batch
+  double batch_size_;
+  double m_adam_;  // auxiliary variable for adam optimizer
+  double v_adam_;  // auxiliary variable for adam optimizer
+  double beta1_adam_;
+  double beta2_adam_;
+  double epsilon_adam_;
+  double recall_duration_steps_;
+  std::vector< double > grads_;  // vector that stores the gradients of one batch
+  double adam_;
 };
 
 
@@ -412,8 +413,11 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_prime_int_trace_ += sum_t_prime_new * dt;
       }
 
+      if ( adam_ = 1.0 )
+      {
       grads_.push_back( grad );
-      if ( grads_.size() >= batch_size_ )
+      size_t batch_size_cast = batch_size_;
+      if ( grads_.size() >= batch_size_cast )
       {
         double sum_grads = 0.0;
         for ( auto dw_i : grads_ )
@@ -442,10 +446,14 @@ EpropConnection< targetidentifierT >::send( Event& e,
         //  std::endl;
         grads_.clear();
       }
-      // DEBUG II: the following line implements gradient descent. Uncomment this line and comment
-      // line 430 for gradient descent.
-      //weight_ += dw / ( recall_duration_steps_ * batch_size_ );
-      // DEBUG: define t_lastupdate_ to be the end of the last period T to be compatible with tf code
+    }
+    else // gradient descent
+    {
+    // DEBUG II: the following line implements gradient descent. Uncomment this line and comment
+    // line 430 for gradient descent.
+    weight_ += dw / ( recall_duration_steps_ * batch_size_ );
+    }
+    // DEBUG: define t_lastupdate_ to be the end of the last period T to be compatible with tf code
       t_lastupdate_ = t_update_;
       t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) *
         update_interval_;
@@ -487,6 +495,14 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , target_firing_rate_( 10. )
   , tau_low_pass_e_tr_( 0.0 )
   , propagator_low_pass_( 0.0 )
+  , batch_size_( 1. )
+  , m_adam_( 0.0 )
+  , v_adam_( 0.0 )
+  , beta1_adam_( 0.9 )
+  , beta2_adam_( 0.999 )
+  , epsilon_adam_( 1.0e-8 )
+  , recall_duration_steps_( 150.0 )  // in ms which corresponds to steps
+  , adam_( false )
 {
 }
 
@@ -509,6 +525,14 @@ EpropConnection< targetidentifierT >::EpropConnection(
   , target_firing_rate_( rhs.target_firing_rate_ )
   , tau_low_pass_e_tr_( rhs.tau_low_pass_e_tr_ )
   , propagator_low_pass_( rhs.propagator_low_pass_ )
+  , batch_size_( rhs.batch_size_ )
+  , m_adam_( rhs.m_adam_ )
+  , v_adam_( rhs.v_adam_ )
+  , beta1_adam_( rhs.beta1_adam_ )
+  , beta2_adam_( rhs.beta2_adam_ )
+  , epsilon_adam_( rhs.epsilon_adam_ )
+  , recall_duration_steps_( rhs.recall_duration_steps_ )
+  , adam_( rhs.adam_ )
 {
 }
 
@@ -527,6 +551,14 @@ EpropConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::target_firing_rate, target_firing_rate_ );
   def< double >( d, names::tau_decay, tau_low_pass_e_tr_ );
   def< long >( d, names::size_of, sizeof( *this ) );
+  def< double >( d, names::batch_size, batch_size_);
+  def< double >( d, names::m_adam, m_adam_);
+  def< double >( d, names::v_adam, v_adam_);
+  def< double >( d, names::beta1_adam, beta1_adam_);
+  def< double >( d, names::beta2_adam, beta2_adam_);
+  def< double >( d, names::epsilon_adam, epsilon_adam_);
+  def< double >( d, names::recall_duration_steps, recall_duration_steps_);
+  def< double >( d, names::adam, adam_);
 }
 
 template < typename targetidentifierT >
@@ -544,6 +576,14 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   updateValue< double >( d, names::rate_reg, rate_reg_ );
   updateValue< double >( d, names::target_firing_rate, target_firing_rate_ );
   updateValue< double >( d, names::tau_decay, tau_low_pass_e_tr_ );
+  updateValue< double >( d, names::batch_size, batch_size_);
+  updateValue< double >( d, names::m_adam, m_adam_);
+  updateValue< double >( d, names::v_adam, v_adam_);
+  updateValue< double >( d, names::beta1_adam, beta1_adam_);
+  updateValue< double >( d, names::beta2_adam, beta2_adam_);
+  updateValue< double >( d, names::epsilon_adam, epsilon_adam_);
+  updateValue< double >( d, names::recall_duration_steps, recall_duration_steps_);
+  updateValue< double >( d, names::adam, adam_);
 
   const double h = Time::get_resolution().get_ms();
   // TODO: t_nextupdate and t_lastupdate should be initialized even if set_status is not called
