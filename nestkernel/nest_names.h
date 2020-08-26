@@ -51,7 +51,6 @@ namespace names
 extern const Name a;
 extern const Name a_acausal;
 extern const Name a_causal;
-extern const Name adam;
 extern const Name A_LTD;
 extern const Name A_LTD_const;
 extern const Name A_LTP;
@@ -545,6 +544,7 @@ extern const Name u_ref_squared;
 extern const Name update;
 extern const Name update_interval;
 extern const Name update_node;
+extern const Name use_adam;
 extern const Name use_wfr;
 
 extern const Name V_act_NMDA;

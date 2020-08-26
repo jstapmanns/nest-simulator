@@ -205,7 +205,7 @@ private:
   double epsilon_adam_;
   double recall_duration_steps_;
   std::vector< double > grads_;  // vector that stores the gradients of one batch
-  double adam_;
+  double use_adam_;
 };
 
 
@@ -413,7 +413,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_prime_int_trace_ += sum_t_prime_new * dt;
       }
 
-      if ( adam_ = 1.0 )
+      if ( use_adam_ == 1.0 )
       {
       grads_.push_back( grad );
       size_t batch_size_cast = batch_size_;
@@ -502,7 +502,7 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , beta2_adam_( 0.999 )
   , epsilon_adam_( 1.0e-8 )
   , recall_duration_steps_( 150.0 )  // in ms which corresponds to steps
-  , adam_( false )
+  , use_adam_( false )
 {
 }
 
@@ -532,7 +532,7 @@ EpropConnection< targetidentifierT >::EpropConnection(
   , beta2_adam_( rhs.beta2_adam_ )
   , epsilon_adam_( rhs.epsilon_adam_ )
   , recall_duration_steps_( rhs.recall_duration_steps_ )
-  , adam_( rhs.adam_ )
+  , use_adam_( rhs.use_adam_ )
 {
 }
 
@@ -558,7 +558,7 @@ EpropConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::beta2_adam, beta2_adam_);
   def< double >( d, names::epsilon_adam, epsilon_adam_);
   def< double >( d, names::recall_duration_steps, recall_duration_steps_);
-  def< double >( d, names::adam, adam_);
+  def< double >( d, names::use_adam, use_adam_);
 }
 
 template < typename targetidentifierT >
@@ -583,7 +583,7 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   updateValue< double >( d, names::beta2_adam, beta2_adam_);
   updateValue< double >( d, names::epsilon_adam, epsilon_adam_);
   updateValue< double >( d, names::recall_duration_steps, recall_duration_steps_);
-  updateValue< double >( d, names::adam, adam_);
+  updateValue< double >( d, names::use_adam, use_adam_);
 
   const double h = Time::get_resolution().get_ms();
   // TODO: t_nextupdate and t_lastupdate should be initialized even if set_status is not called

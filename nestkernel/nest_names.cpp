@@ -30,7 +30,6 @@ namespace names
 const Name a( "a" );
 const Name a_acausal( "a_acausal" );
 const Name a_causal( "a_causal" );
-const Name adam( "adam" );
 const Name A_LTD( "A_LTD" );
 const Name A_LTD_const( "A_LTD_const" );
 const Name A_LTP( "A_LTP" );
@@ -524,6 +523,7 @@ const Name u_ref_squared( "u_ref_squared" );
 const Name update( "update" );
 const Name update_interval( "update_interval" );
 const Name update_node( "update_node" );
+const Name use_adam( "use_adam" );
 const Name use_wfr( "use_wfr" );
 
 const Name V_act_NMDA( "V_act_NMDA" );
