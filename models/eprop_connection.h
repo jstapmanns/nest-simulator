@@ -420,30 +420,38 @@ EpropConnection< targetidentifierT >::send( Event& e,
       if ( grads_.size() >= batch_size_cast )
       {
         double sum_grads = 0.0;
-        for ( auto dw_i : grads_ )
+        for ( auto gr : grads_ )
         {
-          sum_grads += dw_i;
+          //std::cout << gr << ",  ";
+          sum_grads += gr;
+          //std::cout << sum_grads << " | ";
         }
         sum_grads /= recall_duration_steps_ * batch_size_;
-        m_adam_ = beta1_adam_ * m_adam_ + ( 1.0 - beta1_adam_ ) * sum_grads / batch_size_;
-        v_adam_ = beta2_adam_ * v_adam_ + ( 1.0 - beta2_adam_ )
-          * std::pow( sum_grads / batch_size_, 2 );
+        m_adam_ = beta1_adam_ * m_adam_ + ( 1.0 - beta1_adam_ ) * sum_grads;
+        v_adam_ = beta2_adam_ * v_adam_ + ( 1.0 - beta2_adam_ ) * std::pow( sum_grads, 2 );
         double alpha_t = learning_rate_ * std::sqrt( 1.0 - std::pow( beta2_adam_, learning_period_counter_ ) )
           / ( 1.0 - std::pow( beta1_adam_, learning_period_counter_ ) );
-        //double old_w = weight_;
-        //double delta_w = -alpha_t * m_adam_ / ( std::sqrt( v_adam_ ) + epsilon_adam_ );
+        /*
+        std::cout << "mean grads: " << sum_grads << std::endl;
+        double old_w = weight_;
+        double delta_w = -alpha_t * m_adam_ / ( std::sqrt( v_adam_ ) + epsilon_adam_ );
+        */
         weight_ -= alpha_t * m_adam_ / ( std::sqrt( v_adam_ ) + epsilon_adam_ );
-        //std::cout << "apply update. counter = " << learning_period_counter_ << "  grads:" <<
-        //  std::endl;
-        //for ( auto gr : grads_ )
-        //{
-        //  std::cout << gr / ( recall_duration_steps_ * batch_size_ ) << " | ";
-        //}
-        //std::cout << std::endl;
-        //std::cout << "m = " << m_adam_ << "  v = " << v_adam_ << "  alpha_t = " << alpha_t <<
-        //  std::endl;
-        //std::cout << "old -> new: " << old_w << " -> " << weight_ << " delta = " << delta_w <<
-        //  std::endl;
+        /*
+        std::cout << "apply update. counter = " << learning_period_counter_
+          << "  recall_duration_steps = " << recall_duration_steps_ << "  batch_size = " <<
+          batch_size_ << "  grads:" <<
+          std::endl;
+        for ( auto gr : grads_ )
+        {
+          std::cout << gr << " | ";
+        }
+        std::cout << std::endl;
+        std::cout << "m = " << m_adam_ << "  v = " << v_adam_ << "  alpha_t = " << alpha_t <<
+          "  t = " << learning_period_counter_ << std::endl;
+        std::cout << "old -> new: " << old_w << " -> " << weight_ << " delta = " << delta_w <<
+          std::endl;
+        */
         grads_.clear();
       }
     }
