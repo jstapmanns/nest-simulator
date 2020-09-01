@@ -413,11 +413,11 @@ EpropConnection< targetidentifierT >::send( Event& e,
         t_prime_int_trace_ += sum_t_prime_new * dt;
       }
 
-      if ( use_adam_ == 1.0 )
-      {
       grads_.push_back( grad );
       size_t batch_size_cast = batch_size_;
       if ( grads_.size() >= batch_size_cast )
+      {
+      if ( use_adam_ == 1.0 )
       {
         double sum_grads = 0.0;
         for ( auto gr : grads_ )
