@@ -243,7 +243,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
         last_e_trace_ = 0.0;
         t_prime_int_trace_ = 0.0;
       }
-      double grad = 0.0;
       double const dt = Time::get_resolution().get_ms();
       // get spike history in relevant range (t1, t2] from post-synaptic neuron
       std::deque< histentry_eprop >::iterator start;
@@ -261,7 +260,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         ++start;
       }
       std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
-      double dw = 0.0;
+      double grad = 0.0;
       if (target->is_eprop_readout() )  // if target is a readout neuron
       {
         target->get_eprop_history( t_lastupdate_ + dendritic_delay,
@@ -279,11 +278,10 @@ EpropConnection< targetidentifierT >::send( Event& e,
             last_e_trace_ += ( 1.0 - propagator_low_pass_ );
             t_pre_spike++;
           }
-          dw += (start->target_signal_ - ( start->readout_signal_ / start->normalization_ )) * last_e_trace_;
+          grad += ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ ) * last_e_trace_;
           start++;
         }
-        grad = -dw * dt;
-        dw *= learning_rate_ * dt;
+        grad *= dt;
       }
       else  // if target is a neuron of the recurrent network
       {
@@ -325,24 +323,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
             epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
             elegibility_trace.push_back( elig_tr );
           }
-          /*
-          // start: print eligibility trace
-          if ( t_spike > 2298 && t_spike < 2302 )
-          {
-            std::cout << std::endl << "adaptive elig_tr:" << std::endl;
-            int counter = 0;
-            double low_pass_tr = 0.0;
-            for ( auto elig_tr : elegibility_trace )
-            {
-              low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
-                elig_tr;
-              std::cout << counter << ". " << low_pass_tr << " | ";
-              counter++;
-            }
-            std::cout << std::endl;
-          }
-          // end: print eligibility trace
-          */
         }
         else
         {
@@ -367,20 +347,17 @@ EpropConnection< targetidentifierT >::send( Event& e,
           }
           /*
           // start: print eligibility trace
-          if ( t_spike > 2298 && t_spike < 2302 )
+          std::cout << std::endl << "regular elig_tr:" << std::endl;
+          int counter = 0;
+          double low_pass_tr = 0.0;
+          for ( auto elig_tr : elegibility_trace )
           {
-            std::cout << std::endl << "regular elig_tr:" << std::endl;
-            int counter = 0;
-            double low_pass_tr = 0.0;
-            for ( auto elig_tr : elegibility_trace )
-            {
-              low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
-                elig_tr;
-              std::cout << counter << ". " << low_pass_tr << " | ";
-              counter++;
-            }
-            std::cout << std::endl;
+            low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
+              elig_tr;
+            std::cout << counter << ". " << low_pass_tr << " | ";
+            counter++;
           }
+          std::cout << std::endl;
           // end: print eligibility trace
           */
         }
@@ -391,8 +368,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
         {
           // DEBUG: inserted factor ( 1 - decay )
           sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 - propagator_low_pass_ ) * elegibility_trace[ t_prime ];
-          dw += ( sum_t_prime_new * dt + std::pow( propagator_low_pass_, t_prime ) *
-              t_prime_int_trace_ ) * (start->target_signal_ - ( start->readout_signal_ / start->normalization_ ));
+          grad += ( sum_t_prime_new * dt + std::pow( propagator_low_pass_, t_prime ) *
+              t_prime_int_trace_ ) * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
           t_prime++;
           start++;
         }
@@ -405,63 +382,41 @@ EpropConnection< targetidentifierT >::send( Event& e,
         // compute average firing rate since last update. factor 1000 to convert into Hz
         double av_firing_rate = nspikes / update_interval_;
         // Eq.(56)
-        dw += -rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_elig_tr /
+        grad += rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_elig_tr /
           elegibility_trace.size();
-        grad = -dw * dt;
-        //std::cout << "grad_rec: " << grad / ( recall_duration_steps_ * batch_size_ ) << std::endl;
-        dw *= dt*learning_rate_;
+        grad *= dt;
         t_prime_int_trace_ += sum_t_prime_new * dt;
       }
-
+      // implementation of batches: store all gradients in a vector and compute the weight using
+      // their mean value.
       grads_.push_back( grad );
       size_t batch_size_cast = batch_size_;
       if ( grads_.size() >= batch_size_cast )
       {
-      if ( use_adam_ == 1.0 )
-      {
         double sum_grads = 0.0;
         for ( auto gr : grads_ )
         {
-          //std::cout << gr << ",  ";
           sum_grads += gr;
-          //std::cout << sum_grads << " | ";
         }
-        sum_grads /= recall_duration_steps_ * batch_size_;
-        m_adam_ = beta1_adam_ * m_adam_ + ( 1.0 - beta1_adam_ ) * sum_grads;
-        v_adam_ = beta2_adam_ * v_adam_ + ( 1.0 - beta2_adam_ ) * std::pow( sum_grads, 2 );
-        double alpha_t = learning_rate_ * std::sqrt( 1.0 - std::pow( beta2_adam_, learning_period_counter_ ) )
-          / ( 1.0 - std::pow( beta1_adam_, learning_period_counter_ ) );
-        /*
-        std::cout << "mean grads: " << sum_grads << std::endl;
-        double old_w = weight_;
-        double delta_w = -alpha_t * m_adam_ / ( std::sqrt( v_adam_ ) + epsilon_adam_ );
-        */
-        weight_ -= alpha_t * m_adam_ / ( std::sqrt( v_adam_ ) + epsilon_adam_ );
-        /*
-        std::cout << "apply update. counter = " << learning_period_counter_
-          << "  recall_duration_steps = " << recall_duration_steps_ << "  batch_size = " <<
-          batch_size_ << "  grads:" <<
-          std::endl;
-        for ( auto gr : grads_ )
+        if ( use_adam_ == 1.0 ) // use adam optimizer
         {
-          std::cout << gr << " | ";
+          // divide also by the number of recall steps to be compatible with the tf implementation
+          sum_grads /= recall_duration_steps_ * batch_size_;
+          m_adam_ = beta1_adam_ * m_adam_ + ( 1.0 - beta1_adam_ ) * sum_grads;
+          v_adam_ = beta2_adam_ * v_adam_ + ( 1.0 - beta2_adam_ ) * std::pow( sum_grads, 2 );
+          double alpha_t = learning_rate_ * std::sqrt( 1.0 - std::pow( beta2_adam_, learning_period_counter_ ) )
+            / ( 1.0 - std::pow( beta1_adam_, learning_period_counter_ ) );
+          weight_ -= alpha_t * m_adam_ / ( std::sqrt( v_adam_ ) + epsilon_adam_ );
         }
-        std::cout << std::endl;
-        std::cout << "m = " << m_adam_ << "  v = " << v_adam_ << "  alpha_t = " << alpha_t <<
-          "  t = " << learning_period_counter_ << std::endl;
-        std::cout << "old -> new: " << old_w << " -> " << weight_ << " delta = " << delta_w <<
-          std::endl;
-        */
+        else // gradient descent
+        {
+          // here we do not divide by the number of recall steps (see tf implementation)
+          sum_grads /= batch_size_;
+          weight_ -= learning_rate_ * sum_grads;
+        }
         grads_.clear();
       }
-    }
-    else // gradient descent
-    {
-    // DEBUG II: the following line implements gradient descent. Uncomment this line and comment
-    // line 430 for gradient descent.
-    weight_ += dw / ( recall_duration_steps_ * batch_size_ );
-    }
-    // DEBUG: define t_lastupdate_ to be the end of the last period T to be compatible with tf code
+      // DEBUG: define t_lastupdate_ to be the end of the last period T to be compatible with tf code
       t_lastupdate_ = t_update_;
       t_nextupdate_ += ( floor( ( t_spike - t_nextupdate_ ) / update_interval_ ) + 1 ) *
         update_interval_;
