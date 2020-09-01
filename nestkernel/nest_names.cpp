@@ -351,7 +351,7 @@ const Name rate_slope( "rate_slope" );
 const Name rate_times( "rate_times" );
 const Name rate_values( "rate_values" );
 const Name readout_cycle_duration( "readout_cycle_duration" );
-const Name recall_duration_steps( "recall_duration_steps" );
+const Name recall_duration( "recall_duration" );
 const Name receptor_type( "receptor_type" );
 const Name receptor_types( "receptor_types" );
 const Name receptors( "receptors" );

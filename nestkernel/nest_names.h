@@ -372,7 +372,7 @@ extern const Name rate_slope;
 extern const Name rate_times;
 extern const Name rate_values;
 extern const Name readout_cycle_duration;
-extern const Name recall_duration_steps;
+extern const Name recall_duration;
 extern const Name receptor_type;
 extern const Name receptor_types;
 extern const Name receptors;

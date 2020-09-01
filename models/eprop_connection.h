@@ -203,7 +203,7 @@ private:
   double beta1_adam_;
   double beta2_adam_;
   double epsilon_adam_;
-  double recall_duration_steps_;
+  double recall_duration_;
   std::vector< double > grads_;  // vector that stores the gradients of one batch
   double use_adam_;
 };
@@ -401,7 +401,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         if ( use_adam_ == 1.0 ) // use adam optimizer
         {
           // divide also by the number of recall steps to be compatible with the tf implementation
-          sum_grads /= recall_duration_steps_ * batch_size_;
+          sum_grads /= Time( Time::ms( recall_duration_ ) ).get_steps() * batch_size_;
           m_adam_ = beta1_adam_ * m_adam_ + ( 1.0 - beta1_adam_ ) * sum_grads;
           v_adam_ = beta2_adam_ * v_adam_ + ( 1.0 - beta2_adam_ ) * std::pow( sum_grads, 2 );
           double alpha_t = learning_rate_ * std::sqrt( 1.0 - std::pow( beta2_adam_, learning_period_counter_ ) )
@@ -464,7 +464,7 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , beta1_adam_( 0.9 )
   , beta2_adam_( 0.999 )
   , epsilon_adam_( 1.0e-8 )
-  , recall_duration_steps_( 150.0 )  // in ms which corresponds to steps
+  , recall_duration_( 150.0 )  // in ms
   , use_adam_( false )
 {
 }
@@ -494,7 +494,7 @@ EpropConnection< targetidentifierT >::EpropConnection(
   , beta1_adam_( rhs.beta1_adam_ )
   , beta2_adam_( rhs.beta2_adam_ )
   , epsilon_adam_( rhs.epsilon_adam_ )
-  , recall_duration_steps_( rhs.recall_duration_steps_ )
+  , recall_duration_( rhs.recall_duration_ )
   , use_adam_( rhs.use_adam_ )
 {
 }
@@ -520,7 +520,7 @@ EpropConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::beta1_adam, beta1_adam_);
   def< double >( d, names::beta2_adam, beta2_adam_);
   def< double >( d, names::epsilon_adam, epsilon_adam_);
-  def< double >( d, names::recall_duration_steps, recall_duration_steps_);
+  def< double >( d, names::recall_duration, recall_duration_);
   def< double >( d, names::use_adam, use_adam_);
 }
 
@@ -545,7 +545,7 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   updateValue< double >( d, names::beta1_adam, beta1_adam_);
   updateValue< double >( d, names::beta2_adam, beta2_adam_);
   updateValue< double >( d, names::epsilon_adam, epsilon_adam_);
-  updateValue< double >( d, names::recall_duration_steps, recall_duration_steps_);
+  updateValue< double >( d, names::recall_duration, recall_duration_);
   updateValue< double >( d, names::use_adam, use_adam_);
 
   const double h = Time::get_resolution().get_ms();
