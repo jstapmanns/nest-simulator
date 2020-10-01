@@ -19,7 +19,7 @@ The `GNU Scientific Library <http://www.gnu.org/software/gsl/>`_ is needed by se
 For efficient sorting algorithms the Boost library <https://www.boost.org/> is used. Since this is an essential factor for the communication of spikes, some simulations are significantly faster when NEST is compile with Boost.
 If you want to use PyNEST, we recommend to install the following along with their development packages:
 
-- `Python 3.5 or higher <http://www.python.org>`_
+- `Python 3.6 or higher <http://www.python.org>`_
 - `NumPy <http://www.scipy.org>`_
 - `SciPy <http://www.scipy.org>`_
 - `Matplotlib 3.0 or higher <http://matplotlib.org>`_
@@ -73,7 +73,7 @@ The following are the basic steps to compile and install NEST from source code. 
 
 .. code-block:: sh
 
-   cmake -DCMAKE_INSTALL_PREFIX:PATH=</install/path> </path/to/NEST/src>
+   cmake -DCMAKE_INSTALL_PREFIX:PATH=<nest_install_dir> </path/to/NEST/src>
 
 .. note::
 
@@ -101,16 +101,16 @@ NEST should now be successfully installed on your system.
 What gets installed where
 -------------------------
 
-By default, everything will be installed to the subdirectories ``/install/path/{bin,lib,share}``, where ``/install/path`` is the install path given to ``cmake``:
+By default, everything will be installed to the subdirectories ``<nest_install_dir>/{bin,lib,share}``, where ``/install/path`` is the install path given to ``cmake``:
 
-- Executables ``/install/path/bin``
-- Dynamic libraries ``/install/path/lib/``
-- SLI libraries ``/install/path/share/nest/sli``
-- Documentation ``/install/path/share/doc/nest``
-- Examples ``/install/path/share/doc/nest/examples``
-- PyNEST ``/install/path/lib/pythonX.Y/site-packages/nest``
-- PyNEST examples ``/install/path/share/doc/nest/examples/pynest``
-- Extras ``/install/path/share/nest/extras/``
+- Executables ``<nest_install_dir>/bin``
+- Dynamic libraries ``<nest_install_dir>/lib/``
+- SLI libraries ``<nest_install_dir>/share/nest/sli``
+- Documentation ``<nest_install_dir>/share/doc/nest``
+- Examples ``<nest_install_dir>/share/doc/nest/examples``
+- PyNEST ``<nest_install_dir>/lib/pythonX.Y/site-packages/nest``
+- PyNEST examples ``<nest_install_dir>/share/doc/nest/examples/pynest``
+- Extras ``<nest_install_dir>/share/nest/extras/``
 
 If you want to run the ``nest`` executable or use the ``nest`` Python module without providing explicit paths, you have to add the installation directory to your search paths.
 Please refer to the :ref:`next section <environment_variables>` section for this.
@@ -123,11 +123,11 @@ Environment variables
 
 A number of environment variables are used to specify where the components of a NEST installation are found. In particular when installing to a custom directory, it is typically necessary to explicitly set these variables, so that your operating system can find the NEST binaries, its libraries and custom extension modules.
 
-For your convenience, a shell script setting all required environment variables is provided in ``/install/path/bin/nest_vars.sh``. Setting the environment variables in your active shell session requires sourcing the script:
+For your convenience, a shell script setting all required environment variables is provided in ``<nest_install_dir>/bin/nest_vars.sh``. Setting the environment variables in your active shell session requires sourcing the script:
 
 .. code-block:: sh
 
-   source </install/path/>bin/nest_vars.sh
+   source <nest_install_dir>/bin/nest_vars.sh
 
 You may want to include this line in your ``.bashrc`` file, so that the environment variables are set automatically whenever you open a new terminal.
 
@@ -139,19 +139,9 @@ The following variables are set in ``nest_vars.sh``:
 
    * - Variable
      - Description
-   * - ``NEST_INSTALL_DIR``
-     - NEST installation directory. Contains ``bin``, ``lib``, etc.
-   * - ``NEST_DATA_DIR``	
-     - NEST finds standard *.sli files in ``$NEST_DATA_DIR/sli``
-   * - ``NEST_DOC_DIR``
-     - NEST built-in online help finds help files in ``$NEST_DOC_DIR/help``
-   * - ``NEST_PYTHON_PREFIX``
-     - The path where the PyNEST bindings are installed.
    * - ``PYTHONPATH``
      - Search path for non-standard Python module locations. Will be newly set or prepended to the already existing variable if it is already set.
    * - ``PATH``
      - Search path for binaries. Will be newly set or prepended to the already existing variable if it is already set.
-   * - ``LD_LIBRARY_PATH``
-     - Search path for shared objects (*.so files). Note: called ``DYLD_LIBRARY_PATH`` on MacOS. Will be newly set or prepended to the already existing variable if it is already set.
 
 If your operating system does not find the ``nest`` executable or if Python does not find the ``nest`` module, your path variables may not be set correctly. This may also be the case if Python cannot load the ``nest`` module due to missing or incompatible libraries.
