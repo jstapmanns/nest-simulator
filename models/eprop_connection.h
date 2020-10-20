@@ -255,10 +255,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
       //DEBUG: added 2*delay to be in sync with TF code
       double t_update_ = ( floor( ( t_spike - dt ) / update_interval_ ) ) * update_interval_ + 2.0 *
         dendritic_delay;
-      if ( start != finish )
-      {
-        ++start;
-      }
       std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
       double grad = 0.0;
       if (target->is_eprop_readout() )  // if target is a readout neuron
