@@ -364,14 +364,31 @@ EpropConnection< targetidentifierT >::send( Event& e,
 
         int t_prime = 0;
         double sum_t_prime_new = 0.0;
-        while ( start != finish )
+
+        if ( keep_traces_ < 1.0 )
         {
-          // DEBUG: inserted factor ( 1 - decay )
-          sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 - propagator_low_pass_ ) * elegibility_trace[ t_prime ];
-          grad += ( sum_t_prime_new * dt + std::pow( propagator_low_pass_, t_prime ) *
-              t_prime_int_trace_ ) * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
-          t_prime++;
-          start++;
+            while ( start != finish )
+            {
+              // DEBUG: inserted factor ( 1 - decay )
+              sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 - propagator_low_pass_ ) * elegibility_trace[ t_prime ];
+              grad += sum_t_prime_new * dt * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
+              t_prime++;
+              start++;
+            }
+        }
+        else
+        {
+            double propagator_power = 1.0;
+            while ( start != finish )
+            {
+              // DEBUG: inserted factor ( 1 - decay )
+              sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 - propagator_low_pass_ ) * elegibility_trace[ t_prime ];
+              grad += ( sum_t_prime_new * dt + propagator_power *
+                  t_prime_int_trace_ ) * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
+              propagator_power *= propagator_low_pass_;
+              t_prime++;
+              start++;
+            }
         }
         // firing rate regularization
         target->get_spike_history( t_lastupdate_,
