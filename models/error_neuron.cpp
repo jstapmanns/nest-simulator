@@ -246,7 +246,6 @@ nest::error_neuron::update_( Time const& origin,
     to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
-  const double h = Time::get_resolution().get_ms();
   const size_t buffer_size = kernel().connection_manager.get_min_delay();
 
   // allocate memory to store rates to be sent by rate events
@@ -332,7 +331,6 @@ nest::error_neuron::write_readout_history( Time const& t_sp,
 void
 nest::error_neuron::add_learning_to_hist( LearningSignalConnectionEvent& e )
 {
-  const double weight = e.get_weight();
   const long delay = e.get_delay_steps();
   const Time stamp = e.get_stamp();
 
@@ -352,13 +350,11 @@ nest::error_neuron::add_learning_to_hist( LearningSignalConnectionEvent& e )
     // Add learning signal and reduce access counter
     double regression = e.get_coeffvalue(it);
     double readout_signal = e.get_coeffvalue(it);
-    double target_signal = e.get_coeffvalue(it);
     double recall = e.get_coeffvalue(it);
     if (recall == 1.)
     {
       if (regression == 0.)
       {
-        double old_norm = start->normalization_;
         start->normalization_ += std::exp(readout_signal);
       }
     }
