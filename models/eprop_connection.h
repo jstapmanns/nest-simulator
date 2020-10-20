@@ -238,6 +238,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
     // do update only if this is the first spike in a new inverval T
     if ( t_spike > t_nextupdate_ )
     {
+      pre_syn_spike_times_.insert( --pre_syn_spike_times_.end(), t_nextupdate_ - dendritic_delay );
       if ( keep_traces_ < 1.0 )
       {
         last_e_trace_ = 0.0;
@@ -257,6 +258,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         dendritic_delay;
       std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
       double grad = 0.0;
+      double sum_t_prime_new = 0.0;
       if (target->is_eprop_readout() )  // if target is a readout neuron
       {
         target->get_eprop_history( t_lastupdate_ + dendritic_delay,
@@ -287,17 +289,71 @@ EpropConnection< targetidentifierT >::send( Event& e,
             &start,
             &finish );
 
-        std::vector< double > elegibility_trace;
         double alpha = target->get_leak_propagator();
+        //std::vector< double > elegibility_trace;
         // compute the sum of the elegibility trace because it is used for the firing rate
         // regularization
         double sum_elig_tr = 0.0;
+        // compute intervals between presynaptic spikes
+        std::vector< double > pre_syn_spk_diff(pre_syn_spike_times_.size() - 1);
+        std::adjacent_difference(pre_syn_spike_times_.begin(), --pre_syn_spike_times_.end(),
+            pre_syn_spk_diff.begin());
+        pre_syn_spk_diff[0] -= t_lastupdate_ - 1.0*dendritic_delay;
+        int sum_pre_syn_intervals = 0;
+        for ( auto n : pre_syn_spk_diff )
+        {
+          sum_pre_syn_intervals += n;
+        }
+        if ( sum_pre_syn_intervals != std::distance( start, finish ) )
+        {
+          std::cout << "something went wrong! sum_pre_syn_intervals = " << sum_pre_syn_intervals
+            << " and distance start <-> finish = " << std::distance( start, finish ) << std::endl;
+        }
         if ( target->is_eprop_adaptive() )
         {
           // if the target is of type aif_psc_delta_eprop (adaptive threshold)
           double beta = target->get_beta();
           double rho = target->get_adapt_propagator();
           double epsilon = 0.0;
+          /*
+          std::cout << "pre syn spike times:" << std::endl;
+          for ( auto pre_syn_spk_t : pre_syn_spike_times_ )
+          {
+            std::cout << pre_syn_spk_t << ", ";
+          }
+          std::cout << std::endl;
+          
+
+          std::cout << "pre syn spike times diff:" << std::endl;
+          for ( auto pre_syn_spk_t : pre_syn_spk_diff )
+          {
+            std::cout << pre_syn_spk_t << ", ";
+          }
+          std::cout << std::endl;
+          
+          std::vector< double > z_hat_old;
+          std::vector< double > z_hat_new;
+          */
+          double last_z_hat = -1.0;
+          for ( auto pre_syn_spk_t : pre_syn_spk_diff )
+          {
+            last_z_hat += 1.0;
+            for (int t = 0; t < pre_syn_spk_t; t++)
+            {
+              //z_hat_new.push_back( last_z_hat );
+              double pseudo_deriv = start->V_m_;
+              double elig_tr = pseudo_deriv * ( last_z_hat  - beta * epsilon );
+              //elegibility_trace.push_back( elig_tr );
+              sum_elig_tr += elig_tr;
+              epsilon = pseudo_deriv * last_z_hat + ( rho - beta * pseudo_deriv ) * epsilon;
+              sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 -
+                  propagator_low_pass_ ) * elig_tr;
+              grad += sum_t_prime_new * dt * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
+              start++;
+              last_z_hat *= alpha;
+            }
+          }
+          /*
           for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
           {
             double pseudo_deriv = runner->V_m_;
@@ -312,6 +368,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
               last_e_trace_ += 1.0;
               t_pre_spike++;
             }
+            z_hat_old.push_back( last_e_trace_ );
             // Eq.(28)
             double elig_tr = pseudo_deriv * ( last_e_trace_  - beta * epsilon );
             sum_elig_tr += elig_tr;
@@ -319,10 +376,55 @@ EpropConnection< targetidentifierT >::send( Event& e,
             epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
             elegibility_trace.push_back( elig_tr );
           }
+          */
+
+          /*
+          std::cout << "z_hat_new (" << z_hat_new.size() << "):" << std::endl;
+          for ( int i = 0; i < z_hat_new.size(); i++ )
+          {
+            std::cout << i << ". " << z_hat_new[i] << " | ";
+          }
+          std::cout << std::endl;
+          */
+          /*
+          std::cout << "z_hat_old (" << z_hat_old.size() << "):" << std::endl;
+          for ( int i = 0; i < z_hat_old.size(); i++ )
+          {
+            std::cout << i << ". " << z_hat_old[i] << " | ";
+          }
+          std::cout << std::endl;
+          */
+          /*
+          std::cout << "elig_tr_new (" << elegibility_trace.size() << "):" << std::endl;
+          for ( int i = 0; i < elegibility_trace.size(); i++ )
+          {
+            std::cout << i << ". " << elegibility_trace[i] << " | ";
+          }
+          std::cout << std::endl;
+          */
         }
         else
         {
           // if the target is of type iaf_psc_delta_eprop
+          double last_z_hat = -1.0;
+          for ( auto pre_syn_spk_t : pre_syn_spk_diff )
+          {
+            last_z_hat += 1.0;
+            for (int t = 0; t < pre_syn_spk_t; t++)
+            {
+              //z_hat_new.push_back( last_z_hat );
+              double pseudo_deriv = start->V_m_;
+              double elig_tr = pseudo_deriv * last_z_hat;
+              //elegibility_trace.push_back( elig_tr );
+              sum_elig_tr += elig_tr;
+              sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 -
+                  propagator_low_pass_ ) * elig_tr;
+              grad += sum_t_prime_new * dt * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
+              start++;
+              last_z_hat *= alpha;
+            }
+          }
+          /*
           for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
           {
             // Eq.(22)
@@ -341,6 +443,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
             // Eq.(23)
             elegibility_trace.push_back( elig_tr );
           }
+          */
           /*
           // start: print eligibility trace
           std::cout << std::endl << "regular elig_tr:" << std::endl;
@@ -358,6 +461,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           */
         }
 
+        /*
         int t_prime = 0;
         double sum_t_prime_new = 0.0;
 
@@ -386,6 +490,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
               start++;
             }
         }
+        */
         // firing rate regularization
         target->get_spike_history( t_lastupdate_,
             t_lastupdate_ + update_interval_,
@@ -396,7 +501,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         double av_firing_rate = nspikes / update_interval_;
         // Eq.(56)
         grad += rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_elig_tr /
-          elegibility_trace.size();
+          sum_pre_syn_intervals;
         grad *= dt;
         t_prime_int_trace_ += sum_t_prime_new * dt;
       }
