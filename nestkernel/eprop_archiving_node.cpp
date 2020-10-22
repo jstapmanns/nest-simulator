@@ -87,7 +87,7 @@ nest::Eprop_Archiving_Node::init_eprop_buffers( double delay )
   }
   else
   {
-    it_reg->access_counter_++;
+    ++it_reg->access_counter_;
   }
 }
 
@@ -125,7 +125,7 @@ nest::Eprop_Archiving_Node::print_t_ls_per_syn()
 {
   std::cout << "t_ls per syn:" << std::endl;
   for ( std::vector< histentry_extended >::iterator it = last_spike_per_synapse_.begin();
-      it != last_spike_per_synapse_.end(); it++)
+      it != last_spike_per_synapse_.end(); ++it)
   {
     std::cout << it->t_ << "  " << it->access_counter_ << ",  ";
   }
@@ -141,7 +141,7 @@ nest::Eprop_Archiving_Node::print_eprop_history()
   {
     std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->readout_signal_
       << " " << runner->target_signal_ << " " << runner->normalization_ << "|  ";
-    runner++;
+    ++runner;
   }
   std::cout << std::endl;
 }
@@ -194,7 +194,7 @@ nest::Eprop_Archiving_Node::register_update( double t_lastupdate,
   }
   else
   {
-    it_reg->access_counter_++;
+    ++it_reg->access_counter_;
   }
   // search for old entry and decrease access counter and delete entry if the access counter
   // equals zero
@@ -348,7 +348,7 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent&
        start->target_signal_ += 0.;
        start->normalization_ += 1.;
     }
-    start++;
+    ++start;
   }
 }
 
