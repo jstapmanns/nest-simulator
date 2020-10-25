@@ -222,10 +222,11 @@ void
 nest::Eprop_Archiving_Node::get_eprop_history( double t1,
   double t2,
   double t3,
+  double t4,
   std::deque< histentry_eprop >::iterator* start,
   std::deque< histentry_eprop >::iterator* finish )
 {
-  register_update( t1, t3 );
+  register_update( t3, t4 );
   nest::Eprop_Archiving_Node::find_eprop_hist_entries( t1, t2, start, finish );
 }
 
