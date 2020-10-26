@@ -278,7 +278,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           for (int t = 0; t < pre_syn_spk_t; t++)
           {
             grad += ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ ) * last_z_hat;
-            start++;
+            ++start;
             last_z_hat *= propagator_low_pass_;
           }
         }
@@ -325,7 +325,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
               sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 -
                   propagator_low_pass_ ) * elig_tr;
               grad += sum_t_prime_new * dt * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
-              start++;
+              ++start;
               last_z_hat *= alpha;
             }
           }
@@ -347,7 +347,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
               sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 -
                   propagator_low_pass_ ) * elig_tr;
               grad += sum_t_prime_new * dt * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
-              start++;
+              ++start;
               last_z_hat *= alpha;
             }
           }
