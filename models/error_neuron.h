@@ -133,6 +133,7 @@ private:
   void update_( Time const&, const long, const long );
 
   void update( Time const&, const long, const long );
+  double phi( double );
 
   // The next two classes need to be friends to access the State_ class/member
   friend class RecordablesMap< error_neuron >;
@@ -149,6 +150,10 @@ private:
         True (default): Gain function applied to linearly summed input.
         False: Gain function applied to each input before summation.
     **/
+    double phi_max_;    //!< Parameter of the rate function
+    double rate_slope_; //!< Parameter of the rate function
+    double beta_;       //!< Parameter of the rate function
+    double theta_;      //!< Parameter of the rate function
     double tau_m_;  // Membrane time constant in ms.
     double c_m_;  // Membrane capacitance in pF.
     double E_L_;  // Resting potential in mV.
@@ -220,6 +225,8 @@ private:
     int step_start_ls_; // step after which a learning signal is sent to the recurrent neurons
     int T_steps_; // length of one period T in steps
     bool prnt;
+    librandom::RngPtr rng_;                   //!< random number generator of my own thread
+    librandom::PoissonRandomDev poisson_dev_; //!< random deviate generator
 
    };
 
@@ -279,6 +286,12 @@ error_neuron::update( Time const& origin,
   const long to )
 {
   update_( origin, from, to);
+}
+
+inline double
+error_neuron::phi( double u )
+{
+  return P_.phi_max_ / ( 1.0 + P_.rate_slope_ * exp( P_.beta_ * ( P_.theta_ - u ) ) );
 }
 
 inline port

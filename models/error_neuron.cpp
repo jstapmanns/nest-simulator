@@ -71,7 +71,11 @@ RecordablesMap< error_neuron >::create()
  * ---------------------------------------------------------------- */
 
 nest::error_neuron::Parameters_::Parameters_()
-  : tau_m_( 10.0 )                                  // ms
+  : phi_max_( 0.15 )
+  , rate_slope_( 0.5 )
+  , beta_( 1.0 / 3.0 )
+  , theta_( 1.0 )
+  , tau_m_( 10.0 )                                  // ms
   , c_m_( 250.0 )                                   // pF
   , E_L_( -70.0 )                                   // mV
   , I_e_( 0.0 )                                     // pA
@@ -97,6 +101,10 @@ void
 nest::error_neuron::Parameters_::get(
   DictionaryDatum& d ) const
 {
+  def< double >( d, names::phi_max, phi_max_ );
+  def< double >( d, names::rate_slope, rate_slope_ );
+  def< double >( d, names::beta, beta_ );
+  def< double >( d, names::theta, theta_ );
   def< double >( d, names::E_L, E_L_ ); // Resting potential
   def< double >( d, names::I_e, I_e_ );
   def< double >( d, names::V_min, V_min_ + E_L_ );
@@ -118,6 +126,10 @@ nest::error_neuron::Parameters_::set(
     V_min_ -= E_L_;
   }
 
+  updateValue< double >( d, names::phi_max, phi_max_ );
+  updateValue< double >( d, names::rate_slope, rate_slope_ );
+  updateValue< double >( d, names::beta, beta_ );
+  updateValue< double >( d, names::theta, theta_ );
   updateValue< double >( d, names::I_e, I_e_ );
   updateValue< double >( d, names::C_m, c_m_ );
   updateValue< double >( d, names::tau_m, tau_m_ );
@@ -226,6 +238,7 @@ nest::error_neuron::calibrate()
   B_.logger_
     .init(); // ensures initialization in case mm connected after Simulate
 
+  V_.rng_ = kernel().rng_manager.get_rng( get_thread() );
   const double h = Time::get_resolution().get_ms();
   V_.P33_ = std::exp( -h / P_.tau_m_ );
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
@@ -270,8 +283,13 @@ nest::error_neuron::update_( Time const& origin,
     readout_and_target_signals [ 3*lag ] = double(P_.regression_);
     // TODO: replace -1 by ls
     double readout_signal = S_.y3_ + P_.E_L_;
-    readout_and_target_signals [ 3*lag + 1 ] =  readout_signal;
-    readout_and_target_signals [ 3*lag + 2 ] = S_.target_rate_;
+    double error_signal = readout_signal - S_.target_rate_;
+    double rate = 1000.0 * phi( std::abs( error_signal ) );
+    V_.poisson_dev_.set_lambda( rate * h * 1e-3 );
+    unsigned long n_spikes = V_.poisson_dev_.ldev( V_.rng_ );
+    int n_spikes_sign = n_spikes * ( ( error_signal > 0.0 ) - ( error_signal < 0.0 ) );
+    readout_and_target_signals [ 3*lag + 1 ] = n_spikes_sign; //n_spikes * readout_signal;
+    readout_and_target_signals [ 3*lag + 2 ] = 0.0; //n_spikes * S_.target_rate_;
 
     if ( t_mod_T > V_.step_start_ls_ )
     {
@@ -281,8 +299,8 @@ nest::error_neuron::update_( Time const& origin,
       {
         readout_signal = std::exp( readout_signal );
       }
-      write_readout_history( Time::step( origin.get_steps() + lag + 1), readout_signal,
-          S_.target_rate_, readout_signal);
+      write_readout_history( Time::step( origin.get_steps() + lag + 1), n_spikes_sign,
+          n_spikes * S_.target_rate_, readout_signal);
     }
     else
     {
