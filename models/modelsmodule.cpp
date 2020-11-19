@@ -127,6 +127,7 @@
 #include "eprop_connection.h"
 #include "gap_junction.h"
 #include "ht_connection.h"
+#include "jonke_connection.h"
 #include "learning_signal_connection_delayed.h"
 #include "quantal_stp_connection.h"
 #include "quantal_stp_connection_impl.h"
@@ -320,6 +321,7 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< ContDelayConnection >( "cont_delay_synapse" );
   register_connection_model< EpropConnection >( "eprop_synapse" );
   register_connection_model< HTConnection >( "ht_synapse" );
+  register_connection_model< JonkeConnection >( "jonke_synapse" );
   register_connection_model< Quantal_StpConnection >( "quantal_stp_synapse" );
   register_connection_model< StaticConnection >( "static_synapse" );
   register_connection_model< StaticConnectionHomW >( "static_synapse_hom_w" );
