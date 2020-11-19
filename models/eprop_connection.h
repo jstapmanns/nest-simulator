@@ -274,10 +274,10 @@ EpropConnection< targetidentifierT >::send( Event& e,
           {
             // DEBUG: inserted factor ( 1 - dacay )
             last_e_trace_ += ( 1.0 - propagator_low_pass_ );
-            t_pre_spike++;
+            ++t_pre_spike;
           }
           grad += ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ ) * last_e_trace_;
-          start++;
+          ++start;
         }
         grad *= dt;
       }
@@ -338,7 +338,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           for ( auto pre_syn_spk_t : pre_syn_spk_diff )
           {
             last_z_hat += 1.0;
-            for (int t = 0; t < pre_syn_spk_t; t++)
+            for (int t = 0; t < pre_syn_spk_t; ++t)
             {
               //z_hat_new.push_back( last_z_hat );
               double pseudo_deriv = start->V_m_;
@@ -349,12 +349,12 @@ EpropConnection< targetidentifierT >::send( Event& e,
               sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 -
                   propagator_low_pass_ ) * elig_tr;
               grad += sum_t_prime_new * dt * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
-              start++;
+              ++start;
               last_z_hat *= alpha;
             }
           }
           /*
-          for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
+          for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; ++runner )
           {
             double pseudo_deriv = runner->V_m_;
             // Eq.(22)
@@ -366,7 +366,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
               // DEBUG II: removed factor ( 1 - decay )
               //last_e_trace_ += ( 1.0 - alpha );
               last_e_trace_ += 1.0;
-              t_pre_spike++;
+              ++t_pre_spike;
             }
             z_hat_old.push_back( last_e_trace_ );
             // Eq.(28)
@@ -380,7 +380,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
 
           /*
           std::cout << "z_hat_new (" << z_hat_new.size() << "):" << std::endl;
-          for ( int i = 0; i < z_hat_new.size(); i++ )
+          for ( int i = 0; i < z_hat_new.size(); ++i )
           {
             std::cout << i << ". " << z_hat_new[i] << " | ";
           }
@@ -388,7 +388,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           */
           /*
           std::cout << "z_hat_old (" << z_hat_old.size() << "):" << std::endl;
-          for ( int i = 0; i < z_hat_old.size(); i++ )
+          for ( int i = 0; i < z_hat_old.size(); ++i )
           {
             std::cout << i << ". " << z_hat_old[i] << " | ";
           }
@@ -396,7 +396,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           */
           /*
           std::cout << "elig_tr_new (" << elegibility_trace.size() << "):" << std::endl;
-          for ( int i = 0; i < elegibility_trace.size(); i++ )
+          for ( int i = 0; i < elegibility_trace.size(); ++i )
           {
             std::cout << i << ". " << elegibility_trace[i] << " | ";
           }
@@ -410,7 +410,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           for ( auto pre_syn_spk_t : pre_syn_spk_diff )
           {
             last_z_hat += 1.0;
-            for (int t = 0; t < pre_syn_spk_t; t++)
+            for (int t = 0; t < pre_syn_spk_t; ++t)
             {
               //z_hat_new.push_back( last_z_hat );
               double pseudo_deriv = start->V_m_;
@@ -419,13 +419,13 @@ EpropConnection< targetidentifierT >::send( Event& e,
               sum_elig_tr += elig_tr;
               sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 -
                   propagator_low_pass_ ) * elig_tr;
-              grad += sum_t_prime_new * dt * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
-              start++;
+              grad += sum_t_prime_new * dt * ( ( start->readout_signal_ / start->normalization_) - start->target_signal_ );
+              ++start;
               last_z_hat *= alpha;
             }
           }
           /*
-          for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
+          for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; ++runner )
           {
             // Eq.(22)
             last_e_trace_ *= alpha;
@@ -436,7 +436,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
               // DEBUG II: removed factor ( 1 - decay )
               //last_e_trace_ += ( 1.0 - alpha );
               last_e_trace_ += 1.0;
-              t_pre_spike++;
+              ++t_pre_spike;
             }
             double elig_tr = runner->V_m_ * last_e_trace_;
             sum_elig_tr += elig_tr;
@@ -454,7 +454,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
             low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
               elig_tr;
             std::cout << counter << ". " << low_pass_tr << " | ";
-            counter++;
+            ++counter;
           }
           std::cout << std::endl;
           // end: print eligibility trace
@@ -472,8 +472,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
               // DEBUG: inserted factor ( 1 - decay )
               sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 - propagator_low_pass_ ) * elegibility_trace[ t_prime ];
               grad += sum_t_prime_new * dt * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
-              t_prime++;
-              start++;
+              ++t_prime;
+              ++start;
             }
         }
         else
@@ -486,8 +486,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
               grad += ( sum_t_prime_new * dt + propagator_power *
                   t_prime_int_trace_ ) * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
               propagator_power *= propagator_low_pass_;
-              t_prime++;
-              start++;
+              ++t_prime;
+              ++start;
             }
         }
         */
