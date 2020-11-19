@@ -40,25 +40,25 @@ namespace nest
 {
 
 /**
- * \class Eprop_Archiving_Node
+ * \class EpropArchivingNode
  * a archiving node which additionally archives parameters
  * needed for the Clopath plasticity rule
  */
-class Eprop_Archiving_Node : public Archiving_Node
+class EpropArchivingNode : public ArchivingNode
 {
 
 public:
   /**
-   * \fn Eprop_Archiving_Node()
+   * \fn EpropArchivingNode()
    * Constructor.
    */
-  Eprop_Archiving_Node();
+  EpropArchivingNode();
 
   /**
-   * \fn Eprop_Archiving_Node()
+   * \fn EpropArchivingNode()
    * Copy Constructor.
    */
-  Eprop_Archiving_Node( const Eprop_Archiving_Node& );
+  EpropArchivingNode( const EpropArchivingNode& );
 
   /**
    * \fn void get_LTP_history(long t1, long t2,
@@ -140,13 +140,13 @@ private:
 };
 
 inline double
-Eprop_Archiving_Node::get_eprop_history_len() const
+EpropArchivingNode::get_eprop_history_len() const
 {
   return eprop_history_.size();
 }
 
 inline double
-Eprop_Archiving_Node::get_ls_per_syn_len() const
+EpropArchivingNode::get_ls_per_syn_len() const
 {
   return last_spike_per_synapse_.size();
 }

@@ -206,7 +206,7 @@ nest::iaf_psc_delta_eprop::Buffers_::Buffers_( const Buffers_&, iaf_psc_delta_ep
  * ---------------------------------------------------------------- */
 
 nest::iaf_psc_delta_eprop::iaf_psc_delta_eprop()
-  : Eprop_Archiving_Node()
+  : EpropArchivingNode()
   , P_()
   , S_()
   , B_( *this )
@@ -215,7 +215,7 @@ nest::iaf_psc_delta_eprop::iaf_psc_delta_eprop()
 }
 
 nest::iaf_psc_delta_eprop::iaf_psc_delta_eprop( const iaf_psc_delta_eprop& n )
-  : Eprop_Archiving_Node( n )
+  : EpropArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -241,7 +241,7 @@ nest::iaf_psc_delta_eprop::init_buffers_()
   B_.logger_.reset();   // includes resize
   // DEBUG: print last spike per synapse
   //print_t_ls_per_syn();
-  Eprop_Archiving_Node::clear_history();
+  EpropArchivingNode::clear_history();
 }
 
 void

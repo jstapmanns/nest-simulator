@@ -133,7 +133,7 @@ Author:  September 1999, Diesmann, Gewaltig
 
 SeeAlso: iaf_psc_alpha, iaf_psc_exp, iaf_psc_delta_eprop_canon
 */
-class iaf_psc_delta_eprop : public Eprop_Archiving_Node
+class iaf_psc_delta_eprop : public EpropArchivingNode
 {
 
 public:
@@ -398,7 +398,7 @@ iaf_psc_delta_eprop::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d, P_ );
-  Eprop_Archiving_Node::get_status( d );
+  EpropArchivingNode::get_status( d );
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
 
@@ -414,7 +414,7 @@ iaf_psc_delta_eprop::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Eprop_Archiving_Node::set_status( d );
+  EpropArchivingNode::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

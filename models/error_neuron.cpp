@@ -181,7 +181,7 @@ nest::error_neuron::Buffers_::Buffers_(
  * ---------------------------------------------------------------- */
 
 nest::error_neuron::error_neuron()
-  : Eprop_Archiving_Node()
+  : EpropArchivingNode()
   , P_()
   , S_()
   , B_( *this )
@@ -191,7 +191,7 @@ nest::error_neuron::error_neuron()
 
 nest::error_neuron::error_neuron(
   const error_neuron& n )
-  : Eprop_Archiving_Node( n )
+  : EpropArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -217,7 +217,7 @@ nest::error_neuron::init_buffers_()
   B_.logger_.reset(); // includes resize
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 }
 
 void
@@ -342,7 +342,7 @@ nest::error_neuron::add_learning_to_hist( LearningSignalConnectionEvent& e )
 
   // Get part of history to which the learning signal is added
   // This increases the access counter which is undone below
-  nest::Eprop_Archiving_Node::find_eprop_hist_entries(
+  nest::EpropArchivingNode::find_eprop_hist_entries(
      t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish );
   std::vector< unsigned int >::iterator it = e.begin();
   while ( start != finish && it != e.end() )
