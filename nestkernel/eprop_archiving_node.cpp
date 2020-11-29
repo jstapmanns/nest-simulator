@@ -290,8 +290,9 @@ nest::EpropArchivingNode::write_eprop_history( Time const& t_sp,
     const double t_ms = t_sp.get_ms();
     // create new entry in history
     // DEBUG: additional factor 1 / V_th
-    double h = pseudo_deriv( diff_V_m_V_th, V_th ) / V_th;
-    eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0.0, 0.0, 0 ) );
+    // fast eprop: write only gamma/V_th in case of a spike and 0 otherwise
+    // double h = pseudo_deriv( diff_V_m_V_th, V_th ) / V_th;
+    eprop_history_.push_back( histentry_eprop( t_ms, dampening_factor_ * diff_V_m_V_th / V_th, 0.0, 0.0, 0.0, 0 ) );
   }
 }
 

@@ -348,11 +348,22 @@ nest::aif_psc_delta_eprop::update( Time const& origin,
       // DEBUG: subtract threshold instead of setting to V_reset
       V_.reset_next_step_ = true;
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
-      //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
       write_spike_history( Time::step( origin.get_steps() + lag + 1 ) );
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );
+      // write eprop hist only if a spike is emitted
+      write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), 1.0, P_.V_th_ );
     }
+    else
+    {
+      // fill eprop hist with zeros whenever there is no spike
+      write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), 0.0, P_.V_th_ );
+    }
+    if ( S_.r_ > 0 )
+    {
+      --S_.r_;
+    }
+    /*
     if ( S_.r_ > 0 )
     {
       // if neuron is refractory, the preudo derivative is set to zero
@@ -363,69 +374,13 @@ nest::aif_psc_delta_eprop::update( Time const& origin,
     {
       write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_ - thr, P_.V_th_ );
     }
+    */
     // set new input current
     S_.y0_ = B_.currents_.get_value( lag );
 
     // voltage logging
     B_.logger_.record_data( origin.get_steps() + lag );
   }
-  /*
-  for ( long lag = from; lag < to; ++lag )
-  {
-    // DEBUG: added reset after each T to be compatible with tf code
-    if ( ( origin.get_steps() + lag - 1 ) % static_cast< int >( ( get_update_interval() / h) ) == 0 )
-    {
-      S_.y3_ = 0.0;
-      B_.spikes_.clear();   // includes resize
-      V_.reset_next_step_ = false;
-    }
-    // update spiking threshold
-    S_.a_ *= V_.Pa_;
-    // DEBUG: rewrote code that handles refractory time
-    S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
-      + B_.spikes_.get_value( lag );
-      //+ ( 1.0 - V_.P33_ ) * B_.spikes_.get_value( lag );
-
-    // DEBUG: reset in next step after threshold crossing
-    if ( V_.reset_next_step_ )
-    {
-      S_.y3_ -= P_.V_th_;
-      V_.reset_next_step_ = false;
-    }
-    // threshold crossing (fixed + adaptive)
-    if ( S_.y3_ >= P_.V_th_ + P_.beta_ * S_.a_ )
-    {
-      S_.r_ = V_.RefractoryCounts_;
-      S_.y3_ = P_.V_reset_;
-      // jump of spiking threshold
-      S_.a_ += 1.0;
-      // send a spike only if the neuron is not refractory
-      if ( S_.r_ == 0 )
-      {
-        // DEBUG: subtract threshold in next step instead of setting to V_reset
-        V_.reset_next_step_ = true;
-        set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
-        // save spike time which is needed to compute the average firing rate
-        write_spike_history( Time::step( origin.get_steps() + lag + 1 ) );
-        SpikeEvent se;
-        kernel().event_delivery_manager.send( *this, se, lag );
-        //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
-      }
-      else
-      {
-        --S_.r_;
-        // if neuron is refractory, the preudo derivative is set to zero
-        //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), 0.0, P_.V_th_ );
-      }
-    }
-
-    // set new input current
-    S_.y0_ = B_.currents_.get_value( lag );
-
-    // voltage logging
-    B_.logger_.record_data( origin.get_steps() + lag );
-  }
-  */
 }
 
 double

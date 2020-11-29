@@ -335,7 +335,19 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
       write_spike_history( Time::step( origin.get_steps() + lag + 1 ) );
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );
+      // write eprop hist only if a spike is emitted
+      write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), 1.0, P_.V_th_ );
     }
+    else
+    {
+      // fill eprop hist with zeros whenever there is no spike
+      write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), 0.0, P_.V_th_ );
+    }
+    if ( S_.r_ > 0 )
+    {
+      --S_.r_;
+    }
+    /*
     if ( S_.r_ > 0 )
     {
       // if neuron is refractory, the preudo derivative is set to zero
@@ -346,6 +358,7 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     {
       write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_ - P_.V_th_, P_.V_th_ );
     }
+    */
 
     // set new input current
     S_.y0_ = B_.currents_.get_value( lag );
