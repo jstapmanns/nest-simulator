@@ -217,7 +217,7 @@ nest::aif_psc_delta_eprop::Buffers_::Buffers_( const Buffers_&, aif_psc_delta_ep
  * ---------------------------------------------------------------- */
 
 nest::aif_psc_delta_eprop::aif_psc_delta_eprop()
-  : Eprop_Archiving_Node()
+  : EpropArchivingNode()
   , P_()
   , S_()
   , B_( *this )
@@ -226,7 +226,7 @@ nest::aif_psc_delta_eprop::aif_psc_delta_eprop()
 }
 
 nest::aif_psc_delta_eprop::aif_psc_delta_eprop( const aif_psc_delta_eprop& n )
-  : Eprop_Archiving_Node( n )
+  : EpropArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -251,7 +251,7 @@ nest::aif_psc_delta_eprop::init_buffers_()
   B_.currents_.clear(); // includes resize
   B_.logger_.reset();   // includes resize
   //init_eprop_buffers();
-  Eprop_Archiving_Node::clear_history();
+  EpropArchivingNode::clear_history();
 }
 
 void

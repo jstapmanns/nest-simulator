@@ -154,7 +154,7 @@ public:
 
     ConnectionBase::check_connection_( dummy_target, s, t, receptor_type );
 
-    if ( Eprop_Archiving_Node* t_eprop = dynamic_cast< Eprop_Archiving_Node* >( &t ) )
+    if ( EpropArchivingNode* t_eprop = dynamic_cast< EpropArchivingNode* >( &t ) )
     {
       if (t_eprop->is_eprop_readout() )  // if target is a readout neuron
       {

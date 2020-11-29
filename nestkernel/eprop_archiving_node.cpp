@@ -31,36 +31,36 @@
 namespace nest
 {
 
-// member functions for Eprop_Archiving_Node
+// member functions for EpropArchivingNode
 
-nest::Eprop_Archiving_Node::Eprop_Archiving_Node()
-  : Archiving_Node()
+nest::EpropArchivingNode::EpropArchivingNode()
+  : ArchivingNode()
   , dampening_factor_( 0.3 )
   , update_interval_( 100.0 )
 {
 }
 
-nest::Eprop_Archiving_Node::Eprop_Archiving_Node(
-  const Eprop_Archiving_Node& n )
-  : Archiving_Node( n )
+nest::EpropArchivingNode::EpropArchivingNode(
+  const EpropArchivingNode& n )
+  : ArchivingNode( n )
   , dampening_factor_( n.dampening_factor_ )
   , update_interval_( n.update_interval_ )
 {
 }
 
 void
-nest::Eprop_Archiving_Node::get_status( DictionaryDatum& d ) const
+nest::EpropArchivingNode::get_status( DictionaryDatum& d ) const
 {
-  Archiving_Node::get_status( d );
+  ArchivingNode::get_status( d );
 
   def< double >( d, names::dampening_factor, dampening_factor_ );
   def< double >( d, names::update_interval, update_interval_ );
 }
 
 void
-nest::Eprop_Archiving_Node::set_status( const DictionaryDatum& d )
+nest::EpropArchivingNode::set_status( const DictionaryDatum& d )
 {
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   // We need to preserve values in case invalid values are set
   double new_dampening_factor = dampening_factor_;
@@ -73,7 +73,7 @@ nest::Eprop_Archiving_Node::set_status( const DictionaryDatum& d )
 }
 
 void
-nest::Eprop_Archiving_Node::init_eprop_buffers( double delay )
+nest::EpropArchivingNode::init_eprop_buffers( double delay )
 {
   // register first etry for every synapse. If it is already in the list increase access counter.
   std::vector< histentry_extended >::iterator it_reg = std::lower_bound(
@@ -92,25 +92,25 @@ nest::Eprop_Archiving_Node::init_eprop_buffers( double delay )
 }
 
 double
-nest::Eprop_Archiving_Node::get_update_interval()
+nest::EpropArchivingNode::get_update_interval()
 {
   return update_interval_;
 }
 
 int
-nest::Eprop_Archiving_Node::get_update_interval_steps()
+nest::EpropArchivingNode::get_update_interval_steps()
 {
   return Time( Time::ms( update_interval_ ) ).get_steps();
 }
 
 double
-nest:: Eprop_Archiving_Node::get_spike_history_len() const
+nest:: EpropArchivingNode::get_spike_history_len() const
 {
   return spike_history_.size();
 }
 
 void
-nest::Eprop_Archiving_Node::print_spike_history()
+nest::EpropArchivingNode::print_spike_history()
 {
   std::cout << "spike history:" << std::endl;
   for ( auto it : spike_history_ )
@@ -121,7 +121,7 @@ nest::Eprop_Archiving_Node::print_spike_history()
 }
 
 void
-nest::Eprop_Archiving_Node::print_t_ls_per_syn()
+nest::EpropArchivingNode::print_t_ls_per_syn()
 {
   std::cout << "t_ls per syn:" << std::endl;
   for ( std::vector< histentry_extended >::iterator it = last_spike_per_synapse_.begin();
@@ -133,7 +133,7 @@ nest::Eprop_Archiving_Node::print_t_ls_per_syn()
 }
 
 void
-nest::Eprop_Archiving_Node::print_eprop_history()
+nest::EpropArchivingNode::print_eprop_history()
 {
   std::cout << "eprop hist t, h, readout, target, normalization:" << std::endl;
   std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
@@ -147,7 +147,7 @@ nest::Eprop_Archiving_Node::print_eprop_history()
 }
 
 void
-nest::Eprop_Archiving_Node::find_eprop_hist_entries( double t1,
+nest::EpropArchivingNode::find_eprop_hist_entries( double t1,
   double t2,
   std::deque< histentry_eprop >::iterator* start,
   std::deque< histentry_eprop >::iterator* finish )
@@ -179,7 +179,7 @@ nest::Eprop_Archiving_Node::find_eprop_hist_entries( double t1,
 }
 
 void
-nest::Eprop_Archiving_Node::register_update( double t_lastupdate,
+nest::EpropArchivingNode::register_update( double t_lastupdate,
    double t_update )
 {
   // register spike time if it is not in the list, otherwise increase access counter.
@@ -219,7 +219,7 @@ nest::Eprop_Archiving_Node::register_update( double t_lastupdate,
 }
 
 void
-nest::Eprop_Archiving_Node::get_eprop_history( double t1,
+nest::EpropArchivingNode::get_eprop_history( double t1,
   double t2,
   double t3,
   double t4,
@@ -227,11 +227,11 @@ nest::Eprop_Archiving_Node::get_eprop_history( double t1,
   std::deque< histentry_eprop >::iterator* finish )
 {
   register_update( t3, t4 );
-  nest::Eprop_Archiving_Node::find_eprop_hist_entries( t1, t2, start, finish );
+  nest::EpropArchivingNode::find_eprop_hist_entries( t1, t2, start, finish );
 }
 
 void
-nest::Eprop_Archiving_Node::get_spike_history( double t1,
+nest::EpropArchivingNode::get_spike_history( double t1,
   double t2,
   std::deque< double >::iterator* start,
   std::deque< double >::iterator* finish)
@@ -260,7 +260,7 @@ nest::Eprop_Archiving_Node::get_spike_history( double t1,
 }
 
 void
-nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
+nest::EpropArchivingNode::tidy_eprop_history( double t1 )
 {
   double smallest_time_to_keep = ( last_spike_per_synapse_.begin() )->t_;
   if ( !eprop_history_.empty() )
@@ -269,7 +269,7 @@ nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
     // search for coresponding hist entry
     std::deque< histentry_eprop >::iterator start;
     std::deque< histentry_eprop >::iterator finish;
-    nest::Eprop_Archiving_Node::find_eprop_hist_entries(
+    nest::EpropArchivingNode::find_eprop_hist_entries(
        0.0, smallest_time_to_keep, &start, &finish );
     // erase entries that are no longer used
     eprop_history_.erase( eprop_history_.begin(), finish );
@@ -281,7 +281,7 @@ nest::Eprop_Archiving_Node::tidy_eprop_history( double t1 )
 }
 
 void
-nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
+nest::EpropArchivingNode::write_eprop_history( Time const& t_sp,
   double diff_V_m_V_th,
   double V_th )
 {
@@ -297,14 +297,14 @@ nest::Eprop_Archiving_Node::write_eprop_history( Time const& t_sp,
 
 
 void
-nest::Eprop_Archiving_Node::write_spike_history( Time const& t_sp )
+nest::EpropArchivingNode::write_spike_history( Time const& t_sp )
 {
   const double t_ms = t_sp.get_ms();
   spike_history_.push_back( t_ms );
 }
 
 void
-nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent& e )
+nest::EpropArchivingNode::add_learning_to_hist( LearningSignalConnectionEvent& e )
 {
   const double weight = e.get_weight();
   const long delay = e.get_delay_steps();
@@ -318,7 +318,7 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent&
 
   // Get part of history to which the learning signal is added
   // This increases the access counter which is undone below
-  nest::Eprop_Archiving_Node::find_eprop_hist_entries(
+  nest::EpropArchivingNode::find_eprop_hist_entries(
      t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish );
   std::vector< unsigned int >::iterator it = e.begin();
   while ( start != finish && it != e.end() )
@@ -354,7 +354,7 @@ nest::Eprop_Archiving_Node::add_learning_to_hist( LearningSignalConnectionEvent&
 }
 
 double
-nest::Eprop_Archiving_Node::pseudo_deriv( double diff_V_m_V_th, double V_th_const ) const
+nest::EpropArchivingNode::pseudo_deriv( double diff_V_m_V_th, double V_th_const ) const
 {
   // DEBUG: v_scaled = (Vm - adaptive_thr) / V_th,
   // where adaptive_thr is the spiking threshold including the adaptive part and
