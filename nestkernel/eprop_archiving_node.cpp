@@ -291,8 +291,9 @@ nest::EpropArchivingNode::write_eprop_history( Time const& t_sp,
     // create new entry in history
     // DEBUG: additional factor 1 / V_th
     // fast eprop: write only gamma/V_th in case of a spike and 0 otherwise
-    // double h = pseudo_deriv( diff_V_m_V_th, V_th ) / V_th;
-    eprop_history_.push_back( histentry_eprop( t_ms, dampening_factor_ * diff_V_m_V_th / V_th, 0.0, 0.0, 0.0, 0 ) );
+    double h = pseudo_deriv( diff_V_m_V_th, V_th ) / V_th;
+    //eprop_history_.push_back( histentry_eprop( t_ms, dampening_factor_ * diff_V_m_V_th / V_th, 0.0, 0.0, 0.0, 0 ) );
+    eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0.0, 0.0, 0 ) );
   }
 }
 
@@ -362,7 +363,7 @@ nest::EpropArchivingNode::pseudo_deriv( double diff_V_m_V_th, double V_th_const 
   // V_th is the constant part of the threshold. In the normal LIF neuron
   // adaptive_thr = V_th
   double norm_diff_threshold = 1.0 - std::fabs( ( diff_V_m_V_th ) / V_th_const );
-  return dampening_factor_ * ( ( norm_diff_threshold > 0.0 ) ? norm_diff_threshold : 0.0 );
+  return dampening_factor_ * ( ( norm_diff_threshold > 0.9 ) ? norm_diff_threshold : 0.0 );
 }
 
 } // of namespace nest

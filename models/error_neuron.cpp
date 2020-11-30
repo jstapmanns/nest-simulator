@@ -285,6 +285,7 @@ nest::error_neuron::update_( Time const& origin,
     double readout_signal = S_.y3_ + P_.E_L_;
     double error_signal = readout_signal - S_.target_rate_;
     double rate = 1000.0 * phi( std::abs( error_signal ) );
+    //std::cout << "rate = " << rate << std::endl;
     V_.poisson_dev_.set_lambda( rate * h * 1e-3 );
     unsigned long n_spikes = V_.poisson_dev_.ldev( V_.rng_ );
     int n_spikes_sign = n_spikes * ( ( error_signal > 0.0 ) - ( error_signal < 0.0 ) );

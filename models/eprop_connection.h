@@ -332,6 +332,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
         }
         else
         {
+          //std::cout << "update synapse" << std::endl;
+          //std::cout << "eligibility trace low pass:" << std::endl;
           // if the target is of type iaf_psc_delta_eprop
           double last_z_hat = 0.0;
           for ( auto pre_syn_spk_t : pre_syn_spk_diff )
@@ -342,15 +344,18 @@ EpropConnection< targetidentifierT >::send( Event& e,
               //z_hat_new.push_back( last_z_hat );
               double pseudo_deriv = start->V_m_;
               double elig_tr = pseudo_deriv * last_z_hat;
+              //std::cout << elig_tr << " | ";
               //elegibility_trace.push_back( elig_tr );
               sum_elig_tr += elig_tr;
               sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 -
                   propagator_low_pass_ ) * elig_tr;
+              //std::cout << sum_t_prime_new << " , " << ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ ) << " | ";
               grad += sum_t_prime_new * dt * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
               ++start;
               last_z_hat *= alpha;
             }
           }
+          //std::cout << std::endl;
         }
         // firing rate regularization
         target->get_spike_history( t_lastupdate_,

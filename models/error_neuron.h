@@ -291,7 +291,8 @@ error_neuron::update( Time const& origin,
 inline double
 error_neuron::phi( double u )
 {
-  return P_.phi_max_ / ( 1.0 + P_.rate_slope_ * exp( P_.beta_ * ( P_.theta_ - u ) ) );
+  //return P_.phi_max_ / ( 1.0 + P_.rate_slope_ * exp( P_.beta_ * ( P_.theta_ - u ) ) );
+  return P_.phi_max_ * tanh( P_.beta_ * u );
 }
 
 inline port
