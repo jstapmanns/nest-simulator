@@ -544,6 +544,7 @@ void
 nest::Node::get_eprop_history( double,
   double,
   double,
+  double,
   std::deque< histentry_eprop >::iterator*,
   std::deque< histentry_eprop >::iterator* )
 {
