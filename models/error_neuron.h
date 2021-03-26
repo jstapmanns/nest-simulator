@@ -364,8 +364,8 @@ error_neuron::get_status( DictionaryDatum& d ) const
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
   DictionaryDatum receptor_dict_ = new Dictionary();
-  ( *receptor_dict_ )[ names::soma_exc ] = READOUT_SIG;
-  ( *receptor_dict_ )[ names::dendritic_exc ] = TARGET_SIG;
+  ( *receptor_dict_ )[ names::readout_signal ] = READOUT_SIG;
+  ( *receptor_dict_ )[ names::target_signal ] = TARGET_SIG;
 
   ( *d )[ names::receptor_types ] = receptor_dict_;
 }
