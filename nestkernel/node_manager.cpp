@@ -752,7 +752,7 @@ NodeManager::check_wfr_use()
   InstantaneousRateConnectionEvent::set_coeff_length( kernel().connection_manager.get_min_delay() );
   DelayedRateConnectionEvent::set_coeff_length( kernel().connection_manager.get_min_delay() );
   DiffusionConnectionEvent::set_coeff_length( kernel().connection_manager.get_min_delay() );
-  LearningSignalConnectionEvent::set_coeff_length( 4*kernel().connection_manager.get_min_delay() );
+  LearningSignalConnectionEvent::set_coeff_length( 2*kernel().connection_manager.get_min_delay() );
 }
 
 void

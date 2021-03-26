@@ -252,6 +252,16 @@ nest::aif_psc_delta_eprop::init_buffers_()
   B_.logger_.reset();   // includes resize
   //init_eprop_buffers();
   EpropArchivingNode::clear_history();
+
+  // small "buffer" to memorize whether the membrane potential needs to
+  // be reset in the following time step. This is needed since because the
+  // reset should take place after a spike was emmitted and not in the same
+  // time step as the threshold crossing. We set reset_next_step_ here
+  // because calibrate() is called whenever nest.Simulate() is executed, i.e.
+  // also during one long simulation if it is splitted in multiple executions
+  // of nest.Simulate() in the same python script. However, we want to keep
+  // the value of reset_nest_step_ when we continue the simulation.
+  V_.reset_next_step_ = false;
 }
 
 void
@@ -265,9 +275,6 @@ nest::aif_psc_delta_eprop::calibrate()
   V_.P33_ = std::exp( -h / P_.tau_m_ );
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
   V_.Pa_ = std::exp( -h / P_.tau_a_ );
-
-  // DEBUG:
-  V_.reset_next_step_ = false;
 
   // t_ref_ specifies the length of the absolute refractory period as
   // a double in ms. The grid based iaf_psp_delta can only handle refractory

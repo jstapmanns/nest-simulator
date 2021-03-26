@@ -229,8 +229,7 @@ nest::error_neuron::calibrate()
   const double h = Time::get_resolution().get_ms();
   V_.P33_ = std::exp( -h / P_.tau_m_ );
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
-  V_.step_start_ls_ = Time( Time::ms( std::max( P_.t_start_ls_ - h, 0.0 ) ) ).get_steps();
-  V_.prnt = true;
+  V_.step_start_ls_ = Time( Time::ms( std::max( P_.t_start_ls_, 0.0 ) + h ) ).get_steps();
 }
 
 /* ----------------------------------------------------------------
@@ -248,8 +247,12 @@ nest::error_neuron::update_( Time const& origin,
 
   const size_t buffer_size = kernel().connection_manager.get_min_delay();
 
-  // allocate memory to store rates to be sent by rate events
-  std::vector< double > readout_and_target_signals( 4*buffer_size, 0.0 );
+  // allocate memory to store learning signal to be sent by learning signal events
+  size_t n_entries = 2;
+  std::vector< double > readout_and_target_signals( n_entries*buffer_size, 0.0 );
+
+  // allocate memory to store readout signal to be sent by rate events
+  std::vector< double > readout_signal_buffer( buffer_size, 0.0 );
 
   for ( long lag = from; lag < to; ++lag )
   {
@@ -259,46 +262,108 @@ nest::error_neuron::update_( Time const& origin,
     {
       S_.y3_ = 0.0;
       B_.spikes_.clear();   // includes resize
-      V_.prnt = true;
     }
     // DEBUG: introduced factor ( 1 - exp( -dt / tau_m ) ) for campatibility wit tf code
     S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + ( 1 - V_.P33_ ) * B_.spikes_.get_value( lag );
     S_.y3_ = ( S_.y3_ < P_.V_min_ ? P_.V_min_ : S_.y3_ );
 
-    // DEBUG: changed sign (see tf code)
-    readout_and_target_signals [ 3*lag ] = double(P_.regression_);
-    // TODO: replace -1 by ls
+    // compute the readout signal
     double readout_signal = S_.y3_ + P_.E_L_;
-    readout_and_target_signals [ 3*lag + 1 ] =  readout_signal;
-    readout_and_target_signals [ 3*lag + 2 ] = S_.target_rate_;
+    // write exp( readout signal ) into the buffer which is used to send it to the other error neurons
+    // in case of a regression task we don't need this and therefore set it to zero
+    readout_signal_buffer[ lag ] = P_.regression_ ? 0.0 : std::exp( readout_signal );
 
-    if ( t_mod_T > V_.step_start_ls_ )
+    // DEBUG: changed sign (see tf code)
+    readout_and_target_signals[ n_entries*lag ] = origin.get_steps() + lag + 1;
+
+    // compute normalized learning signal from values stored in state_buffer_
+    // which now contains the correct normalization because in the meantime
+    // the other readout neurons have sent their membrane potential
+    // the entries of the state_buffer_ are
+    // 0: readout_signal, 1: target_signal, 2: normalization
+    double normalized_learning_signal;
+    if ( t_mod_T >= V_.step_start_ls_ )
     {
-      // recall active
-      readout_and_target_signals [ 3*lag + 3 ] =  1.0;
-      if ( !P_.regression_ )
+      // if recall is active, compute normalized learning signal
+      if ( P_.regression_ )
       {
-        readout_signal = std::exp( readout_signal );
+        // if this is a regression task, use the bare membrane potential
+        normalized_learning_signal = V_.state_buffer_ [ 0 ] /
+        V_.state_buffer_ [ 2 ] - V_.state_buffer_ [ 1 ];
       }
-      write_readout_history( Time::step( origin.get_steps() + lag + 1), readout_signal,
-          S_.target_rate_, readout_signal);
+      else
+      {
+        // if this is a classification task, use exp( membrane potential )
+        normalized_learning_signal = std::exp( V_.state_buffer_ [ 0 ] ) /
+        V_.state_buffer_ [ 2 ] - V_.state_buffer_ [ 1 ];
+      }
     }
     else
     {
-      // recall inactive -> add archiving fills history with zeros
-      readout_and_target_signals [ 3*lag + 3 ] = 0.0;
-      write_readout_history( Time::step( origin.get_steps() + lag + 1), 0.0, 0.0, 1.0);
+      // if recall is inactive, set normalized learning signal to zero
+      normalized_learning_signal = 0.0;
     }
+
+    // fill the state buffer with new values
+    if ( t_mod_T >= V_.step_start_ls_ - 1 )
+    {
+      // if the recall is active, fill state_buffer_ with the current state
+      V_.state_buffer_ [ 0 ] = readout_signal;
+      V_.state_buffer_ [ 1 ] = S_.target_rate_;
+      V_.state_buffer_ [ 2 ] = 1.0;
+    }
+    else
+    {
+      // if the recall is inactive, fill state_buffer_ with zeros
+      V_.state_buffer_ [ 0 ] = 0.0;
+      V_.state_buffer_ [ 1 ] = 0.0;
+      V_.state_buffer_ [ 2 ] = 1.0;
+    }
+
+    // write normalized learning signal into history. Use the previous time step:
+    // origin.get_steps() + lag (without + 1) because of the buffering in
+    // readout_signal_buffer
+    // previously, the function write_readout_history was used for this purpose
+    Time const& t_norm_ls = Time::step( origin.get_steps() + lag );
+    const double t_norm_ls_ms = t_norm_ls.get_ms();
+    eprop_history_.push_back( histentry_eprop( t_norm_ls_ms,
+          0.0, normalized_learning_signal, 0 ) );
+
+    // store the normalized learning signal in the buffer which is send to
+    // the recurrent neurons via the learning signal connection
+    readout_and_target_signals[ n_entries*lag + 1 ] = normalized_learning_signal;
     S_.y0_ = B_.currents_.get_value( lag ); // set new input current
-    S_.target_rate_ =  1. * B_.delayed_rates_.get_value( lag );
+    S_.target_rate_ =  B_.delayed_rates_.get_value( lag );
+
     B_.logger_.record_data( origin.get_steps() + lag );
   }
 
-  // Send delay-rate-neuron-event. This only happens in the final iteration
-  // to avoid accumulation in the buffers of the receiving neurons.
-  LearningSignalConnectionEvent drve;
-  drve.set_coeffarray( readout_and_target_signals );
-  kernel().event_delivery_manager.send_secondary( *this, drve );
+  // time as it is in the last iteration of the for loop modulo update interval
+  int t_mod_T_final = ( origin.get_steps() + to - 3 ) % get_update_interval_steps();
+  // send learning signal and readout signal only if recall is active
+  if ( t_mod_T_final >= V_.step_start_ls_ )
+  {
+    // send learning signal
+    // TODO: it would be much more efficient to send this in larger batches
+    LearningSignalConnectionEvent drve;
+    drve.set_coeffarray( readout_and_target_signals );
+    kernel().event_delivery_manager.send_secondary( *this, drve );
+  }
+  // time one time step larger than t_mod_T_final because the readout has to
+  // be sent one time step in advance so that the normalization can be computed
+  // and the learning signal is ready as soon as the recall starts.
+  if ( !P_.regression_ )
+  {
+    int t_mod_T_final_p1 = ( origin.get_steps() + to - 2 ) % get_update_interval_steps();
+    if ( t_mod_T_final_p1 >= V_.step_start_ls_ )
+    {
+      // send readout signal only if this is a classification task
+      // rate connection to connect to other readout neurons
+      DelayedRateConnectionEvent readout_event;
+      readout_event.set_coeffarray( readout_signal_buffer );
+      kernel().event_delivery_manager.send_secondary( *this, readout_event );
+    }
+  }
 
   return;
 }
@@ -310,72 +375,34 @@ nest::error_neuron::is_eprop_readout()
     }
 
 void
-nest::error_neuron::write_readout_history( Time const& t_sp,
-  double readout_signal, double target_signal, double norm )
-{
-  const double t_ms = t_sp.get_ms();
-  if ( n_incoming_ )
-  {
-    // create new entry in history
-    if ( !P_.regression_ )
-    {
-      eprop_history_.push_back( histentry_eprop( t_ms, 0.0, readout_signal, norm, target_signal, 0 ) );
-    }
-    else
-    {
-      eprop_history_.push_back( histentry_eprop( t_ms, 0.0, readout_signal, 1.0, target_signal, 0 ) );
-    }
-  }
-}
-
-void
-nest::error_neuron::add_learning_to_hist( LearningSignalConnectionEvent& e )
-{
-  const long delay = e.get_delay_steps();
-  const Time stamp = e.get_stamp();
-
-  // TODO: Do we need to sutract the resolution? Examine delays in the network.
-  double t_ms = stamp.get_ms();
-
-  std::deque< histentry_eprop >::iterator start;
-  std::deque< histentry_eprop >::iterator finish;
-
-  // Get part of history to which the learning signal is added
-  // This increases the access counter which is undone below
-  nest::EpropArchivingNode::find_eprop_hist_entries(
-     t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish );
-  std::vector< unsigned int >::iterator it = e.begin();
-  while ( start != finish && it != e.end() )
-  {
-    // Add learning signal and reduce access counter
-    double regression = e.get_coeffvalue(it);
-    double readout_signal = e.get_coeffvalue(it);
-    double recall = e.get_coeffvalue(it);
-    if (recall == 1.)
-    {
-      if (regression == 0.)
-      {
-        start->normalization_ += std::exp(readout_signal);
-      }
-    }
-    start++;
-  }
-}
-
-void
 nest::error_neuron::handle(
   DelayedRateConnectionEvent& e )
 {
+  assert( 0 <= e.get_rport() && e.get_rport() < 3 );
   const double weight = e.get_weight();
   const long delay = e.get_delay_steps();
-
   size_t i = 0;
   std::vector< unsigned int >::iterator it = e.begin();
-  // The call to get_coeffvalue( it ) in this loop also advances the iterator it
-  while ( it != e.end() )
+  if ( e.get_rport() == READOUT_SIG - MIN_RATE_RECEPTOR )
   {
-    B_.delayed_rates_.add_value(delay + i, weight * 1. * e.get_coeffvalue( it ) ) ;
-    ++i;
+    // handle port for readout signal
+    // The call to get_coeffvalue( it ) in this loop also advances the iterator it
+    while ( it != e.end() )
+    {
+      double readout_signal = e.get_coeffvalue( it );
+      V_.state_buffer_ [ 2 ] += readout_signal;
+      ++i;
+    }
+  }
+  else  if ( e.get_rport() == TARGET_SIG - MIN_RATE_RECEPTOR )
+  {
+    // handle port for target signal
+    while ( it != e.end() )
+    {
+      // The call to get_coeffvalue( it ) in this loop also advances the iterator it
+      B_.delayed_rates_.add_value(delay + i, weight * 1. * e.get_coeffvalue( it ) ) ;
+      ++i;
+    }
   }
 }
 
@@ -405,14 +432,6 @@ nest::error_neuron::handle( CurrentEvent& e )
   B_.currents_.add_value(
     e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
     w * c );
-}
-
-void
-nest::error_neuron::handle(
-  LearningSignalConnectionEvent& e )
-{
-  // Add learning signal to hist entries
-  add_learning_to_hist( e );
 }
 
 void

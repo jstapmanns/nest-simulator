@@ -45,12 +45,10 @@ nest::histentry_extended::histentry_extended( double t, double dw, size_t access
 {
 }
 
-nest::histentry_eprop::histentry_eprop( double t, double V_m, double readout_signal, double normalization, double target_signal, size_t access_counter )
+nest::histentry_eprop::histentry_eprop( double t, double V_m, double learning_signal, size_t access_counter )
   : t_( t )
   , V_m_( V_m )
-  , readout_signal_( readout_signal )
-  , normalization_( normalization )
-  , target_signal_( target_signal )
+  , learning_signal_( learning_signal )
   , access_counter_( access_counter )
 {
 }

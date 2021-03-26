@@ -324,9 +324,7 @@ private:
   {
     if ( eprop_history_.size() > 2 )
     {
-      return ( ( eprop_history_.rbegin() ) + 2 )->target_signal_
-        - ( ( eprop_history_.rbegin() ) + 2 )->readout_signal_
-        / ( ( eprop_history_.rbegin() ) + 2 )->normalization_ ;
+      return ( ( eprop_history_.rbegin() ) + 2 )->learning_signal_;
     }
     return 0.0;
   }

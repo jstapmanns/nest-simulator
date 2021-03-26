@@ -106,20 +106,21 @@ public:
   void handle( DelayedRateConnectionEvent& );
   void handle( SpikeEvent& );
   void handle( CurrentEvent& );
-  void handle( LearningSignalConnectionEvent& );
   void handle( DataLoggingRequest& );
 
   port handles_test_event( DelayedRateConnectionEvent&, rport );
   port handles_test_event( SpikeEvent&, rport );
   port handles_test_event( CurrentEvent&, rport );
-  port handles_test_event( LearningSignalConnectionEvent&, rport );
   port handles_test_event( DataLoggingRequest&, rport );
 
   void
   sends_secondary_event( LearningSignalConnectionEvent& )
   {
   }
-
+  void
+  sends_secondary_event( DelayedRateConnectionEvent& )
+  {
+  }
 
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
@@ -219,12 +220,33 @@ private:
     double P33_;
     int step_start_ls_; // step after which a learning signal is sent to the recurrent neurons
     int T_steps_; // length of one period T in steps
-    bool prnt;
 
+
+    // buffer to store the membrane potential (1st entry), the target signal (2nd), and the
+    // normalization (3rd) so that the normalized learning signal can be computed once the
+    // membrane potential of the other readout neurons arrived.
+    // TODO: make propper buffer so that it can be used with delay != 1ms
+    double state_buffer_ [ 3 ] = { 0.0, 0.0, 1.0 };
    };
 
-  void write_readout_history( Time const& t_sp,
-    double readout_signal, double target_signal, double norm );
+  /**
+   * Minimal spike receptor type.
+   * @note Start with 1 so we can forbid port 0 to avoid accidental
+   *       creation of connections with no receptor type set.
+   */
+  static const port MIN_RATE_RECEPTOR = 1;
+
+  /**
+   * Spike receptors.
+   */
+  enum RateSynapseTypes
+  {
+    READOUT_SIG = MIN_RATE_RECEPTOR,
+    TARGET_SIG,
+    SUP_RATE_RECEPTOR
+  };
+
+  static const size_t NUM_RATE_RECEPTORS = SUP_RATE_RECEPTOR - MIN_RATE_RECEPTOR;
 
   void add_learning_to_hist( LearningSignalConnectionEvent& e );
 
@@ -234,9 +256,7 @@ private:
   {
     if ( eprop_history_.size() > 2 )
     {
-      return ( ( eprop_history_.rbegin() ) + 2 )->target_signal_
-        - ( ( eprop_history_.rbegin() ) + 2 )->readout_signal_
-        / ( ( eprop_history_.rbegin() ) + 2 )->normalization_ ;
+      return ( ( eprop_history_.rbegin() ) + 2 )->learning_signal_;
     }
     return 0.0;
   }
@@ -286,11 +306,18 @@ error_neuron::handles_test_event(
   DelayedRateConnectionEvent&,
   rport receptor_type )
 {
+  /*
   if ( receptor_type != 0 )
   {
     throw UnknownReceptorType( receptor_type, get_name() );
   }
   return 0;
+  */
+  if ( receptor_type < MIN_RATE_RECEPTOR || receptor_type >= SUP_RATE_RECEPTOR )
+  {
+    throw UnknownReceptorType( receptor_type, get_name() );
+  }
+  return receptor_type - MIN_RATE_RECEPTOR;
 }
 
 
@@ -308,17 +335,6 @@ error_neuron::handles_test_event(
 inline port
 error_neuron::handles_test_event(
         CurrentEvent&, rport receptor_type )
-{
-  if ( receptor_type != 0 )
-  {
-    throw UnknownReceptorType( receptor_type, get_name() );
-  }
-  return 0;
-}
-
-inline port
-error_neuron::handles_test_event( LearningSignalConnectionEvent&,
-  rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
@@ -347,6 +363,11 @@ error_neuron::get_status( DictionaryDatum& d ) const
   EpropArchivingNode::get_status( d );
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
+  DictionaryDatum receptor_dict_ = new Dictionary();
+  ( *receptor_dict_ )[ names::soma_exc ] = READOUT_SIG;
+  ( *receptor_dict_ )[ names::dendritic_exc ] = TARGET_SIG;
+
+  ( *d )[ names::receptor_types ] = receptor_dict_;
 }
 
 inline void

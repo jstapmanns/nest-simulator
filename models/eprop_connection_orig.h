@@ -154,7 +154,7 @@ public:
 
     ConnectionBase::check_connection_( dummy_target, s, t, receptor_type );
 
-    if ( EpropArchivingNode* t_eprop = dynamic_cast< EpropArchivingNode* >( &t ) )
+    if ( Eprop_Archiving_Node* t_eprop = dynamic_cast< Eprop_Archiving_Node* >( &t ) )
     {
       if (t_eprop->is_eprop_readout() )  // if target is a readout neuron
       {
@@ -185,6 +185,8 @@ private:
   double t_lastspike_;
   double t_lastupdate_;
   double t_nextupdate_;
+  double last_e_trace_;
+  double t_prime_int_trace_;
   double keep_traces_;
   double rate_reg_;
   double target_firing_rate_;
@@ -226,7 +228,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
   double dendritic_delay = get_delay();
 
   // spikes that do not meet the following condition do not need to be delivered because they would
-  // arrive during the reset period (-> at the end of a training interval T) of the postsynaptic neuron
+  // arrive during the reset period of the postsynaptic neuron
   if ( ! ( Time( Time::ms( t_spike ) ).get_steps() % Time( Time::ms( update_interval_ ) ).get_steps()
       - Time( Time::ms( dendritic_delay ) ).get_steps() == 0 ) )
   {
@@ -234,141 +236,144 @@ EpropConnection< targetidentifierT >::send( Event& e,
     pre_syn_spike_times_.push_back( t_spike );
 
     // do update only if this is the first spike in a new inverval T
-    if ( t_spike >= t_nextupdate_ )
+    if ( t_spike > t_nextupdate_ )
     {
-      // retrive time step of simulation
+      if ( keep_traces_ < 1.0 )
+      {
+        last_e_trace_ = 0.0;
+        t_prime_int_trace_ = 0.0;
+      }
       double const dt = Time::get_resolution().get_ms();
       // get spike history in relevant range (t1, t2] from post-synaptic neuron
       std::deque< histentry_eprop >::iterator start;
       std::deque< histentry_eprop >::iterator finish;
 
+      std::deque< double >::iterator start_spk;
+      std::deque< double >::iterator finish_spk;
       // DEBUG II: the learning_period_counter corresponds to the variable t of the adam optimizer
       double learning_period_counter_ = floor( ( t_spike - dt ) / update_interval_ )  / batch_size_;
       //DEBUG: added 2*delay to be in sync with TF code
       double t_update_ = ( floor( ( t_spike - dt ) / update_interval_ ) ) * update_interval_ + 2.0 *
         dendritic_delay;
+      if ( start != finish )
+      {
+        ++start;
+      }
+      std::vector< double >::iterator t_pre_spike = pre_syn_spike_times_.begin();
       double grad = 0.0;
       if (target->is_eprop_readout() )  // if target is a readout neuron
       {
-        pre_syn_spike_times_.insert( --pre_syn_spike_times_.end(), t_nextupdate_ );
-        // set pointers start and finish at the beginning/end of the history of the postsynaptic
-        // neuron. The history before the first presyn spike time is not relevant because there
-        // z_hat, and therefore the eligibility trace, is zero.
-        // Therefore, we use the time of the first presyn spike to indicate where start should
-        // be assiged to. finish should point to the last entry of the current update interval.
-        target->get_eprop_history(
-            pre_syn_spike_times_[0] + dendritic_delay,            // time for start
-            t_lastupdate_ + update_interval_ + dendritic_delay,   // time for finish
-            t_lastupdate_ + dendritic_delay,  // used to register this update
-            t_update_ + dendritic_delay,      // used to register this update
+        target->get_eprop_history( t_lastupdate_ + dendritic_delay,
+            t_lastupdate_ + update_interval_ + dendritic_delay,
+            t_update_ + dendritic_delay,
             &start,
             &finish );
 
-        // Compute intervals between two consecutive presynaptic spikes which simplifies the
-        // cumputation of the trace z_hat of the presynaptic spikes because z_hat jumps by
-        // (1 - propagator_low_pass) at each presyn spike and decays exponentially in between.
-        std::vector< double > pre_syn_spk_diff(pre_syn_spike_times_.size() - 1);
-        std::adjacent_difference(pre_syn_spike_times_.begin(), --pre_syn_spike_times_.end(),
-            pre_syn_spk_diff.begin());
-        pre_syn_spk_diff.erase( pre_syn_spk_diff.begin() );
-        double last_z_hat = 0.0;
-        for ( auto pre_syn_spk_t : pre_syn_spk_diff )
+        while ( start != finish )
         {
-          // jump of z_hat
-          last_z_hat += ( 1.0 - propagator_low_pass_ );
-          for (int t = 0; t < pre_syn_spk_t; ++t)
+          last_e_trace_ *= propagator_low_pass_;
+          if ( std::fabs( *t_pre_spike - start->t_ + dendritic_delay ) < 1.0e-6 )
           {
-            grad += start->learning_signal_ * last_z_hat;
-            // exponential decay of z_hat
-            last_z_hat *= propagator_low_pass_;
-            ++start;
+            // DEBUG: inserted factor ( 1 - dacay )
+            last_e_trace_ += ( 1.0 - propagator_low_pass_ );
+            t_pre_spike++;
           }
+          grad += ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ ) * last_e_trace_;
+          start++;
         }
         grad *= dt;
       }
       else  // if target is a neuron of the recurrent network
       {
-        pre_syn_spike_times_.insert( --pre_syn_spike_times_.end(), t_nextupdate_ - dendritic_delay );
-        // set pointers start and finish at the beginning/end of the history of the postsynaptic
-        // neuron. The history before the first presyn spike time is not relevant because there
-        // z_hat, and therefore the eligibility trace, is zero.
-        // Therefore, we use the time of the first presyn spike to indicate where start should
-        // be assiged to. finish should point to the last entry of the current update interval.
-        target->get_eprop_history(
-            pre_syn_spike_times_[0] + dendritic_delay,  // time for start
-            t_lastupdate_ + update_interval_,           // time for finish
-            t_lastupdate_,    // used to register this update
-            t_update_,        // used to register this update
+        target->get_eprop_history( t_lastupdate_,
+            t_lastupdate_ + update_interval_,
+            t_update_,
             &start,
             &finish );
 
+        std::vector< double > elegibility_trace;
         double alpha = target->get_leak_propagator();
-        double sum_t_prime_new = 0.0;
         // compute the sum of the elegibility trace because it is used for the firing rate
         // regularization
         double sum_elig_tr = 0.0;
-        // Compute intervals between two consecutive presynaptic spikes which simplifies the
-        // cumputation of the trace z_hat of the presynaptic spikes because z_hat jumps by 1
-        // at each presyn spike and decays exponentially in between.
-        std::vector< double > pre_syn_spk_diff(pre_syn_spike_times_.size() - 1);
-        std::adjacent_difference(pre_syn_spike_times_.begin(), --pre_syn_spike_times_.end(),
-            pre_syn_spk_diff.begin());
-        // The first entry of pre_syn_spk_diff contains the number of steps between the start
-        // of the learning interval and the first presynaptic spike. Since the low-pass filtered
-        // presynaptic spike train is zero before the first presynaptic spike, we remove the
-        // corresponding entry from pre_syn_spk_diff.
-        pre_syn_spk_diff.erase( pre_syn_spk_diff.begin() );
         if ( target->is_eprop_adaptive() )
         {
           // if the target is of type aif_psc_delta_eprop (adaptive threshold)
           double beta = target->get_beta();
           double rho = target->get_adapt_propagator();
           double epsilon = 0.0;
-          double last_z_hat = 0.0;
-          for ( auto pre_syn_spk_t : pre_syn_spk_diff )
+          for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
           {
-            // jump of z_hat
-            last_z_hat += 1.0;
-            for (int t = 0; t < pre_syn_spk_t; ++t)
+            double pseudo_deriv = runner->V_m_;
+            // Eq.(22)
+            last_e_trace_ *= alpha;
+            // DEBUG II: + 1.0 * dendritic_delay
+            if ( std::fabs( *t_pre_spike - runner->t_  + 1.0 * dendritic_delay) < 1.0e-6 )
             {
-              double pseudo_deriv = start->V_m_;
-              double elig_tr = pseudo_deriv * ( last_z_hat  - beta * epsilon );
-              sum_elig_tr += elig_tr;
-              epsilon = pseudo_deriv * last_z_hat + ( rho - beta * pseudo_deriv ) * epsilon;
-              // exponential decay of z_hat
-              last_z_hat *= alpha;
-              sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 -
-                  propagator_low_pass_ ) * elig_tr;
-              grad += sum_t_prime_new * dt * start->learning_signal_;
-              ++start;
+              // DEBUG: inserted factor ( 1 - dacay )
+              // DEBUG II: removed factor ( 1 - decay )
+              //last_e_trace_ += ( 1.0 - alpha );
+              last_e_trace_ += 1.0;
+              t_pre_spike++;
             }
+            // Eq.(28)
+            double elig_tr = pseudo_deriv * ( last_e_trace_  - beta * epsilon );
+            sum_elig_tr += elig_tr;
+            // Eq.(27)
+            epsilon = pseudo_deriv * last_e_trace_ + ( rho - beta * pseudo_deriv ) * epsilon;
+            elegibility_trace.push_back( elig_tr );
           }
         }
         else
         {
           // if the target is of type iaf_psc_delta_eprop
-          double last_z_hat = 0.0;
-          for ( auto pre_syn_spk_t : pre_syn_spk_diff )
+          for ( std::deque< histentry_eprop >::iterator runner = start; runner != finish; runner++ )
           {
-            // jump of z_hat
-            last_z_hat += 1.0;
-            for (int t = 0; t < pre_syn_spk_t; ++t)
+            // Eq.(22)
+            last_e_trace_ *= alpha;
+            //DEBUG: added dendritic delay for sync with TF code
+            if ( std::fabs( *t_pre_spike - runner->t_ + dendritic_delay ) < 1.0e-6 )
             {
-              double pseudo_deriv = start->V_m_;
-              double elig_tr = pseudo_deriv * last_z_hat;
-              // exponential decay of z_hat
-              last_z_hat *= alpha;
-              sum_elig_tr += elig_tr;
-              sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 -
-                  propagator_low_pass_ ) * elig_tr;
-              grad += sum_t_prime_new * dt * start->learning_signal_;
-              ++start;
+              // DEBUG: inserted factor ( 1 - dacay )
+              // DEBUG II: removed factor ( 1 - decay )
+              //last_e_trace_ += ( 1.0 - alpha );
+              last_e_trace_ += 1.0;
+              t_pre_spike++;
             }
+            double elig_tr = runner->V_m_ * last_e_trace_;
+            sum_elig_tr += elig_tr;
+            // Eq.(23)
+            elegibility_trace.push_back( elig_tr );
           }
+          /*
+          // start: print eligibility trace
+          std::cout << std::endl << "regular elig_tr:" << std::endl;
+          int counter = 0;
+          double low_pass_tr = 0.0;
+          for ( auto elig_tr : elegibility_trace )
+          {
+            low_pass_tr = propagator_low_pass_ * low_pass_tr + ( 1.0 - propagator_low_pass_ ) *
+              elig_tr;
+            std::cout << counter << ". " << low_pass_tr << " | ";
+            counter++;
+          }
+          std::cout << std::endl;
+          // end: print eligibility trace
+          */
+        }
+
+        int t_prime = 0;
+        double sum_t_prime_new = 0.0;
+        while ( start != finish )
+        {
+          // DEBUG: inserted factor ( 1 - decay )
+          sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 - propagator_low_pass_ ) * elegibility_trace[ t_prime ];
+          grad += ( sum_t_prime_new * dt + std::pow( propagator_low_pass_, t_prime ) *
+              t_prime_int_trace_ ) * ( ( start->readout_signal_ / start->normalization_ ) - start->target_signal_ );
+          t_prime++;
+          start++;
         }
         // firing rate regularization
-        std::deque< double >::iterator start_spk;
-        std::deque< double >::iterator finish_spk;
         target->get_spike_history( t_lastupdate_,
             t_lastupdate_ + update_interval_,
             &start_spk,
@@ -377,10 +382,10 @@ EpropConnection< targetidentifierT >::send( Event& e,
         // compute average firing rate since last update. factor 1000 to convert into Hz
         double av_firing_rate = nspikes / update_interval_;
         // Eq.(56)
-        // TODO: is the dt needed in the following line?
-        grad += rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_elig_tr * dt /
-          update_interval_;
+        grad += rate_reg_ * ( av_firing_rate - target_firing_rate_ / 1000.) * sum_elig_tr /
+          elegibility_trace.size();
         grad *= dt;
+        t_prime_int_trace_ += sum_t_prime_new * dt;
       }
       // implementation of batches: store all gradients in a vector and compute the weight using
       // their mean value.
@@ -392,10 +397,6 @@ EpropConnection< targetidentifierT >::send( Event& e,
         for ( auto gr : grads_ )
         {
           sum_grads += gr;
-        }
-        if ( isnan( grad ) )
-        {
-          std::cout << "gradient is nan; something went terribly wrong!" << std::endl;
         }
         if ( use_adam_ == 1.0 ) // use adam optimizer
         {
@@ -450,6 +451,8 @@ EpropConnection< targetidentifierT >::EpropConnection()
   , t_lastspike_( 0.0 )
   , t_lastupdate_( 0.0 )
   , t_nextupdate_( 100.0 )
+  , last_e_trace_( 0.0 )
+  , t_prime_int_trace_( 0.0 )
   , keep_traces_( true )
   , rate_reg_( 0. )
   , target_firing_rate_( 10. )
@@ -478,6 +481,8 @@ EpropConnection< targetidentifierT >::EpropConnection(
   , t_lastspike_( rhs.t_lastspike_ )
   , t_lastupdate_( rhs.t_lastupdate_ )
   , t_nextupdate_( rhs.t_nextupdate_ )
+  , last_e_trace_( rhs.last_e_trace_ )
+  , t_prime_int_trace_( rhs.t_prime_int_trace_ )
   , keep_traces_( rhs.keep_traces_ )
   , rate_reg_( rhs.rate_reg_ )
   , target_firing_rate_( rhs.target_firing_rate_ )

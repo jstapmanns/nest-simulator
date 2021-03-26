@@ -135,12 +135,15 @@ nest::EpropArchivingNode::print_t_ls_per_syn()
 void
 nest::EpropArchivingNode::print_eprop_history()
 {
-  std::cout << "eprop hist t, h, readout, target, normalization:" << std::endl;
+  std::cout << "eprop hist t, pseudo deriv, learning_signal:" << std::endl;
   std::deque< histentry_eprop >::iterator runner = eprop_history_.begin();
+  if ( runner == eprop_history_.end() )
+  {
+    std::cout << "eprop_history is empty!" << std::endl;
+  }
   while( runner != eprop_history_.end() )
   {
-    std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->readout_signal_
-      << " " << runner->target_signal_ << " " << runner->normalization_ << "|  ";
+    std::cout << runner->t_ << " " << runner->V_m_ << " " << runner->learning_signal_ << "|  ";
     ++runner;
   }
   std::cout << std::endl;
@@ -291,7 +294,7 @@ nest::EpropArchivingNode::write_eprop_history( Time const& t_sp,
     // create new entry in history
     // DEBUG: additional factor 1 / V_th
     double h = pseudo_deriv( diff_V_m_V_th, V_th ) / V_th;
-    eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0.0, 0.0, 0 ) );
+    eprop_history_.push_back( histentry_eprop( t_ms, h, 0.0, 0 ) );
   }
 }
 
@@ -310,8 +313,7 @@ nest::EpropArchivingNode::add_learning_to_hist( LearningSignalConnectionEvent& e
   const long delay = e.get_delay_steps();
   const Time stamp = e.get_stamp();
 
-  // TODO: Do we need to sutract the resolution? Examine delays in the network.
-  double t_ms = stamp.get_ms() - Time::get_resolution().get_ms();
+  double t_ms = stamp.get_ms() - 2.0*Time::get_resolution().get_ms();
 
   std::deque< histentry_eprop >::iterator start;
   std::deque< histentry_eprop >::iterator finish;
@@ -321,34 +323,13 @@ nest::EpropArchivingNode::add_learning_to_hist( LearningSignalConnectionEvent& e
   nest::EpropArchivingNode::find_eprop_hist_entries(
      t_ms, t_ms + Time::delay_steps_to_ms(delay), &start, &finish );
   std::vector< unsigned int >::iterator it = e.begin();
-  while ( start != finish && it != e.end() )
+  if ( start != finish && it != e.end() )
   {
     // Add learning signal and reduce access counter
-    double regression = e.get_coeffvalue(it);
-    double readout_signal = e.get_coeffvalue(it);
-    double target_signal = e.get_coeffvalue(it);
-    double recall = e.get_coeffvalue(it);
-    if (recall == 1.)
-    {
-      if (regression == 1.)
-      {
-          start->readout_signal_ += weight * readout_signal;
-          start->target_signal_ += weight * target_signal;
-          start->normalization_ = 1.;
-      }
-      else if (regression == 0.)
-      {
-          start->readout_signal_ += weight * std::exp(readout_signal);
-          start->target_signal_ += weight * target_signal;
-          start->normalization_ += std::exp(readout_signal);
-      }
-    }
-    else
-    {
-       start->readout_signal_ += 0.;
-       start->target_signal_ += 0.;
-       start->normalization_ += 1.;
-    }
+    double t_entry = e.get_coeffvalue( it );
+    double normalized_learning_signal = e.get_coeffvalue( it );
+    double weight = e.get_weight();
+    start->learning_signal_ += weight * normalized_learning_signal;
     ++start;
   }
 }

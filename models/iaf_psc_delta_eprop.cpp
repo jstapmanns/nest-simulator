@@ -242,6 +242,16 @@ nest::iaf_psc_delta_eprop::init_buffers_()
   // DEBUG: print last spike per synapse
   //print_t_ls_per_syn();
   EpropArchivingNode::clear_history();
+
+  // small "buffer" to memorize whether the membrane potential needs to
+  // be reset in the following time step. This is needed since because the
+  // reset should take place after a spike was emmitted and not in the same
+  // time step as the threshold crossing. We set reset_next_step_ here
+  // because calibrate() is called whenever nest.Simulate() is executed, i.e.
+  // also during one long simulation if it is splitted in multiple executions
+  // of nest.Simulate() in the same python script. However, we want to keep
+  // the value of reset_nest_step_ when we continue the simulation.
+  V_.reset_next_step_ = false;
 }
 
 void
@@ -254,9 +264,6 @@ nest::iaf_psc_delta_eprop::calibrate()
 
   V_.P33_ = std::exp( -h / P_.tau_m_ );
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
-
-  // DEBUG:
-  V_.reset_next_step_ = false;
 
   // t_ref_ specifies the length of the absolute refractory period as
   // a double in ms. The grid based iaf_psp_delta can only handle refractory
@@ -328,10 +335,10 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     // threshold crossing
     if ( ( S_.y3_ >= P_.V_th_ ) && ( S_.r_ == 0 ) )
     {
-      // DEBUG: subtract threshold instead of setting to V_reset
+      // indicate that the membrane potential has to be reset in next step
       V_.reset_next_step_ = true;
+      // note spike time and send spike
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
-      //write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_, P_.V_th_ );
       write_spike_history( Time::step( origin.get_steps() + lag + 1 ) );
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );
@@ -339,11 +346,13 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     if ( S_.r_ > 0 )
     {
       // if neuron is refractory, the preudo derivative is set to zero
+      // (achived by setting V_m = 0)
       write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), P_.V_th_, P_.V_th_ );
       --S_.r_;
     }
     else
     {
+      // if neuron is not refractory, write hist with value for pseudo derivative
       write_eprop_history( Time::step( origin.get_steps() + lag + 1 ), S_.y3_ - P_.V_th_, P_.V_th_ );
     }
 
@@ -377,7 +386,6 @@ void
 nest::iaf_psc_delta_eprop::handle( SpikeEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
-
   // EX: We must compute the arrival time of the incoming spike
   //     explicity, since it depends on delay and offset within
   //     the update cycle.  The way it is done here works, but
