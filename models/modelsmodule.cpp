@@ -319,6 +319,7 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< clopath_synapse >(
     "clopath_synapse", default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_CLOPATH_ARCHIVING );
   register_connection_model< cont_delay_synapse >( "cont_delay_synapse" );
+  register_connection_model< EpropConnection >( "eprop_synapse" );
   register_connection_model< ht_synapse >( "ht_synapse" );
   register_connection_model< jonke_synapse >( "jonke_synapse" );
   register_connection_model< quantal_stp_synapse >( "quantal_stp_synapse" );
