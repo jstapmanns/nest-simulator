@@ -511,6 +511,13 @@ function( NEST_PROCESS_WITH_MPI )
   endif ()
 endfunction()
 
+function( NEST_PROCESS_WITH_DETAILED_TIMERS )
+  set( TIMER_DETAILED OFF PARENT_SCOPE )
+  if ( ${with-detailed-timers} STREQUAL "ON" )
+    set( TIMER_DETAILED ON PARENT_SCOPE )
+  endif ()
+endfunction()
+
 function( NEST_PROCESS_WITH_LIBNEUROSIM )
   # Find libneurosim
   set( HAVE_LIBNEUROSIM OFF PARENT_SCOPE )
@@ -596,7 +603,8 @@ function( NEST_PROCESS_WITH_BOOST )
     set(Boost_USE_DEBUG_LIBS OFF)  # ignore debug libs
     set(Boost_USE_RELEASE_LIBS ON) # only find release libs
     # Needs Boost version >=1.62.0 to use Boost sorting, JUNIT logging
-    find_package( Boost 1.62.0 )
+    # Require Boost version >=1.69.0 due to change in Boost sort
+    find_package( Boost 1.69.0 )
     if ( Boost_FOUND )
       # export found variables to parent scope
       set( HAVE_BOOST ON PARENT_SCOPE )
