@@ -229,7 +229,7 @@ nest::error_neuron::calibrate()
   const double h = Time::get_resolution().get_ms();
   V_.P33_ = std::exp( -h / P_.tau_m_ );
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
-  V_.step_start_ls_ = Time( Time::ms( std::max( P_.t_start_ls_, 0.0 ) + h ) ).get_steps();
+  V_.step_start_ls_ = Time( Time::ms( std::max( P_.t_start_ls_, 0.0 ) ) ).get_steps();
 }
 
 /* ----------------------------------------------------------------
@@ -257,7 +257,7 @@ nest::error_neuron::update_( Time const& origin,
   for ( long lag = from; lag < to; ++lag )
   {
     // DEBUG: added reset after each T to be compatible with tf code
-    int t_mod_T = ( origin.get_steps() + lag - 2 ) % get_update_interval_steps();
+    int t_mod_T = ( origin.get_steps() + lag - 3 ) % get_update_interval_steps();
     if ( t_mod_T == 0 )
     {
       S_.y3_ = 0.0;
@@ -288,14 +288,17 @@ nest::error_neuron::update_( Time const& origin,
       if ( P_.regression_ )
       {
         // if this is a regression task, use the bare membrane potential
-        normalized_learning_signal = V_.state_buffer_ [ 0 ] /
-        V_.state_buffer_ [ 2 ] - V_.state_buffer_ [ 1 ];
+        // the normalization is not needed
+        normalized_learning_signal = V_.state_buffer_ [ 0 ] - V_.state_buffer_ [ 1 ];
       }
       else
       {
         // if this is a classification task, use exp( membrane potential )
         normalized_learning_signal = std::exp( V_.state_buffer_ [ 0 ] ) /
         V_.state_buffer_ [ 2 ] - V_.state_buffer_ [ 1 ];
+        //std::cout << "compose ls: " << normalized_learning_signal << "  readout: "
+        //  << V_.state_buffer_[0] << "  target: " << V_.state_buffer_[1] << "  norm: "
+        //  << V_.state_buffer_[2] << std::endl;
       }
     }
     else
@@ -310,7 +313,22 @@ nest::error_neuron::update_( Time const& origin,
       // if the recall is active, fill state_buffer_ with the current state
       V_.state_buffer_ [ 0 ] = readout_signal;
       V_.state_buffer_ [ 1 ] = S_.target_rate_;
-      V_.state_buffer_ [ 2 ] = 1.0;
+      // normalization
+      if ( P_.regression_ )
+      {
+        // if it is a regression task, we do not need the normalization
+        // and we (arbitrarily) set it to 1
+        V_.state_buffer_ [ 2 ] = 1.0;
+      }
+      else
+      {
+        // if this is a classification task, the normalization is given by
+        // the sum of exp(readout_signal) over all readout neurons
+        // this is the first contribution to this sum, the terms from the
+        // other readout neurons is added in the handel function of the
+        // DelayedRateConnectionEvent
+        V_.state_buffer_ [ 2 ] = std::exp( readout_signal );
+      }
     }
     else
     {
@@ -338,31 +356,23 @@ nest::error_neuron::update_( Time const& origin,
     B_.logger_.record_data( origin.get_steps() + lag );
   }
 
-  // time as it is in the last iteration of the for loop modulo update interval
-  int t_mod_T_final = ( origin.get_steps() + to - 3 ) % get_update_interval_steps();
-  // send learning signal and readout signal only if recall is active
-  if ( t_mod_T_final >= V_.step_start_ls_ )
-  {
-    // send learning signal
-    // TODO: it would be much more efficient to send this in larger batches
-    LearningSignalConnectionEvent drve;
-    drve.set_coeffarray( readout_and_target_signals );
-    kernel().event_delivery_manager.send_secondary( *this, drve );
-  }
+  // send learning signal
+  // TODO: it would be much more efficient to send this in larger batches
+  //std::cout << "send ls at t: " << origin.get_steps() 
+  //  << "  ls: " << readout_and_target_signals[1] << std::endl;
+  LearningSignalConnectionEvent drve;
+  drve.set_coeffarray( readout_and_target_signals );
+  kernel().event_delivery_manager.send_secondary( *this, drve );
   // time one time step larger than t_mod_T_final because the readout has to
   // be sent one time step in advance so that the normalization can be computed
   // and the learning signal is ready as soon as the recall starts.
   if ( !P_.regression_ )
   {
-    int t_mod_T_final_p1 = ( origin.get_steps() + to - 2 ) % get_update_interval_steps();
-    if ( t_mod_T_final_p1 >= V_.step_start_ls_ )
-    {
-      // send readout signal only if this is a classification task
-      // rate connection to connect to other readout neurons
-      DelayedRateConnectionEvent readout_event;
-      readout_event.set_coeffarray( readout_signal_buffer );
-      kernel().event_delivery_manager.send_secondary( *this, readout_event );
-    }
+    // send readout signal only if this is a classification task
+    // rate connection to connect to other readout neurons
+    DelayedRateConnectionEvent readout_event;
+    readout_event.set_coeffarray( readout_signal_buffer );
+    kernel().event_delivery_manager.send_secondary( *this, readout_event );
   }
 
   return;

@@ -271,6 +271,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         std::adjacent_difference(pre_syn_spike_times_.begin(), --pre_syn_spike_times_.end(),
             pre_syn_spk_diff.begin());
         pre_syn_spk_diff.erase( pre_syn_spk_diff.begin() );
+        //std::cout << "spike at t: " << t_spike << " z hat:" << std::endl;
         double last_z_hat = 0.0;
         for ( auto pre_syn_spk_t : pre_syn_spk_diff )
         {
@@ -285,6 +286,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
           }
         }
         grad *= dt;
+        //std::cout << std::endl << "grad: " << grad << std::endl;
       }
       else  // if target is a neuron of the recurrent network
       {
@@ -346,6 +348,10 @@ EpropConnection< targetidentifierT >::send( Event& e,
         }
         else
         {
+          //std::cout << "spike at t: " << t_spike << " learning signal:" << std::endl;
+          //std::cout << "spike at t: " << t_spike << " low pass elig trace:" << std::endl;
+          //std::cout << "spike at t: " << t_spike << " pseudo deriv:" << std::endl;
+          //std::cout << "spike at t: " << t_spike << " z hat:" << std::endl;
           // if the target is of type iaf_psc_delta_eprop
           double last_z_hat = 0.0;
           for ( auto pre_syn_spk_t : pre_syn_spk_diff )
@@ -362,9 +368,14 @@ EpropConnection< targetidentifierT >::send( Event& e,
               sum_t_prime_new = propagator_low_pass_ * sum_t_prime_new + ( 1.0 -
                   propagator_low_pass_ ) * elig_tr;
               grad += sum_t_prime_new * dt * start->learning_signal_;
+              //std::cout << start->learning_signal_ << " | ";
+              //std::cout << sum_t_prime_new  << "  " << start->learning_signal_ << " | ";
+              //std::cout << pseudo_deriv << " | ";
+              //std::cout << last_z_hat << " | ";
               ++start;
             }
           }
+          //std::cout << std::endl << "grad: " << grad << std::endl;
         }
         // firing rate regularization
         std::deque< double >::iterator start_spk;

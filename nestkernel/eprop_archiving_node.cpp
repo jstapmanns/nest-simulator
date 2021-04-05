@@ -328,7 +328,10 @@ nest::EpropArchivingNode::add_learning_to_hist( LearningSignalConnectionEvent& e
     // Add learning signal and reduce access counter
     double t_entry = e.get_coeffvalue( it );
     double normalized_learning_signal = e.get_coeffvalue( it );
+    //std::cout << "add ls of t: " << t_entry << "  ls: " << normalized_learning_signal 
+    //  << "  w: " << weight << std::endl;
     start->learning_signal_ += weight * normalized_learning_signal;
+    //print_eprop_history();
     ++start;
   }
 }
