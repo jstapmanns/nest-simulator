@@ -296,9 +296,6 @@ nest::error_neuron::update_( Time const& origin,
         // if this is a classification task, use exp( membrane potential )
         normalized_learning_signal = std::exp( V_.state_buffer_ [ 0 ] ) /
         V_.state_buffer_ [ 2 ] - V_.state_buffer_ [ 1 ];
-        //std::cout << "compose ls: " << normalized_learning_signal << "  readout: "
-        //  << V_.state_buffer_[0] << "  target: " << V_.state_buffer_[1] << "  norm: "
-        //  << V_.state_buffer_[2] << std::endl;
       }
     }
     else
@@ -358,8 +355,6 @@ nest::error_neuron::update_( Time const& origin,
 
   // send learning signal
   // TODO: it would be much more efficient to send this in larger batches
-  //std::cout << "send ls at t: " << origin.get_steps() 
-  //  << "  ls: " << readout_and_target_signals[1] << std::endl;
   LearningSignalConnectionEvent drve;
   drve.set_coeffarray( readout_and_target_signals );
   kernel().event_delivery_manager.send_secondary( *this, drve );
