@@ -413,6 +413,16 @@ EpropConnection< targetidentifierT >::send( Event& e,
           sum_grads /= batch_size_;
           weight_ -= learning_rate_ * sum_grads;
         }
+        // check whether the new weight is between Wmin and Wmax
+        if ( weight_ > Wmax_ )
+        {
+          weight_ = Wmax_;
+        }
+        else if ( weight_ < Wmin_ )
+        {
+          weight_ = Wmin_;
+        }
+        // clear the buffer of the gradients so that we can start a new batch
         grads_.clear();
       }
       // DEBUG: define t_lastupdate_ to be the end of the last period T to be compatible with tf code
@@ -546,7 +556,7 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   const double h = Time::get_resolution().get_ms();
   // TODO: t_nextupdate and t_lastupdate should be initialized even if set_status is not called
   // DEBUG: added + delay to correct for the delay of the learning signal
-  t_nextupdate_ = update_interval_ + 2.0 * get_delay(); // TODO: is this waht we want?
+  t_nextupdate_ = update_interval_ + 2.0 * get_delay();
   //DEBUG: shifted initial value of t_lastupdate to be in sync with TF code
   t_lastupdate_ = 2.0 * get_delay();
   // compute propagator for low pass filtering of eligibility trace
@@ -563,18 +573,21 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
     throw BadProperty( "The synaptic time constant tau_decay must be greater than zero." );
   }
 
-  // check if weight_ and Wmin_ has the same sign
-  if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
-         == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
+  // check if Wmax >= Wmin
+  if ( not ( Wmax_ >= Wmin_ ) )
   {
-    // throw BadProperty( "Weight and Wmin must have same sign." );
+    throw BadProperty( "Wmax has to be >= Wmin." );
+  }
+  // check if weight_ and Wmin_ have the same sign
+  if ( not ( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
+  {
+    throw BadProperty( "Weight and Wmin must have same sign." );
   }
 
-  // check if weight_ and Wmax_ has the same sign
-  if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
-         == ( ( Wmax_ > 0 ) - ( Wmax_ <= 0 ) ) ) )
+  // check if weight_ and Wmax_ have the same sign
+  if ( not ( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmax_ > 0 ) - ( Wmax_ <= 0 ) ) ) )
   {
-    // throw BadProperty( "Weight and Wmax must have same sign." );
+    throw BadProperty( "Weight and Wmax must have same sign." );
   }
 
   if ( update_interval_ <= 0.0 )
