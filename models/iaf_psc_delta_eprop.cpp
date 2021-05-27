@@ -314,8 +314,8 @@ nest::iaf_psc_delta_eprop::update( Time const& origin,
     // DEBUG: introduce factor ( 1 - exp( -dt / tau_m ) ) for incoming spikes
     S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
       // DEBUG II: in evidence accumulation this factor is not there
-      //+ ( 1.0 - V_.P33_ ) * B_.spikes_.get_value( lag );
-      + B_.spikes_.get_value( lag );
+      + ( 1.0 - V_.P33_ ) * B_.spikes_.get_value( lag );
+      //+ B_.spikes_.get_value( lag );
 
     // DEBUG: reset in next step after threshold crossing
     if ( V_.reset_next_step_ )

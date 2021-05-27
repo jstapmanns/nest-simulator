@@ -327,8 +327,9 @@ EpropConnection< targetidentifierT >::send( Event& e,
           double last_z_hat = 0.0;
           for ( auto pre_syn_spk_t : pre_syn_spk_diff )
           {
-            // jump of z_hat
-            last_z_hat += 1.0;
+            // jump of z_hat // TODO: factor (1-alpha) is specific to pattern generation task
+            last_z_hat += ( 1.0 - alpha );
+            //last_z_hat += 1.0;
             for (int t = 0; t < pre_syn_spk_t; ++t)
             {
               double pseudo_deriv = start->V_m_;
@@ -350,8 +351,9 @@ EpropConnection< targetidentifierT >::send( Event& e,
           double last_z_hat = 0.0;
           for ( auto pre_syn_spk_t : pre_syn_spk_diff )
           {
-            // jump of z_hat
-            last_z_hat += 1.0;
+            // jump of z_hat // TODO: factor (1-alpha) is specific to pattern generation task
+            last_z_hat += ( 1.0 - alpha );
+            //last_z_hat += 1.0;
             for (int t = 0; t < pre_syn_spk_t; ++t)
             {
               double pseudo_deriv = start->V_m_;
@@ -414,6 +416,8 @@ EpropConnection< targetidentifierT >::send( Event& e,
           weight_ -= learning_rate_ * sum_grads;
         }
         // check whether the new weight is between Wmin and Wmax
+        // TODO: commented to be compatible with TF code
+        /*
         if ( weight_ > Wmax_ )
         {
           weight_ = Wmax_;
@@ -422,6 +426,7 @@ EpropConnection< targetidentifierT >::send( Event& e,
         {
           weight_ = Wmin_;
         }
+        */
         // clear the buffer of the gradients so that we can start a new batch
         grads_.clear();
       }
@@ -573,21 +578,15 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
     throw BadProperty( "The synaptic time constant tau_decay must be greater than zero." );
   }
 
-  // check if Wmax >= Wmin
-  if ( not ( Wmax_ >= Wmin_ ) )
+  // check if Wmax >= weight >= Wmin
+  if ( not ( ( Wmax_ >= weight_ ) && ( Wmin_ <= weight_ ) ) )
   {
-    throw BadProperty( "Wmax has to be >= Wmin." );
+    throw BadProperty( "Wmax, Wmin and the Weight have to satisfy Wmax >= Weight >= Wmin" );
   }
   // check if weight_ and Wmin_ have the same sign
-  if ( not ( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
+  if ( not ( ( Wmax_ >= 0 && Wmin_ >= 0 ) || ( Wmax_ <= 0 && Wmin_ <= 0 ) ) )
   {
     throw BadProperty( "Weight and Wmin must have same sign." );
-  }
-
-  // check if weight_ and Wmax_ have the same sign
-  if ( not ( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmax_ > 0 ) - ( Wmax_ <= 0 ) ) ) )
-  {
-    throw BadProperty( "Weight and Wmax must have same sign." );
   }
 
   if ( update_interval_ <= 0.0 )
