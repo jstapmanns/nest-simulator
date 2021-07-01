@@ -573,21 +573,15 @@ EpropConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
     throw BadProperty( "The synaptic time constant tau_decay must be greater than zero." );
   }
 
-  // check if Wmax >= Wmin
-  if ( not ( Wmax_ >= Wmin_ ) )
+  // check if Wmax >= weight >= Wmin
+  if ( not ( ( Wmax_ >= weight_ ) && ( Wmin_ <= weight_ ) ) )
   {
-    throw BadProperty( "Wmax has to be >= Wmin." );
+    throw BadProperty( "Wmax, Wmin and the Weight have to satisfy Wmax >= Weight >= Wmin");
   }
   // check if weight_ and Wmin_ have the same sign
-  if ( not ( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmin_ >= 0 ) - ( Wmin_ < 0 ) ) ) )
+  if ( not ( ( Wmax_ >= 0 && Wmin_ >= 0 ) || ( Wmax_ <= 0 && Wmin_ <= 0 ) ) )
   {
     throw BadProperty( "Weight and Wmin must have same sign." );
-  }
-
-  // check if weight_ and Wmax_ have the same sign
-  if ( not ( ( ( weight_ >= 0 ) - ( weight_ < 0 ) ) == ( ( Wmax_ > 0 ) - ( Wmax_ <= 0 ) ) ) )
-  {
-    throw BadProperty( "Weight and Wmax must have same sign." );
   }
 
   if ( update_interval_ <= 0.0 )
